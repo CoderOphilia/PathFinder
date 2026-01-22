@@ -1,0 +1,45 @@
+# Maven
+target/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.metadata/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# Spring Tools Suite
+.apt_generated/
+.factorypath
+.springBeans
+.sts4-cache/
+
+# JEnv / SDKMAN
+.java-version
+
+# Local env files
+.env
+*.local
