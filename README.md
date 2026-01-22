@@ -1,8 +1,11 @@
+
+### Software Engineering Project
 # PathFinder
 
 a comprehensive career preparation and mentorship platform designed to help job seekers navigate modern hiring challenges.
 
-## How to Access Project
+
+### How to Access Project
 
 To switch to a specific branch in the repository, follow these steps:
 
