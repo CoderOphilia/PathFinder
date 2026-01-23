@@ -1,14 +1,17 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pathfinder</title>
-  </head>
-  <body>
-    <main>
-      <h1>Pathfinder</h1>
-      <p>Landing page template: <code>templates/landing/index.html</code></p>
-    </main>
-  </body>
-</html>
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+  <h1>Turn career advice into action.</h1>
+  <p>Book structured mentorship sessions and leave with clear next steps you can track.</p>
+
+  <p>
+    <a th:href="@{/auth/signup}">Create account</a>
+    |
+    <a th:href="@{/auth/login}">Sign in</a>
+  </p>
+
+  <h2>How it works</h2>
+  <ol>
+    <li><strong>Request</strong> - Share your goals, context, and what you want out of the session.</li>
+    <li><strong>Meet</strong> - Sessions happen through an external meeting link (Meet/Zoom).</li>
+    <li><strong>Follow through</strong> - Get action items you can check off over time.</li>
+  </ol>
+</section>

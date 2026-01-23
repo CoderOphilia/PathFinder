@@ -1,0 +1,102 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<!--   <th:block th:replace="~{fragments/auth_aside :: aside}"></th:block> -->
+
+	<div class="authContainer">
+		<h1>Create your account</h1>
+		<form method="post" th:action="@{/auth/signup}">
+			<div>
+				<label for="firstName" class="label label--required"
+					>First name</label
+				>
+				<input
+					class="input"
+					id="firstName"
+					name="firstName"
+					autocomplete="given-name"
+					required
+				/>
+			</div>
+
+			<div>
+				<label for="lastName" class="label">Last name</label>
+				<input
+					id="lastName"
+					class="input"
+					name="lastName"
+					autocomplete="family-name"
+					required
+				/>
+			</div>
+
+			<div>
+				<label for="email" class="label label--required">Email</label>
+				<input
+					id="email"
+					name="email"
+					class="input"
+					type="email"
+					autocomplete="email"
+					required
+				/>
+			</div>
+
+			<div>
+				<label for="password" class="label label--required"
+					>Password</label
+				>
+				<input
+					id="password"
+					class="input"
+					name="password"
+					type="password"
+					autocomplete="new-password"
+					minlength="8"
+					required
+				/>
+			</div>
+
+			<div>
+				<label for="confirmPassword" class="label label--required"
+					>Confirm password</label
+				>
+				<input
+					id="confirmPassword"
+					class="input"
+					name="confirmPassword"
+					type="password"
+					autocomplete="new-password"
+					minlength="8"
+					required
+				/>
+			</div>
+
+			<div class="select-wrapper">
+				<label class="label label--required">Role</label>
+				<select class="select select-error">
+					<option value="">Select a value</option>
+					<option value="mentor">Mentor</option>
+					<option value="mentee">Mentee</option>
+				</select>
+			</div>
+
+			<label class="label">
+				<input type="checkbox" name="agree" required />
+				I agree to the terms and community guidelines.
+			</label>
+
+			<button type="submit" class="btn btn--default">
+				Create account
+			</button>
+		</form>
+
+		<p class="p">
+			Already have an account?
+			<a th:href="@{/auth/login}" class="link link--underline">Sign in</a>
+		</p>
+
+		<p class="p p--muted p--tight">
+			Tip: if you are signing up as a mentor, you will need verification
+			before appearing in search.
+		</p>
+	</div>
+</section>

@@ -1,0 +1,13 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
+	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">PathFinder</a>
+
+	<div class="nav__links" aria-label="Primary">
+		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Mentors</a>
+		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Sessions</a>
+		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Dashboard</a>
+		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Admin</a>
+
+		<a th:href="@{/auth/login}" class="nav__link">Log in</a>
+		<a th:href="@{/auth/signup}" class="nav__link nav__cta">Sign up</a>
+	</div>
+</nav>

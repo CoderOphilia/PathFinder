@@ -1,0 +1,662 @@
+/* Notebook tokens + minimal navbar styling. */
+
+:root {
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-display:
+		ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+	--bg: hsl(45 30% 98%);
+	--paper: hsl(0 0% 100%);
+	--paper-2: hsl(45 30% 96%);
+
+	--ink: hsl(222 22% 14%);
+	--muted: hsl(222 10% 42%);
+
+	--rule: hsl(222 14% 86% / 0.55);
+	--margin: hsl(0 70% 55% / 0.22);
+	--border: hsl(222 14% 84%);
+
+	--shadow: 0 1px 2px hsl(222 20% 20% / 0.06);
+
+	--radius: 16px;
+	--container: 1120px;
+
+	--s2: 8px;
+	--s3: 12px;
+	--s4: 16px;
+}
+
+/* Minimal base so the nav looks consistent. */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	color: hsl(var(--foreground));
+	background: hsl(var(--background));
+}
+
+header {
+	padding: 12px 16px 0;
+}
+
+/* Navbar */
+
+.nav {
+	max-width: 1120px;
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 16px 12px 32px;
+	border: 1px solid hsl(var(--border));
+	border-radius: 16px;
+	background:
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0,
+			transparent 26px,
+			hsl(var(--border) / 0.35) 26px,
+			hsl(var(--border) / 0.35) 27px
+		),
+		hsl(var(--card));
+	box-shadow: 0 1px 2px hsl(0 0% 0% / 0.06);
+	position: relative;
+}
+
+.nav::before {
+	content: "";
+	position: absolute;
+	left: 18px;
+	top: 10px;
+	bottom: 10px;
+	width: 2px;
+	background: hsl(0 70% 55% / 0.22);
+	border-radius: 2px;
+}
+
+.nav__brand {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: hsl(var(--foreground));
+	text-decoration: none;
+}
+
+.nav__links {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nav__link {
+	color: hsl(var(--muted-foreground));
+	text-decoration: none;
+	padding: 6px 10px;
+	border-radius: 999px;
+}
+
+.nav__link:hover {
+	background: hsl(var(--muted));
+	color: hsl(var(--foreground));
+}
+
+.nav__link--disabled,
+.nav__link--disabled:hover {
+	opacity: 0.55;
+	background: transparent;
+	color: hsl(var(--muted-foreground));
+	cursor: not-allowed;
+}
+
+.nav__cta {
+	color: hsl(var(--foreground));
+	border: 1px solid hsl(var(--border));
+	background: hsl(var(--card));
+}
+
+@media (max-width: 640px) {
+	header {
+		padding: 10px 16px 0;
+	}
+}
+
+.authContainer {
+	display: flex;
+    width: 100%;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	padding: 1rem;
+	gap: 1rem;
+}
+
+.authContainer form {
+	display: flex;
+	padding: 0.75rem;
+	height: 100%;
+	width: min(420px, 100%);
+	gap: 0.75rem;
+	flex-direction: column;
+}
+.authContainer form div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+}
+
+main {
+	padding: 1rem;
+}
+
+/* =========================
+   Base Input
+   ========================= */
+
+.input {
+	box-sizing: border-box;
+	width: 100%;
+	height: 40px;
+
+	padding: 0.5rem 0.75rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+
+	color: #020817;
+	background-color: #ffffff;
+
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+
+	outline: none;
+
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+/* =========================
+   Placeholder
+   ========================= */
+
+.input::placeholder {
+	color: #94a3b8;
+}
+
+/* =========================
+   Focus State
+   ========================= */
+
+.input:focus {
+	border-color: #6366f1; /* indigo-500 */
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* =========================
+   Disabled State
+   ========================= */
+
+.input:disabled {
+	background-color: #f8fafc;
+	color: #94a3b8;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Readonly State
+   ========================= */
+
+.input[readonly] {
+	background-color: #f8fafc;
+	cursor: default;
+}
+
+/* =========================
+   Error State
+   ========================= */
+
+.input--error {
+	border-color: #ef4444;
+}
+
+.input--error:focus {
+	box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+/* =========================
+   Size Variants
+   ========================= */
+
+.input--sm {
+	height: 32px;
+	padding: 0.375rem 0.5rem;
+	font-size: 0.75rem;
+}
+
+.input--md {
+	height: 40px;
+}
+
+.input--lg {
+	height: 48px;
+	padding: 0.625rem 0.875rem;
+	font-size: 1rem;
+}
+
+/* =========================
+   Base Label
+   ========================= */
+
+.label {
+	display: inline-block;
+
+	margin-bottom: 0.375rem;
+
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.25rem;
+
+	color: #020817;
+
+	cursor: pointer;
+}
+
+/* =========================
+   Disabled Label
+   ========================= */
+
+.label--disabled {
+	color: #94a3b8;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Error Label
+   ========================= */
+
+.label--error {
+	color: #ef4444;
+}
+
+/* =========================
+   Required Indicator
+   ========================= */
+
+.label--required::after {
+	content: " *";
+	color: #ef4444;
+}
+
+/* =========================
+   Description / Helper Text
+   ========================= */
+
+.label__hint {
+	display: block;
+
+	margin-top: 0.25rem;
+
+	font-size: 0.75rem;
+	line-height: 1rem;
+
+	color: #64748b;
+}
+
+/* =========================
+   Base Button
+   ========================= */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+
+	box-sizing: border-box;
+
+	height: 40px;
+	padding: 0 1rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1;
+
+	border-radius: 6px;
+	border: 1px solid transparent;
+
+	background: transparent;
+	color: #0f172a;
+
+	cursor: pointer;
+	user-select: none;
+	text-decoration: none;
+	white-space: nowrap;
+
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease,
+		box-shadow 0.15s ease,
+		transform 0.02s ease;
+}
+
+/* Keyboard focus */
+.btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+/* Pressed */
+.btn:active {
+	transform: translateY(1px);
+}
+
+/* Disabled */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* =========================
+   Variants (shadcn-style)
+   ========================= */
+
+/* default (similar to "default" variant) */
+.btn--default {
+	background-color: #0f172a; /* slate-900 */
+	color: #ffffff;
+}
+
+.btn--default:hover {
+	background-color: #111827; /* slightly lighter/different */
+}
+
+/* secondary */
+.btn--secondary {
+	background-color: #f1f5f9; /* slate-100 */
+	color: #0f172a;
+	border-color: #e2e8f0;
+}
+
+.btn--secondary:hover {
+	background-color: #e2e8f0; /* slate-200 */
+}
+
+/* outline */
+.btn--outline {
+	background-color: transparent;
+	color: #0f172a;
+	border-color: #e2e8f0;
+}
+
+.btn--outline:hover {
+	background-color: #f8fafc;
+}
+
+/* ghost */
+.btn--ghost {
+	background-color: transparent;
+	color: #0f172a;
+}
+
+.btn--ghost:hover {
+	background-color: #f1f5f9;
+}
+
+/* destructive */
+.btn--destructive {
+	background-color: #ef4444; /* red-500 */
+	color: #ffffff;
+}
+
+.btn--destructive:hover {
+	background-color: #dc2626; /* red-600 */
+}
+
+/* link */
+.btn--link {
+	padding: 0;
+	height: auto;
+
+	background-color: transparent;
+	border-color: transparent;
+
+	color: #0f172a;
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+.btn--link:hover {
+	opacity: 0.85;
+}
+
+/* =========================
+   Sizes
+   ========================= */
+
+.btn--sm {
+	height: 32px;
+	padding: 0 0.75rem;
+	font-size: 0.75rem;
+}
+
+.btn--md {
+	height: 40px;
+}
+
+.btn--lg {
+	height: 48px;
+	padding: 0 1.25rem;
+	font-size: 1rem;
+}
+
+/* icon-only */
+.btn--icon {
+	width: 40px;
+	padding: 0;
+}
+
+.btn--icon.btn--sm {
+	width: 32px;
+}
+
+.btn--icon.btn--lg {
+	width: 48px;
+}
+
+/* =========================
+   Optional: loading state
+   (apply class when loading)
+   ========================= */
+
+.btn.is-loading {
+	position: relative;
+	pointer-events: none;
+	opacity: 0.85;
+}
+
+/* =========================
+   Base Select
+   ========================= */
+
+.select {
+	box-sizing: border-box;
+	width: 100%;
+	height: 40px;
+
+	padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+
+	color: #020817;
+	background-color: #ffffff;
+
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+
+	outline: none;
+	cursor: pointer;
+
+	/* Remove native styling */
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+/* =========================
+   Base Paragraph
+   ========================= */
+
+.p {
+	margin: 0 0 1rem 0;
+
+	font-size: 0.875rem;
+	line-height: 1.5;
+
+	color: #334155; /* slate-700 */
+
+	max-width: 65ch;
+}
+
+/* Remove bottom margin for last paragraph in a block */
+.p:last-child {
+	margin-bottom: 0;
+}
+
+/* =========================
+   Muted / Secondary Text
+   ========================= */
+
+.p--muted {
+	color: #64748b; /* slate-500 */
+}
+
+/* =========================
+   Small Text
+   ========================= */
+
+.p--sm {
+	font-size: 0.75rem;
+	line-height: 1.25;
+}
+
+/* =========================
+   Strong Emphasis
+   ========================= */
+
+.p--strong {
+	font-weight: 500;
+	color: #0f172a;
+}
+
+/* =========================
+   Error Text
+   ========================= */
+
+.p--error {
+	color: #ef4444;
+	font-size: 0.75rem;
+	line-height: 1.25;
+}
+
+/* =========================
+   Spacing Utilities
+   ========================= */
+
+.p--tight {
+	margin-bottom: 0.5rem;
+}
+
+.p--loose {
+	margin-bottom: 1.5rem;
+}
+
+/* =========================
+   Base link
+   ========================= */
+
+a.link {
+	color: #0f172a; /* slate-900 */
+	text-decoration: none;
+	text-underline-offset: 4px;
+
+	transition:
+		color 0.15s ease,
+		text-decoration-color 0.15s ease,
+		opacity 0.15s ease;
+}
+
+/* Hover underline (common shadcn feel) */
+a.link:hover {
+	text-decoration: underline;
+}
+
+/* Keyboard focus */
+a.link:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+	border-radius: 4px;
+}
+
+/* Visited (keep subtle so it does not look like old web) */
+a.link:visited {
+	color: #0f172a;
+	opacity: 0.9;
+}
+
+/* Disabled pattern (use aria-disabled since <a> has no disabled) */
+a.link[aria-disabled="true"] {
+	opacity: 0.5;
+	pointer-events: none;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Variants
+   ========================= */
+
+/* Muted link (for secondary actions like "Forgot password?") */
+a.link--muted {
+	color: #64748b; /* slate-500 */
+}
+
+a.link--muted:hover {
+	color: #334155; /* slate-700 */
+}
+
+/* Always-underlined link (matches shadcn button "link" vibe) */
+a.link--underline {
+	text-decoration: underline;
+}
+
+/* Destructive link */
+a.link--destructive {
+	color: #ef4444; /* red-500 */
+}
+
+a.link--destructive:hover {
+	text-decoration: underline;
+	opacity: 0.9;
+}

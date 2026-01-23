@@ -1,0 +1,18 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+  <th:block th:replace="~{fragments/auth_aside :: aside}"></th:block>
+
+  <h1>Reset your password</h1>
+  <p>Enter your email and we will send a reset link (MVP placeholder).</p>
+
+  <form method="post" th:action="@{/auth/forgot}">
+    <div>
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" autocomplete="email" required />
+    </div>
+
+    <button type="submit">Send reset link</button>
+  </form>
+
+  <p><a th:href="@{/auth/login}">Back to login</a></p>
+  <p>If you do not see an email, check your spam folder.</p>
+</section>
