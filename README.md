@@ -2,57 +2,6 @@
 
 PathFinder is a Spring Boot + Thymeleaf web app for booking structured career mentorship sessions and tracking
 progress (session summaries + action items).
-## How to Access Project
-
-To switch to a specific branch in the repository, follow these steps:
-
-1. **Clone the Repository** (if you haven't already):
-
-   ```bash
-   git clone https://github.com/CoderOphilia/PathFinder.git
-   ```
-   &emsp; or
-
-   ```bash
-   gh repo clone CoderOphilia/PathFinder/.git
-   ```
-
-2. **Navigate to the Project Directory**:
-
-   ```bash
-   cd PathFinder
-   ```
-3. **Create a new Branch and switch to the branch**
-    ```bash
-   git checkout -b <branch-name/feature-name>
-   ```
-
-### Steps to Work on Project Locally
-1. **Pull Latest Changes from dev branch**
-   - Fetch the latest updates from the `dev` branch:
-     ```bash
-     git fetch origin dev
-     ```
-   - Merge the latest changes from `dev` into your branch:
-     ```bash
-     git merge origin/dev
-     ```
-
-2. **Create and Switch to Your Branch**
-     ```bash
-     git checkout -b <branch-name/feature-name>
-     ```
-
-
-3. **Resolve Any Conflicts**
-   - If there are any merge conflicts, resolve them in your local environment and commit the changes.
-
-4. **Push Updated Branch**
-   - After ensuring everything is working, push your updated branch:
-     ```bash
-     git push origin <branch-name/feature-name>
-     ```
-
 
 ## Current Status
 
@@ -184,6 +133,56 @@ Views and assets:
 - Member: 300398282
 - Member: 300389976
 - Member: 300388928
+## How to Access Project
+
+To switch to a specific branch in the repository, follow these steps:
+
+1. **Clone the Repository** (if you haven't already):
+
+   ```bash
+   git clone https://github.com/CoderOphilia/PathFinder.git
+   ```
+   &emsp; or
+
+   ```bash
+   gh repo clone CoderOphilia/PathFinder/.git
+   ```
+
+2. **Navigate to the Project Directory**:
+
+   ```bash
+   cd PathFinder
+   ```
+3. **Create a new Branch and switch to the branch**
+    ```bash
+   git checkout -b <branch-name/feature-name>
+   ```
+
+### Steps to Work on Project Locally
+1. **Pull Latest Changes from dev branch**
+   - Fetch the latest updates from the `dev` branch:
+     ```bash
+     git fetch origin dev
+     ```
+   - Merge the latest changes from `dev` into your branch:
+     ```bash
+     git merge origin/dev
+     ```
+
+2. **Create and Switch to Your Branch**
+     ```bash
+     git checkout -b <branch-name/feature-name>
+     ```
+
+
+3. **Resolve Any Conflicts**
+   - If there are any merge conflicts, resolve them in your local environment and commit the changes.
+
+4. **Push Updated Branch**
+   - After ensuring everything is working, push your updated branch:
+     ```bash
+     git push origin <branch-name/feature-name>
+     ```
 
 ## License
 
