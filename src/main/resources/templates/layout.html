@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title th:text="${title} ?: 'PathFinder'">PathFinder</title>
+		<link rel="stylesheet" th:href="@{/css/app.css}" />
+	</head>
+	<body>
+		<header>
+			<th:block th:insert="~{__${navbarType}__}"></th:block>
+		</header>
+
+		<main>
+			<th:block th:insert="~{__${content}__}"></th:block>
+		</main>
+	</body>
+</html>

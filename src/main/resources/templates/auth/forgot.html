@@ -1,0 +1,26 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--aside" aria-label="About PathFinder">
+			<th:block th:replace="~{fragments/auth_aside :: aside}"></th:block>
+		</section>
+
+		<section class="tile tile--form" aria-label="Reset password">
+			<h1>Reset your password</h1>
+			<p class="p p--muted p--tight">We will email you a reset link (MVP placeholder).</p>
+
+			<form method="post" th:action="@{/auth/forgot}">
+				<div>
+					<label for="email" class="label label--required">Email</label>
+					<input id="email" class="input" name="email" type="email" autocomplete="email" required />
+				</div>
+
+				<button type="submit" class="btn btn--default">Send reset link</button>
+			</form>
+
+			<p class="p">
+				<a th:href="@{/auth/login}" class="link link--underline">Back to login</a>
+			</p>
+			<p class="p p--muted p--tight">If you do not see an email, check your spam folder.</p>
+		</section>
+	</div>
+</section>

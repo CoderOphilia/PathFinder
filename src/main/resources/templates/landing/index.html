@@ -1,14 +1,75 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pathfinder</title>
-  </head>
-  <body>
-    <main>
-      <h1>Pathfinder</h1>
-      <p>Landing page template: <code>templates/landing/index.html</code></p>
-    </main>
-  </body>
-</html>
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full" aria-label="Hero">
+			<p class="tile__kicker">PathFinder MVP</p>
+			<h1>Turn career advice into action.</h1>
+			<p class="p p--muted p--tight">
+				Book structured mentorship sessions and leave with clear next steps you can track.
+			</p>
+			<p class="p">
+				<a class="btn btn--default" th:href="@{/auth/signup}">Create account</a>
+				<a class="btn btn--outline" th:href="@{/auth/login}">Sign in</a>
+			</p>
+		</section>
+
+		<section class="tile tile--span4" aria-label="Request step">
+			<p class="tile__kicker">Step 1</p>
+			<h2>Request</h2>
+			<p class="p p--muted p--tight">Share goals, context, and what you want from the session.</p>
+		</section>
+
+		<section class="tile tile--span4" aria-label="Meet step">
+			<p class="tile__kicker">Step 2</p>
+			<h2>Meet</h2>
+			<p class="p p--muted p--tight">Sessions happen via an external meeting link (Meet/Zoom).</p>
+		</section>
+
+		<section class="tile tile--span4" aria-label="Follow through step">
+			<p class="tile__kicker">Step 3</p>
+			<h2>Follow through</h2>
+			<p class="p p--muted p--tight">Get a summary and action items you can check off over time.</p>
+		</section>
+
+		<section class="tile tile--span6" aria-label="Sample session">
+			<p class="tile__kicker">Sample session</p>
+			<h2>Mock interview prep (30m)</h2>
+			<ul class="tile__list">
+				<li><strong>Mentor</strong>: Priya K. (Backend, Java)</li>
+				<li><strong>Status</strong>: Approved</li>
+				<li><strong>Goal</strong>: tighten STAR answers and reduce rambling</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span6" aria-label="Sample action items">
+			<p class="tile__kicker">Action items</p>
+			<h2>What you track</h2>
+			<ul class="checklist">
+				<li>Rewrite 3 resume bullets with measurable impact</li>
+				<li>Practice 5 behavioral questions using STAR</li>
+				<li>Send 2 networking messages for referrals</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span7" aria-label="Mentor spotlight">
+			<p class="tile__kicker">Mentor spotlight</p>
+			<h2>Alex M.</h2>
+			<p class="p p--muted p--tight">Interviewing, resume reviews, and backend system design.</p>
+			<ul class="tags">
+				<li class="tag">Java</li>
+				<li class="tag">Spring</li>
+				<li class="tag">System design</li>
+				<li class="tag">Mock interviews</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span5" aria-label="Project status">
+			<p class="tile__kicker">Project status</p>
+			<h2>In progress</h2>
+			<ul class="tile__list">
+				<li>Landing + auth pages</li>
+				<li>Role-based dashboards (next)</li>
+				<li>Sessions + action items (next)</li>
+			</ul>
+		</section>
+	</div>
+</section>

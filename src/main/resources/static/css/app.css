@@ -1,0 +1,752 @@
+/* Notebook tokens + minimal navbar styling. */
+
+:root {
+	--font-sans:
+		ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	--font-display:
+		ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+	--bg: hsl(45 30% 98%);
+	--paper: hsl(0 0% 100%);
+	--paper-2: hsl(45 30% 96%);
+
+	--ink: hsl(222 22% 14%);
+	--muted: hsl(222 10% 42%);
+
+	--rule: hsl(222 14% 86% / 0.55);
+	--margin: hsl(0 70% 55% / 0.22);
+	--border: hsl(222 14% 84%);
+
+	--shadow: 0 1px 2px hsl(222 20% 20% / 0.06);
+
+	--radius: 16px;
+	--container: 1120px;
+
+	--s2: 8px;
+	--s3: 12px;
+	--s4: 16px;
+}
+
+/* Minimal base so the nav looks consistent. */
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-family: var(--font-sans);
+	color: var(--ink);
+	background: var(--bg);
+}
+
+header {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	padding: 12px 16px 12px;
+	background: color-mix(in srgb, var(--bg) 92%, transparent);
+	backdrop-filter: blur(8px);
+	border-bottom: 1px solid var(--border);
+}
+
+/* Navbar */
+
+.nav {
+	max-width: 1120px;
+	margin: 0 auto;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 16px 12px 32px;
+	border: 1px solid var(--border);
+	border-radius: 0;
+	background: var(--paper);
+}
+
+.nav__brand {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--ink);
+	text-decoration: none;
+}
+
+.nav__links {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.nav__link {
+	color: var(--muted);
+	text-decoration: none;
+	padding: 6px 10px;
+	border-radius: 999px;
+}
+
+.nav__link:hover {
+	background: var(--paper-2);
+	color: var(--ink);
+}
+
+.nav__link--disabled,
+.nav__link--disabled:hover {
+	opacity: 0.55;
+	background: transparent;
+	color: var(--muted);
+	cursor: not-allowed;
+}
+
+.nav__cta {
+	color: var(--ink);
+	border: 1px solid var(--border);
+	background: var(--paper);
+}
+
+@media (max-width: 640px) {
+	header {
+		padding: 10px 16px 0;
+	}
+}
+
+/* Auth grid tiles */
+
+.gridPage {
+	max-width: 1120px;
+	margin: 0 auto;
+	padding: 24px 16px;
+	display: grid;
+	gap: 16px;
+}
+
+@media (min-width: 900px) {
+	.gridPage {
+		grid-template-columns: repeat(12, minmax(0, 1fr));
+		gap: 18px;
+	}
+}
+
+.tile {
+	border: 1px solid var(--border);
+	background: var(--paper);
+	border-radius: 0;
+	padding: 22px;
+}
+
+@media (min-width: 900px) {
+	.tile--full { grid-column: 1 / -1; }
+	.tile--span4 { grid-column: span 4; }
+	.tile--span5 { grid-column: span 5; }
+	.tile--span6 { grid-column: span 6; }
+	.tile--span7 { grid-column: span 7; }
+	.tile--span8 { grid-column: span 8; }
+}
+
+.tile__kicker {
+	margin: 0 0 0.25rem;
+	font-size: 0.8rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0.75rem 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.tag {
+	border: 1px solid var(--border);
+	padding: 4px 8px;
+	border-radius: 0;
+	font-size: 0.85rem;
+	color: var(--muted);
+}
+
+.checklist {
+	margin: 0;
+	padding-left: 18px;
+}
+
+.checklist li {
+	margin: 8px 0;
+}
+
+@media (min-width: 900px) {
+	.tile--aside { grid-column: 1 / span 5; }
+	.tile--form { grid-column: 6 / span 7; }
+	.tileCol--left { grid-column: 1 / span 5; }
+}
+
+.tileCol {
+	display: grid;
+	gap: 16px;
+}
+
+.tile__title {
+	margin: 0 0 0.5rem;
+	font-size: 0.95rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.tile__list {
+	margin: 0;
+	padding-left: 18px;
+	color: var(--ink);
+}
+
+.tile__list li {
+	margin: 8px 0;
+}
+
+.tileCol--left .tile {
+	color: var(--muted);
+}
+
+.tileCol--left .p {
+	color: var(--muted);
+}
+
+.tileCol--left strong {
+	color: var(--ink);
+}
+
+.tileCol--left a {
+	color: var(--ink);
+}
+
+.tileCol--left h2 {
+	color: var(--ink);
+}
+
+.tile--form form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	margin-top: 0.75rem;
+}
+
+.tile--form form > div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+
+main {
+	padding: 1rem;
+}
+
+/* =========================
+   Base Input
+   ========================= */
+
+.input {
+	box-sizing: border-box;
+	width: 100%;
+	height: 40px;
+
+	padding: 0.5rem 0.75rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+
+	color: #020817;
+	background-color: #ffffff;
+
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+
+	outline: none;
+
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+/* =========================
+   Placeholder
+   ========================= */
+
+.input::placeholder {
+	color: #94a3b8;
+}
+
+/* =========================
+   Focus State
+   ========================= */
+
+.input:focus {
+	border-color: #6366f1; /* indigo-500 */
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+/* =========================
+   Disabled State
+   ========================= */
+
+.input:disabled {
+	background-color: #f8fafc;
+	color: #94a3b8;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Readonly State
+   ========================= */
+
+.input[readonly] {
+	background-color: #f8fafc;
+	cursor: default;
+}
+
+/* =========================
+   Error State
+   ========================= */
+
+.input--error {
+	border-color: #ef4444;
+}
+
+.input--error:focus {
+	box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+/* =========================
+   Size Variants
+   ========================= */
+
+.input--sm {
+	height: 32px;
+	padding: 0.375rem 0.5rem;
+	font-size: 0.75rem;
+}
+
+.input--md {
+	height: 40px;
+}
+
+.input--lg {
+	height: 48px;
+	padding: 0.625rem 0.875rem;
+	font-size: 1rem;
+}
+
+/* =========================
+   Base Label
+   ========================= */
+
+.label {
+	display: inline-block;
+
+	margin-bottom: 0.375rem;
+
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1.25rem;
+
+	color: #020817;
+
+	cursor: pointer;
+}
+
+/* =========================
+   Disabled Label
+   ========================= */
+
+.label--disabled {
+	color: #94a3b8;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Error Label
+   ========================= */
+
+.label--error {
+	color: #ef4444;
+}
+
+/* =========================
+   Required Indicator
+   ========================= */
+
+.label--required::after {
+	content: " *";
+	color: #ef4444;
+}
+
+/* =========================
+   Description / Helper Text
+   ========================= */
+
+.label__hint {
+	display: block;
+
+	margin-top: 0.25rem;
+
+	font-size: 0.75rem;
+	line-height: 1rem;
+
+	color: #64748b;
+}
+
+/* =========================
+   Base Button
+   ========================= */
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+
+	box-sizing: border-box;
+
+	height: 40px;
+	padding: 0 1rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	font-weight: 500;
+	line-height: 1;
+
+	border-radius: 6px;
+	border: 1px solid transparent;
+
+	background: transparent;
+	color: #0f172a;
+
+	cursor: pointer;
+	user-select: none;
+	text-decoration: none;
+	white-space: nowrap;
+
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		color 0.15s ease,
+		box-shadow 0.15s ease,
+		transform 0.02s ease;
+}
+
+/* Keyboard focus */
+.btn:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+}
+
+/* Pressed */
+.btn:active {
+	transform: translateY(1px);
+}
+
+/* Disabled */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+/* =========================
+   Variants (shadcn-style)
+   ========================= */
+
+/* default (similar to "default" variant) */
+.btn--default {
+	background-color: #0f172a; /* slate-900 */
+	color: #ffffff;
+}
+
+.btn--default:hover {
+	background-color: #111827; /* slightly lighter/different */
+}
+
+/* secondary */
+.btn--secondary {
+	background-color: #f1f5f9; /* slate-100 */
+	color: #0f172a;
+	border-color: #e2e8f0;
+}
+
+.btn--secondary:hover {
+	background-color: #e2e8f0; /* slate-200 */
+}
+
+/* outline */
+.btn--outline {
+	background-color: transparent;
+	color: #0f172a;
+	border-color: #e2e8f0;
+}
+
+.btn--outline:hover {
+	background-color: #f8fafc;
+}
+
+/* ghost */
+.btn--ghost {
+	background-color: transparent;
+	color: #0f172a;
+}
+
+.btn--ghost:hover {
+	background-color: #f1f5f9;
+}
+
+/* destructive */
+.btn--destructive {
+	background-color: #ef4444; /* red-500 */
+	color: #ffffff;
+}
+
+.btn--destructive:hover {
+	background-color: #dc2626; /* red-600 */
+}
+
+/* link */
+.btn--link {
+	padding: 0;
+	height: auto;
+
+	background-color: transparent;
+	border-color: transparent;
+
+	color: #0f172a;
+	text-decoration: underline;
+	text-underline-offset: 4px;
+}
+
+.btn--link:hover {
+	opacity: 0.85;
+}
+
+/* =========================
+   Sizes
+   ========================= */
+
+.btn--sm {
+	height: 32px;
+	padding: 0 0.75rem;
+	font-size: 0.75rem;
+}
+
+.btn--md {
+	height: 40px;
+}
+
+.btn--lg {
+	height: 48px;
+	padding: 0 1.25rem;
+	font-size: 1rem;
+}
+
+/* icon-only */
+.btn--icon {
+	width: 40px;
+	padding: 0;
+}
+
+.btn--icon.btn--sm {
+	width: 32px;
+}
+
+.btn--icon.btn--lg {
+	width: 48px;
+}
+
+/* =========================
+   Optional: loading state
+   (apply class when loading)
+   ========================= */
+
+.btn.is-loading {
+	position: relative;
+	pointer-events: none;
+	opacity: 0.85;
+}
+
+/* =========================
+   Base Select
+   ========================= */
+
+.select {
+	box-sizing: border-box;
+	width: 100%;
+	height: 40px;
+
+	padding: 0.5rem 2.25rem 0.5rem 0.75rem;
+
+	font-family: inherit;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+
+	color: #020817;
+	background-color: #ffffff;
+
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+
+	outline: none;
+	cursor: pointer;
+
+	/* Remove native styling */
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease,
+		background-color 0.15s ease,
+		color 0.15s ease;
+}
+
+/* =========================
+   Base Paragraph
+   ========================= */
+
+.p {
+	margin: 0 0 1rem 0;
+
+	font-size: 0.875rem;
+	line-height: 1.5;
+
+	color: #334155; /* slate-700 */
+
+	max-width: 65ch;
+}
+
+/* Remove bottom margin for last paragraph in a block */
+.p:last-child {
+	margin-bottom: 0;
+}
+
+/* =========================
+   Muted / Secondary Text
+   ========================= */
+
+.p--muted {
+	color: #64748b; /* slate-500 */
+}
+
+/* =========================
+   Small Text
+   ========================= */
+
+.p--sm {
+	font-size: 0.75rem;
+	line-height: 1.25;
+}
+
+/* =========================
+   Strong Emphasis
+   ========================= */
+
+.p--strong {
+	font-weight: 500;
+	color: #0f172a;
+}
+
+/* =========================
+   Error Text
+   ========================= */
+
+.p--error {
+	color: #ef4444;
+	font-size: 0.75rem;
+	line-height: 1.25;
+}
+
+/* =========================
+   Spacing Utilities
+   ========================= */
+
+.p--tight {
+	margin-bottom: 0.5rem;
+}
+
+.p--loose {
+	margin-bottom: 1.5rem;
+}
+
+/* =========================
+   Base link
+   ========================= */
+
+a.link {
+	color: #0f172a; /* slate-900 */
+	text-decoration: none;
+	text-underline-offset: 4px;
+
+	transition:
+		color 0.15s ease,
+		text-decoration-color 0.15s ease,
+		opacity 0.15s ease;
+}
+
+/* Hover underline (common shadcn feel) */
+a.link:hover {
+	text-decoration: underline;
+}
+
+/* Keyboard focus */
+a.link:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+	border-radius: 4px;
+}
+
+/* Visited (keep subtle so it does not look like old web) */
+a.link:visited {
+	color: #0f172a;
+	opacity: 0.9;
+}
+
+/* Disabled pattern (use aria-disabled since <a> has no disabled) */
+a.link[aria-disabled="true"] {
+	opacity: 0.5;
+	pointer-events: none;
+	cursor: not-allowed;
+}
+
+/* =========================
+   Variants
+   ========================= */
+
+/* Muted link (for secondary actions like "Forgot password?") */
+a.link--muted {
+	color: #64748b; /* slate-500 */
+}
+
+a.link--muted:hover {
+	color: #334155; /* slate-700 */
+}
+
+/* Always-underlined link (matches shadcn button "link" vibe) */
+a.link--underline {
+	text-decoration: underline;
+}
+
+/* Destructive link */
+a.link--destructive {
+	color: #ef4444; /* red-500 */
+}
+
+a.link--destructive:hover {
+	text-decoration: underline;
+	opacity: 0.9;
+}
