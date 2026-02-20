@@ -7,6 +7,7 @@
 				Track the current status of your request and next steps.
 			</p>
 
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
 			<div class="requestHeader">
@@ -31,6 +32,24 @@
 					<dd th:text="${sessionRequest.sessionType}">Type</dd>
 				</div>
 				<div>
+					<dt>Pricing</dt>
+					<dd>
+						<span th:text="${pricingModelLabel}">Hourly</span>
+						•
+						<span th:text="${quotedAmountLabel}">$60.00</span>
+					</dd>
+				</div>
+				<div>
+					<dt>Payment status</dt>
+					<dd>
+						<span th:class="${paymentStatusClass}" th:text="${paymentStatusLabel}">Not started</span>
+					</dd>
+				</div>
+				<div th:if="${paymentDueLabel != null and !paymentDueLabel.isEmpty()}">
+					<dt>Payment due</dt>
+					<dd th:text="${paymentDueLabel}">Fri, Mar 14 • 1:00 PM</dd>
+				</div>
+				<div>
 					<dt>Submitted</dt>
 					<dd th:text="${submittedAtLabel}">Date</dd>
 				</div>
@@ -42,15 +61,19 @@
 			<ul class="requestTimeline">
 				<li>
 					<strong>Requested</strong>
-					<span>Your mentor can review the objective and slot.</span>
+					<span>Your slot is held for 24 hours while mentor decision is pending.</span>
 				</li>
 				<li>
-					<strong>Approved / Declined</strong>
-					<span>Status updates here after mentor action.</span>
+					<strong>Approved</strong>
+					<span>Complete payment before session to confirm attendance.</span>
 				</li>
 				<li>
-					<strong>After approval</strong>
-					<span>Mentor shares an external meeting link and session details.</span>
+					<strong>Declined / Cancelled / Expired</strong>
+					<span>Slot is released and available to other mentees.</span>
+				</li>
+				<li>
+					<strong>After completion</strong>
+					<span>Mentor can mark session complete and payout becomes ready.</span>
 				</li>
 			</ul>
 		</section>
@@ -66,8 +89,32 @@
 				<strong>Mentor note:</strong>
 				<span th:text="${sessionRequest.mentorNote}">Mentor note</span>
 			</p>
+			<p class="p p--sm p--muted p--tight" th:if="${cancellationLabel != null and !cancellationLabel.isEmpty()}">
+				<strong>Cancellation policy:</strong>
+				<span th:text="${cancellationLabel}">Cancelled within 24 hours. 50% cancellation fee applied.</span>
+			</p>
 
 			<div class="formActions">
+				<a
+					class="btn btn--default"
+					th:if="${canPay}"
+					th:href="@{|/seeker/sessions/${sessionRequest.requestId}/payment|}"
+				>
+					Proceed to payment
+				</a>
+				<a
+					class="btn btn--secondary"
+					th:href="@{|/seeker/sessions/${sessionRequest.requestId}/payment?preview=true|}"
+				>
+					View payment flow
+				</a>
+				<form
+					th:if="${canCancelAsMentee}"
+					method="post"
+					th:action="@{|/seeker/sessions/${sessionRequest.requestId}/cancel|}"
+				>
+					<button type="submit" class="btn btn--destructive">Cancel request</button>
+				</form>
 				<a class="btn btn--outline" th:href="@{/seeker/mentors}">Find more mentors</a>
 				<a class="btn btn--secondary" th:href="@{/seeker/home}">Back to mentee home</a>
 			</div>

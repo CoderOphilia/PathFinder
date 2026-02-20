@@ -87,7 +87,9 @@
 							<th scope="col">Session</th>
 							<th scope="col">Slot</th>
 							<th scope="col">Status</th>
+							<th scope="col">Payment</th>
 							<th scope="col">Mentor note</th>
+							<th scope="col">Actions</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -99,11 +101,32 @@
 							</td>
 							<td th:text="${request.slotLabel}">Wednesday • 5:00 PM - 5:45 PM</td>
 							<td>
-								<span
-									th:class="${request.status.name() == 'APPROVED' ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--declined'}"
-									th:text="${request.status.name() == 'APPROVED' ? 'Approved' : 'Declined'}"
-								>
-									Approved
+								<span th:class="${request.status.name() == 'APPROVED_PENDING_PAYMENT' ? 'statusBadge statusBadge--pendingPayment'
+									: (request.status.name() == 'APPROVED_PAID' ? 'statusBadge statusBadge--approved'
+									: (request.status.name() == 'COMPLETED' ? 'statusBadge statusBadge--completed'
+									: (request.status.name() == 'CANCELLED' ? 'statusBadge statusBadge--cancelled'
+									: (request.status.name() == 'EXPIRED' ? 'statusBadge statusBadge--expired'
+									: 'statusBadge statusBadge--declined'))))}"
+									th:text="${request.status.name() == 'APPROVED_PENDING_PAYMENT' ? 'Approved - payment pending'
+										: (request.status.name() == 'APPROVED_PAID' ? 'Approved - paid'
+										: (request.status.name() == 'COMPLETED' ? 'Completed'
+										: (request.status.name() == 'CANCELLED' ? 'Cancelled'
+										: (request.status.name() == 'EXPIRED' ? 'Expired' : 'Declined'))))}">
+									Status
+								</span>
+							</td>
+							<td>
+								<span th:class="${request.paymentStatus.name() == 'PAID' ? 'statusBadge statusBadge--approved'
+									: (request.paymentStatus.name() == 'PARTIAL_REFUND' ? 'statusBadge statusBadge--cancelled'
+									: (request.paymentStatus.name() == 'REFUNDED' ? 'statusBadge statusBadge--expired'
+									: (request.paymentStatus.name() == 'FAILED' ? 'statusBadge statusBadge--declined'
+									: 'statusBadge statusBadge--neutral')))}"
+									th:text="${request.paymentStatus.name() == 'NOT_STARTED' ? 'Not started'
+										: (request.paymentStatus.name() == 'PENDING' ? 'Pending'
+										: (request.paymentStatus.name() == 'PAID' ? 'Paid'
+										: (request.paymentStatus.name() == 'PARTIAL_REFUND' ? 'Partial refund'
+										: (request.paymentStatus.name() == 'REFUNDED' ? 'Refunded' : 'Failed'))))}">
+									Payment
 								</span>
 							</td>
 							<td>
@@ -113,6 +136,24 @@
 								<span th:if="${request.mentorNote == null or request.mentorNote.isEmpty()}" class="p p--sm p--muted p--tight">
 									No note
 								</span>
+							</td>
+							<td>
+								<div class="tableActions">
+									<form
+										th:if="${request.status.name() == 'APPROVED_PENDING_PAYMENT' or request.status.name() == 'APPROVED_PAID'}"
+										method="post"
+										th:action="@{|/mentor/sessions/${request.requestId}/cancel|}"
+									>
+										<button type="submit" class="btn btn--destructive btn--sm">Cancel</button>
+									</form>
+									<form
+										th:if="${request.status.name() == 'APPROVED_PAID'}"
+										method="post"
+										th:action="@{|/mentor/sessions/${request.requestId}/complete|}"
+									>
+										<button type="submit" class="btn btn--secondary btn--sm">Complete</button>
+									</form>
+								</div>
 							</td>
 						</tr>
 					</tbody>

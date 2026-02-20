@@ -1072,10 +1072,35 @@ a.link--destructive:hover {
 	border-color: #86efac;
 }
 
+.statusBadge--pendingPayment {
+	background: #fffbeb;
+	color: #92400e;
+	border-color: #fde68a;
+}
+
 .statusBadge--declined {
 	background: #fef2f2;
 	color: #991b1b;
 	border-color: #fecaca;
+}
+
+.statusBadge--cancelled {
+	background: #fff7ed;
+	color: #9a3412;
+	border-color: #fdba74;
+}
+
+.statusBadge--expired,
+.statusBadge--neutral {
+	background: #f8fafc;
+	color: #334155;
+	border-color: #cbd5e1;
+}
+
+.statusBadge--completed {
+	background: #ecfdf5;
+	color: #065f46;
+	border-color: #6ee7b7;
 }
 
 .detailList {
@@ -1138,6 +1163,29 @@ a.link--destructive:hover {
 	margin-top: 0.5rem;
 	display: grid;
 	gap: 10px;
+}
+
+.detailCard {
+	margin-bottom: 1rem;
+	padding: 12px;
+	border: 1px solid var(--border);
+	background: var(--paper-2);
+}
+
+.tableActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.formActions form {
+	display: inline-flex;
+}
+
+.btn--sm {
+	padding: 0.35rem 0.55rem;
+	font-size: 0.78rem;
+	min-height: 34px;
 }
 
 .calendarCard {
