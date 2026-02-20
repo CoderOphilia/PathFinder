@@ -1,0 +1,11 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
+	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">PathFinder</a>
+
+	<div class="nav__links" aria-label="Mentor">
+		<a th:href="@{/mentor/home}" class="nav__link">Home</a>
+		<a th:href="@{/mentor/profile}" class="nav__link">Profile</a>
+		<a th:href="@{/mentor/requests}" class="nav__link">Requests</a>
+		<a th:href="@{/mentor/availability}" class="nav__link">Availability</a>
+		<a th:href="@{/}" class="nav__link">Public site</a>
+	</div>
+</nav>

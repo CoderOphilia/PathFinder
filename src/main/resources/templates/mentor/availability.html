@@ -1,0 +1,120 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--span5" aria-label="Availability guidance">
+			<p class="tile__kicker">Availability</p>
+			<h1>Set when mentees can book</h1>
+			<p class="p p--muted p--tight">
+				The simplest, most reliable setup is a weekly schedule plus a few booking rules.
+			</p>
+			<ul class="checklist">
+				<li>Open only the days you can consistently commit to.</li>
+				<li>Keep one session length to reduce booking confusion.</li>
+				<li>Use notice + buffer to avoid back-to-back burnout.</li>
+			</ul>
+
+			<section class="badgePreview" aria-label="Bookable slot preview">
+				<p class="tile__kicker">Preview</p>
+				<h2>What mentees can book</h2>
+				<ul class="tile__list">
+					<li th:each="slot : ${previewSlots}" th:text="${slot}">Monday • 6:00 PM - 8:00 PM</li>
+					<li th:if="${#lists.isEmpty(previewSlots)}">No bookable slots yet</li>
+				</ul>
+				<p class="p p--sm p--muted p--tight">Preview is demo-only until backend scheduling is connected.</p>
+			</section>
+		</section>
+
+		<section class="tile tile--span7 tile--form" aria-label="Availability form">
+			<h2>Weekly schedule</h2>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<form method="post" th:action="@{/mentor/availability}" class="availabilityForm">
+				<div class="availabilitySettings">
+					<div>
+						<label for="timezone" class="label label--required">Timezone</label>
+						<input id="timezone" name="timezone" class="input" th:value="${timezone}" placeholder="America/Vancouver" required />
+					</div>
+
+					<div>
+						<label for="slotLengthMinutes" class="label label--required">Session length</label>
+						<select id="slotLengthMinutes" name="slotLengthMinutes" class="select">
+							<option value="30" th:selected="${slotLengthMinutes == '30'}">30 minutes</option>
+							<option value="45" th:selected="${slotLengthMinutes == '45'}">45 minutes</option>
+							<option value="60" th:selected="${slotLengthMinutes == '60'}">60 minutes</option>
+						</select>
+					</div>
+
+					<div>
+						<label for="bufferMinutes" class="label label--required">Buffer between sessions</label>
+						<select id="bufferMinutes" name="bufferMinutes" class="select">
+							<option value="0" th:selected="${bufferMinutes == '0'}">0 minutes</option>
+							<option value="10" th:selected="${bufferMinutes == '10'}">10 minutes</option>
+							<option value="15" th:selected="${bufferMinutes == '15'}">15 minutes</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="tableWrap">
+					<table class="dataTable availabilityTable">
+						<caption class="srOnly">Mentor weekly availability schedule</caption>
+						<thead>
+							<tr>
+								<th scope="col">Day</th>
+								<th scope="col">Bookable</th>
+								<th scope="col">Start</th>
+								<th scope="col">End</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="row : ${availabilityRows}">
+								<td th:text="${row.label}">Monday</td>
+								<td>
+									<label class="availabilityToggle">
+										<input type="checkbox" th:name="${row.key + 'Enabled'}" th:checked="${row.enabled}" />
+										<span>Available</span>
+									</label>
+								</td>
+								<td>
+									<input type="time" class="input" th:name="${row.key + 'Start'}" th:value="${row.startTime}" />
+								</td>
+								<td>
+									<input type="time" class="input" th:name="${row.key + 'End'}" th:value="${row.endTime}" />
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="availabilitySettings">
+					<div>
+						<label for="bookingNoticeHours" class="label label--required">Minimum booking notice</label>
+						<select id="bookingNoticeHours" name="bookingNoticeHours" class="select">
+							<option value="6" th:selected="${bookingNoticeHours == '6'}">6 hours</option>
+							<option value="12" th:selected="${bookingNoticeHours == '12'}">12 hours</option>
+							<option value="24" th:selected="${bookingNoticeHours == '24'}">24 hours</option>
+							<option value="48" th:selected="${bookingNoticeHours == '48'}">48 hours</option>
+						</select>
+					</div>
+
+					<div class="availabilitySettings__wide">
+						<label for="blockedDates" class="label">Blocked dates (optional)</label>
+						<input
+							id="blockedDates"
+							name="blockedDates"
+							class="input"
+							th:value="${blockedDates}"
+							placeholder="2026-03-02, 2026-03-14"
+						/>
+						<p class="label__hint">Comma-separated dates to block one-off conflicts.</p>
+					</div>
+				</div>
+
+				<div class="formActions">
+					<button type="submit" class="btn btn--default">Save availability</button>
+					<a class="btn btn--outline" th:href="@{/mentor/home}">Back to home</a>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>
