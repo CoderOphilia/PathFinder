@@ -17,6 +17,14 @@
 				<h2 th:text="${selectedMentorInfo.name}">Mentor name</h2>
 				<p class="p p--sm p--muted p--tight" th:text="${selectedMentorInfo.rate}">$00/hr</p>
 				<p class="p p--muted p--tight" th:text="${selectedMentorInfo.tagline}">Mentor summary</p>
+				<p class="p p--sm p--muted p--tight">
+					<strong>Pricing:</strong>
+					<span th:text="${selectedPricingLabel}">Hourly pricing</span>
+				</p>
+				<p class="p p--sm p--muted p--tight" th:if="${selectedQuoteLabel != null and !selectedQuoteLabel.isEmpty()}">
+					<strong>Quote preview:</strong>
+					<span th:text="${selectedQuoteLabel}">$60.00 estimated for this slot</span>
+				</p>
 			</section>
 		</section>
 
@@ -64,7 +72,7 @@
 						</label>
 					</div>
 					<p th:if="${#lists.isEmpty(availableSlots)}" class="notice notice--error" role="alert">
-						No slots are available for this mentor yet.
+						No slots are available for this mentor right now. Reserved slots are hidden until released.
 					</p>
 				</div>
 
@@ -116,6 +124,9 @@
 					</button>
 					<a class="btn btn--outline" th:href="@{/seeker/mentors}">Back to mentors</a>
 				</div>
+				<p class="p p--sm p--muted p--tight">
+					Submitting reserves your selected slot for up to 24 hours while the mentor reviews your request.
+				</p>
 			</form>
 		</section>
 	</div>

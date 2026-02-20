@@ -1,11 +1,13 @@
 package com.pathfinder.web;
 
+import java.time.Duration;
+
 import com.pathfinder.admin.web.AdminController;
 import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.landing.web.LandingController;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
-import com.pathfinder.mentor.web.MentorPublicController;
 import com.pathfinder.mentor.web.MentorController;
+import com.pathfinder.mentor.web.MentorPublicController;
 import com.pathfinder.seeker.web.SeekerController;
 import com.pathfinder.session.web.DemoSessionStore;
 import com.pathfinder.session.web.SessionController;
@@ -17,6 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
@@ -226,9 +229,10 @@ class PageRoutingWebMvcTest {
 
     @Test
     void validSessionRequestRedirectsToDetailPage() throws Exception {
+        String slotId = slotIdForMentor("Priya K.", 0);
         mockMvc.perform(post("/seeker/sessions")
                         .param("mentorName", "Priya K.")
-                        .param("slotId", "PRI-MON-1800")
+                        .param("slotId", slotId)
                         .param("sessionType", "Mock interview")
                         .param("objective", "Practice behavioral answers")
                         .param("bookingNotes", "Focus on STAR examples"))
@@ -259,7 +263,7 @@ class PageRoutingWebMvcTest {
 
     @Test
     void mentorDecisionUpdatesRequestStatus() throws Exception {
-        String requestId = createSessionRequest();
+        String requestId = createSessionRequest("Priya K.", 0);
 
         mockMvc.perform(post("/mentor/requests/" + requestId + "/decision")
                         .param("decision", "approve")
@@ -270,20 +274,167 @@ class PageRoutingWebMvcTest {
     }
 
     @Test
-    void endToEndSessionFlowShowsApprovedStatus() throws Exception {
-        String requestId = createSessionRequest();
+    void paymentPageRendersForApprovedPendingPaymentRequest() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+        approveRequest(requestId);
 
-        mockMvc.perform(post("/mentor/requests/" + requestId + "/decision")
-                        .param("decision", "approve")
-                        .param("mentorNote", "Approved for this slot."))
-                .andExpect(status().is3xxRedirection());
+        mockMvc.perform(get("/seeker/sessions/" + requestId + "/payment"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", "seeker/session_payment :: content"))
+                .andExpect(model().attributeExists("sessionRequest"))
+                .andExpect(model().attributeExists("quotedAmountLabel"));
+    }
+
+    @Test
+    void paymentPreviewFlowRendersWithoutApproval() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+
+        mockMvc.perform(get("/seeker/sessions/" + requestId + "/payment").param("preview", "true"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", "seeker/session_payment :: content"))
+                .andExpect(model().attribute("previewMode", true));
+    }
+
+    @Test
+    void paymentPreviewCompleteRedirectsWithoutMutation() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+
+        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment/preview-complete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
+        assertEquals(DemoSessionStore.SessionStatus.REQUESTED, request.status());
+        assertEquals(DemoSessionStore.PaymentStatus.NOT_STARTED, request.paymentStatus());
+    }
+
+    @Test
+    void paymentPostRequiresApprovedRequest() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+
+        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment")
+                        .param("paymentMethod", "card_visa_demo"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(flash().attributeExists("formError"));
+    }
+
+    @Test
+    void endToEndSessionFlowShowsPaidStatus() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+        approveRequest(requestId);
+        payRequest(requestId);
 
         mockMvc.perform(get("/seeker/sessions/" + requestId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "seeker/session_detail :: content"))
-                .andExpect(model().attribute("statusLabel", "Approved"))
+                .andExpect(model().attribute("statusLabel", "Approved - paid"))
+                .andExpect(model().attribute("paymentStatusLabel", "Paid"))
                 .andExpect(model().attributeExists("sessionRequest"));
+    }
+
+    @Test
+    void doubleBookingPreventsSecondRequestForSameSlot() throws Exception {
+        String slotId = slotIdForMentor("Priya K.", 0);
+        createSessionRequest("Priya K.", 0);
+
+        mockMvc.perform(post("/seeker/sessions")
+                        .param("mentorName", "Priya K.")
+                        .param("slotId", slotId)
+                        .param("sessionType", "Mock interview")
+                        .param("objective", "Second booking attempt")
+                        .param("bookingNotes", "Attempt duplicate"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/seeker/sessions/new*"))
+                .andExpect(flash().attributeExists("formError"));
+    }
+
+    @Test
+    void pendingLockExpiresAfter24HoursAndSlotReopens() throws Exception {
+        String slotId = slotIdForMentor("Priya K.", 1);
+        String requestId = createSessionRequest("Priya K.", 1);
+
+        demoSessionStore.advanceTime(Duration.ofHours(25));
+
+        mockMvc.perform(get("/seeker/sessions/" + requestId))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("statusLabel", "Expired"));
+
+        mockMvc.perform(post("/seeker/sessions")
+                        .param("mentorName", "Priya K.")
+                        .param("slotId", slotId)
+                        .param("sessionType", "System design")
+                        .param("objective", "Re-book after expiry")
+                        .param("bookingNotes", "Same slot reused"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("/seeker/sessions/REQ-*"));
+    }
+
+    @Test
+    void cancellationWithin24HoursAppliesPartialRefund() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 0);
+        approveRequest(requestId);
+        payRequest(requestId);
+
+        mockMvc.perform(post("/seeker/sessions/" + requestId + "/cancel"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
+        assertEquals(DemoSessionStore.SessionStatus.CANCELLED, request.status());
+        assertEquals(DemoSessionStore.PaymentStatus.PARTIAL_REFUND, request.paymentStatus());
+        assertEquals(50, request.cancellationFeePercent());
+    }
+
+    @Test
+    void cancellationOutside24HoursAppliesNoFee() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 2);
+        approveRequest(requestId);
+        payRequest(requestId);
+
+        mockMvc.perform(post("/seeker/sessions/" + requestId + "/cancel"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
+        assertEquals(DemoSessionStore.SessionStatus.CANCELLED, request.status());
+        assertEquals(DemoSessionStore.PaymentStatus.REFUNDED, request.paymentStatus());
+        assertEquals(0, request.cancellationFeePercent());
+    }
+
+    @Test
+    void mentorCanCancelApprovedSession() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 1);
+        approveRequest(requestId);
+
+        mockMvc.perform(post("/mentor/sessions/" + requestId + "/cancel"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentor/requests"))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
+        assertEquals(DemoSessionStore.SessionStatus.CANCELLED, request.status());
+    }
+
+    @Test
+    void mentorCanMarkPaidSessionCompleted() throws Exception {
+        String requestId = createSessionRequest("Priya K.", 1);
+        approveRequest(requestId);
+        payRequest(requestId);
+
+        mockMvc.perform(post("/mentor/sessions/" + requestId + "/complete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentor/requests"))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
+        assertEquals(DemoSessionStore.SessionStatus.COMPLETED, request.status());
     }
 
     @Test
@@ -361,10 +512,11 @@ class PageRoutingWebMvcTest {
                 .andExpect(model().attribute("navbarType", navbarType));
     }
 
-    private String createSessionRequest() throws Exception {
+    private String createSessionRequest(String mentorName, int slotIndex) throws Exception {
+        String slotId = slotIdForMentor(mentorName, slotIndex);
         MvcResult result = mockMvc.perform(post("/seeker/sessions")
-                        .param("mentorName", "Priya K.")
-                        .param("slotId", "PRI-MON-1800")
+                        .param("mentorName", mentorName)
+                        .param("slotId", slotId)
                         .param("sessionType", "Mock interview")
                         .param("objective", "Practice behavioral answers")
                         .param("bookingNotes", "Please focus on leadership examples"))
@@ -374,5 +526,26 @@ class PageRoutingWebMvcTest {
 
         String redirectedUrl = result.getResponse().getRedirectedUrl();
         return redirectedUrl.substring(redirectedUrl.lastIndexOf('/') + 1);
+    }
+
+    private String slotIdForMentor(String mentorName, int slotIndex) {
+        DemoSessionStore.MentorDirectoryItemView mentor = demoSessionStore.getMentorByName(mentorName).orElseThrow();
+        return mentor.availability().get(slotIndex).slotId();
+    }
+
+    private void approveRequest(String requestId) throws Exception {
+        mockMvc.perform(post("/mentor/requests/" + requestId + "/decision")
+                        .param("decision", "approve")
+                        .param("mentorNote", "Approved for booking."))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentor/requests"));
+    }
+
+    private void payRequest(String requestId) throws Exception {
+        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment")
+                        .param("paymentMethod", "card_visa_demo"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(flash().attributeExists("flashMessage"));
     }
 }
