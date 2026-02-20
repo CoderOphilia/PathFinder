@@ -1,0 +1,75 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--span5" aria-label="Admin profile guidance">
+			<p class="tile__kicker">Admin profile</p>
+			<h1>Keep ownership and contact details current</h1>
+			<p class="p p--muted p--tight">
+				This profile is used to route escalations and assign platform operations work.
+			</p>
+			<ul class="checklist">
+				<li>Use a monitored admin email address.</li>
+				<li>Set your team clearly for escalation routing.</li>
+				<li>Document moderation notes in concise language.</li>
+			</ul>
+
+			<section class="badgePreview" aria-label="Admin ownership preview">
+				<p class="tile__kicker">Ownership areas</p>
+				<ul class="tags">
+					<li class="tag">Mentor verification</li>
+					<li class="tag">Session quality</li>
+					<li class="tag">Platform incidents</li>
+				</ul>
+				<p class="p p--sm p--muted p--tight">These are placeholder labels for this frontend demo.</p>
+			</section>
+		</section>
+
+		<section class="tile tile--span7 tile--form" aria-label="Admin profile form">
+			<h2>Profile details</h2>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<form method="post" th:action="@{/admin/profile}" class="profileForm">
+				<div>
+					<label for="fullName" class="label label--required">Full name</label>
+					<input id="fullName" name="fullName" class="input" required />
+				</div>
+
+				<div>
+					<label for="email" class="label label--required">Admin email</label>
+					<input id="email" name="email" type="email" class="input" required />
+				</div>
+
+				<div>
+					<label for="team" class="label label--required">Team</label>
+					<input id="team" name="team" class="input" placeholder="Operations" required />
+				</div>
+
+				<div>
+					<label for="timezone" class="label">Timezone</label>
+					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" />
+				</div>
+
+				<div>
+					<label for="slackChannel" class="label">Escalation channel</label>
+					<input id="slackChannel" name="slackChannel" class="input" placeholder="#ops-mentorship" />
+				</div>
+
+				<div>
+					<label for="onCallWindow" class="label">Primary review window</label>
+					<input id="onCallWindow" name="onCallWindow" class="input" placeholder="Mon-Fri, 1:00 PM - 5:00 PM" />
+				</div>
+
+				<div>
+					<label for="notes" class="label">Admin notes</label>
+					<textarea id="notes" name="notes" class="textarea" rows="4"></textarea>
+				</div>
+
+				<div class="formActions">
+					<button type="submit" class="btn btn--default">Save profile</button>
+					<a class="btn btn--outline" th:href="@{/admin/home}">Back to home</a>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>
