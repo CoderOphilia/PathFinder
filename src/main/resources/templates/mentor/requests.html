@@ -1,0 +1,123 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full" aria-label="Mentor request queue">
+			<p class="tile__kicker">Mentor queue</p>
+			<h1>Incoming session requests</h1>
+			<p class="p p--muted p--tight">
+				Review request objectives and respond with approve or decline.
+			</p>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+		</section>
+
+		<section th:if="${#lists.isEmpty(pendingRequests)}" class="tile tile--full" aria-live="polite">
+			<h2>No pending requests</h2>
+			<p class="p p--muted p--tight">New mentee requests will appear here for decision.</p>
+		</section>
+
+		<section th:each="request : ${pendingRequests}" class="tile tile--span6 queueCard" aria-label="Pending request">
+			<div class="queueCard__header">
+				<p class="p p--strong p--tight" th:text="${request.requestId}">REQ-0000</p>
+				<span class="statusBadge statusBadge--requested">Requested</span>
+			</div>
+
+			<p class="p p--sm p--muted p--tight">
+				<strong>Mentee request for:</strong>
+				<span th:text="${request.sessionType}">Type</span>
+			</p>
+			<p class="p p--sm p--muted p--tight">
+				<strong>Mentor:</strong>
+				<span th:text="${request.mentorName}">Mentor</span>
+			</p>
+			<p class="p p--sm p--muted p--tight">
+				<strong>Slot:</strong>
+				<span th:text="${request.slotLabel}">Slot</span>
+			</p>
+			<p class="p p--tight" th:text="${request.objective}">Objective</p>
+			<p class="p p--sm p--muted p--tight" th:if="${request.bookingNotes != null and !request.bookingNotes.isEmpty()}">
+				<strong>Booking notes:</strong>
+				<span th:text="${request.bookingNotes}">Optional notes</span>
+			</p>
+			<p class="p p--sm p--muted p--tight" th:if="${request.mentorNote != null and !request.mentorNote.isEmpty()}">
+				<strong>Your note:</strong>
+				<span th:text="${request.mentorNote}">Mentor note</span>
+			</p>
+
+			<form
+				th:if="${request.status.name() == 'REQUESTED'}"
+				method="post"
+				th:action="@{|/mentor/requests/${request.requestId}/decision|}"
+				class="queueDecisionForm"
+			>
+				<div>
+					<label th:for="${'mentorNote-' + request.requestId}" class="label">Mentor note (optional)</label>
+					<input
+						th:id="${'mentorNote-' + request.requestId}"
+						class="input"
+						type="text"
+						name="mentorNote"
+						placeholder="Helpful context for the mentee"
+					/>
+				</div>
+				<div class="formActions">
+					<button type="submit" class="btn btn--default" name="decision" value="approve">Approve</button>
+					<button type="submit" class="btn btn--destructive" name="decision" value="decline">Decline</button>
+				</div>
+			</form>
+		</section>
+
+		<section class="tile tile--full" aria-label="Previous requests">
+			<p class="tile__kicker">History</p>
+			<h2>Previous requests</h2>
+			<p class="p p--sm p--muted p--tight">
+				Approved and declined decisions are listed here.
+			</p>
+
+			<p th:if="${#lists.isEmpty(previousRequests)}" class="p p--muted p--tight">
+				No previous requests yet.
+			</p>
+
+			<div th:if="${!#lists.isEmpty(previousRequests)}" class="tableWrap">
+				<table class="dataTable">
+					<caption class="srOnly">Processed mentor session requests</caption>
+					<thead>
+						<tr>
+							<th scope="col">Request</th>
+							<th scope="col">Session</th>
+							<th scope="col">Slot</th>
+							<th scope="col">Status</th>
+							<th scope="col">Mentor note</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="request : ${previousRequests}">
+							<td th:text="${request.requestId}">REQ-0000</td>
+							<td>
+								<p class="p p--sm p--tight" th:text="${request.sessionType}">System design</p>
+								<p class="p p--sm p--muted p--tight" th:text="${request.objective}">Objective</p>
+							</td>
+							<td th:text="${request.slotLabel}">Wednesday • 5:00 PM - 5:45 PM</td>
+							<td>
+								<span
+									th:class="${request.status.name() == 'APPROVED' ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--declined'}"
+									th:text="${request.status.name() == 'APPROVED' ? 'Approved' : 'Declined'}"
+								>
+									Approved
+								</span>
+							</td>
+							<td>
+								<span th:if="${request.mentorNote != null and !request.mentorNote.isEmpty()}" th:text="${request.mentorNote}">
+									Looks good.
+								</span>
+								<span th:if="${request.mentorNote == null or request.mentorNote.isEmpty()}" class="p p--sm p--muted p--tight">
+									No note
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</div>
+</section>

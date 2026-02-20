@@ -1,0 +1,122 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--span5" aria-label="Session request guidance">
+			<p class="tile__kicker">Request session</p>
+			<h1>Book a focused mentorship session</h1>
+			<p class="p p--muted p--tight">
+				Pick a mentor slot, describe your objective, and submit your request.
+			</p>
+			<ul class="checklist">
+				<li>Select one available weekly slot.</li>
+				<li>Use a clear objective so the mentor can prepare.</li>
+				<li>You can track status after submitting.</li>
+			</ul>
+
+			<section class="slotSummary" th:if="${selectedMentorInfo != null}" aria-label="Selected mentor summary">
+				<p class="tile__kicker">Selected mentor</p>
+				<h2 th:text="${selectedMentorInfo.name}">Mentor name</h2>
+				<p class="p p--sm p--muted p--tight" th:text="${selectedMentorInfo.rate}">$00/hr</p>
+				<p class="p p--muted p--tight" th:text="${selectedMentorInfo.tagline}">Mentor summary</p>
+			</section>
+		</section>
+
+		<section class="tile tile--span7 tile--form" aria-label="Session request form">
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<form method="get" th:action="@{/seeker/sessions/new}" class="mentorPickerForm">
+				<div>
+					<label for="mentorPicker" class="label label--required">Mentor</label>
+					<select id="mentorPicker" name="mentor" class="select" required>
+						<option
+							th:each="mentorOption : ${mentors}"
+							th:value="${mentorOption.name}"
+							th:text="${mentorOption.name + ' • ' + mentorOption.rate}"
+							th:selected="${mentorOption.name == selectedMentor}"
+						>
+							Mentor
+						</option>
+					</select>
+				</div>
+				<button type="submit" class="btn btn--secondary">Load availability</button>
+			</form>
+
+			<form method="post" th:action="@{/seeker/sessions}" class="profileForm">
+				<input type="hidden" name="mentorName" th:value="${selectedMentor}" />
+
+				<div>
+					<p class="label label--required">Availability slot</p>
+					<div class="slotGrid" th:if="${!#lists.isEmpty(availableSlots)}">
+						<label class="slotCard" th:each="slot : ${availableSlots}" th:for="${'slot-' + slot.slotId}">
+							<input
+								type="radio"
+								name="slotId"
+								th:id="${'slot-' + slot.slotId}"
+								th:value="${slot.slotId}"
+								th:checked="${slot.slotId == selectedSlotId}"
+								required
+							/>
+							<span class="slotCard__content">
+								<strong th:text="${slot.weekday}">Day</strong>
+								<span th:text="${slot.timeRange}">Time</span>
+								<span class="slotCard__tz" th:text="${slot.timezone}">Timezone</span>
+							</span>
+						</label>
+					</div>
+					<p th:if="${#lists.isEmpty(availableSlots)}" class="notice notice--error" role="alert">
+						No slots are available for this mentor yet.
+					</p>
+				</div>
+
+				<div>
+					<label for="sessionType" class="label label--required">Session type</label>
+					<select id="sessionType" name="sessionType" class="select" required>
+						<option
+							th:each="type : ${sessionTypes}"
+							th:value="${type}"
+							th:text="${type}"
+							th:selected="${type == selectedSessionType}"
+						>
+							Type
+						</option>
+					</select>
+				</div>
+
+				<div>
+					<label for="objective" class="label label--required">Objective</label>
+					<textarea
+						id="objective"
+						name="objective"
+						class="textarea"
+						rows="4"
+						required
+						th:text="${objective}"
+					></textarea>
+				</div>
+
+				<div>
+					<label for="bookingNotes" class="label">Booking notes (optional)</label>
+					<textarea
+						id="bookingNotes"
+						name="bookingNotes"
+						class="textarea"
+						rows="3"
+						th:text="${bookingNotes}"
+					></textarea>
+				</div>
+
+				<div class="formActions">
+					<button
+						type="submit"
+						class="btn btn--default"
+						th:disabled="${#lists.isEmpty(availableSlots)}"
+						th:attr="aria-disabled=${#lists.isEmpty(availableSlots)}"
+					>
+						Submit request
+					</button>
+					<a class="btn btn--outline" th:href="@{/seeker/mentors}">Back to mentors</a>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>
