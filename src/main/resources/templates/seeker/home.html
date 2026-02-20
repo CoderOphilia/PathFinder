@@ -1,0 +1,106 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full">
+			<p class="tile__kicker">Mentee workspace</p>
+			<h1>Mentee home</h1>
+			<p class="p p--muted p--tight">
+				Track your current progress and keep your next mentorship steps visible.
+			</p>
+			<div class="heroActions">
+				<a class="btn btn--default" th:href="@{/seeker/profile}">Update profile</a>
+				<a class="btn btn--outline" th:href="@{/seeker/mentors}">Find mentors</a>
+			</div>
+		</section>
+
+		<section class="tile tile--span4">
+			<p class="tile__kicker">Upcoming</p>
+			<h2>Next session</h2>
+			<ul class="tile__list">
+				<li><strong>Mentor:</strong> Priya K.</li>
+				<li><strong>Focus:</strong> Mock interview</li>
+				<li><strong>Time:</strong> Wed • 5:00 PM - 5:45 PM</li>
+			</ul>
+			<p class="p p--sm p--muted p--tight">Watch request status and meeting details here.</p>
+		</section>
+
+		<section class="tile tile--span8">
+			<p class="tile__kicker">Calendar</p>
+			<h2>Session calendar (this week)</h2>
+			<div class="weekCalendar" aria-label="Mentee sessions this week">
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Mon</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--action">Resume follow-up action item</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Tue</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--free">Open slot for practice</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Wed</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--approved">Mock interview with Priya</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Thu</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--requested">Request sent to Alex</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Fri</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--free">No session booked</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Sat</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--free">Open slot 11:00 AM</span></li>
+					</ul>
+				</article>
+			</div>
+		</section>
+
+		<section class="tile tile--span7">
+			<p class="tile__kicker">Current priorities</p>
+			<h2>What to focus on this week</h2>
+			<ul class="checklist">
+				<li>Refine your target role statement</li>
+				<li>Prepare three questions for your next mentor session</li>
+				<li>Complete at least one open action item</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span5">
+			<p class="tile__kicker">Status flow</p>
+			<h2>Request progress</h2>
+			<ul class="tile__list">
+				<li><strong>Requested</strong>: waiting for mentor response</li>
+				<li><strong>Approved</strong>: waiting for scheduled session time</li>
+				<li><strong>Completed</strong>: summary and action items available</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--full">
+			<div class="dashboardStats" aria-label="Mentee stats">
+				<article class="statCard">
+					<h2>1</h2>
+					<p class="p p--sm p--muted p--tight">Pending request</p>
+				</article>
+				<article class="statCard">
+					<h2>2</h2>
+					<p class="p p--sm p--muted p--tight">Upcoming sessions</p>
+				</article>
+				<article class="statCard">
+					<h2>4</h2>
+					<p class="p p--sm p--muted p--tight">Open action items</p>
+				</article>
+			</div>
+		</section>
+	</div>
+</section>

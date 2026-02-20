@@ -1,45 +1,18 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<div class="tileCol tileCol--left" aria-label="Helpful info">
-			<section class="tile" aria-label="Bug fixes">
-				<h2 class="tile__title">Bug fixes</h2>
-				<ul class="tile__list">
-					<li>Fixed template caching for faster frontend iteration</li>
-					<li>Cleaned up auth page spacing and form widths</li>
-					<li>Standardized navbar fragments and stubs</li>
-				</ul>
-			</section>
-
-			<section class="tile" aria-label="System status">
-				<h2 class="tile__title">System status</h2>
-				<p class="p p--muted p--tight">All systems operational.</p>
-				<p class="p p--sm p--muted p--tight">If you hit an error, refresh and try again.</p>
-			</section>
-
-			<section class="tile" aria-label="Privacy and security">
-				<h2 class="tile__title">Privacy &amp; security</h2>
-				<ul class="tile__list">
-					<li>We never email your password</li>
-					<li>Reset links expire</li>
-					<li>Only share what's needed for mentorship</li>
-				</ul>
-			</section>
-
-			<section class="tile" aria-label="Roles">
-				<h2 class="tile__title">Roles</h2>
-				<ul class="tile__list">
-					<li><strong>Job Seeker</strong>: request sessions and track action items</li>
-					<li><strong>Mentor</strong>: manage availability and write summaries</li>
-					<li><strong>Admin</strong>: verify mentors and oversee activity</li>
-				</ul>
-			</section>
-		</div>
+		<section class="tile tile--aside" aria-label="PathFinder onboarding details">
+			<th:block th:replace="~{fragments/auth_aside :: aside}"></th:block>
+		</section>
 
 		<section class="tile tile--form" aria-label="Sign in">
-			<h1>Sign in</h1>
+			<p class="tile__kicker">Welcome back</p>
+			<h1>Sign in to PathFinder</h1>
+			<p class="p p--muted p--tight">
+				Choose your role so we can route you to the right dashboard.
+			</p>
 
-			<p th:if="${param.error}" class="p p--error">Invalid email or password.</p>
-			<p th:if="${param.logout}" class="p p--muted">You have been logged out.</p>
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
 			<form method="post" th:action="@{/auth/login}">
 				<div>
@@ -64,6 +37,16 @@
 						autocomplete="current-password"
 						required
 					/>
+				</div>
+
+				<div class="select-wrapper">
+					<label for="loginRole" class="label label--required">Role</label>
+					<select id="loginRole" name="role" class="select" required>
+						<option value="">Select your role</option>
+						<option value="seeker">Mentee</option>
+						<option value="mentor">Mentor</option>
+						<option value="admin">Admin</option>
+					</select>
 				</div>
 
 				<p class="p p--sm p--muted p--tight">

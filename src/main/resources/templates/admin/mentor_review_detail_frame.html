@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title th:text="${selectedMentor.name + ' | Review details'}">Review details</title>
+		<link rel="stylesheet" th:href="@{/css/app.css}" />
+	</head>
+	<body class="reviewFrameBody">
+		<main class="reviewFrameMain">
+			<section class="reviewFrameCard" aria-label="Selected mentor details">
+				<h2 th:text="${selectedMentor.name}">Mentor Name</h2>
+				<p class="p p--strong p--tight" th:text="${selectedMentor.roleAtCompany}">Title @ Company</p>
+				<p class="p p--sm p--muted p--tight" th:text="${'Industry: ' + selectedMentor.industry}">Industry: Technology</p>
+				<p class="p p--tight" th:text="${selectedMentor.tagline}">Profile summary</p>
+
+				<dl class="detailList">
+					<div>
+						<dt>Review stage</dt>
+						<dd th:text="${selectedReviewItem.stage}">Credential check</dd>
+					</div>
+					<div>
+						<dt>Interview evidence</dt>
+						<dd th:text="${selectedReviewItem.interviewEvidence}">3 of 3 companies verified</dd>
+					</div>
+					<div>
+						<dt>Profile quality</dt>
+						<dd th:text="${selectedReviewItem.profileQuality}">Strong profile clarity</dd>
+					</div>
+					<div>
+						<dt>Admin note</dt>
+						<dd th:text="${selectedReviewItem.note}">Review note</dd>
+					</div>
+					<div>
+						<dt>Recommended next step</dt>
+						<dd th:text="${selectedReviewItem.nextStep}">Ready for final decision.</dd>
+					</div>
+				</dl>
+
+				<p class="tile__kicker">Skills</p>
+				<ul class="tags tags--compact">
+					<li class="tag" th:each="skill : ${selectedMentor.skills}" th:text="${skill}">Skill</li>
+				</ul>
+
+				<p class="tile__kicker">Interviewed at</p>
+				<ul class="tags tags--compact">
+					<li class="tag tag--soft" th:each="company : ${selectedMentor.interviewCompanies}" th:text="${company}">
+						Company
+					</li>
+				</ul>
+
+				<div class="formActions">
+					<a href="#" class="btn btn--default" aria-disabled="true">Approve mentor</a>
+					<a href="#" class="btn btn--outline" aria-disabled="true">Request updates</a>
+				</div>
+			</section>
+		</main>
+	</body>
+</html>

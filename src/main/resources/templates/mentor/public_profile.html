@@ -1,0 +1,35 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full" aria-label="Mentor hero">
+			<p class="tile__kicker">Public mentor profile</p>
+			<h1 th:text="${mentor.name}">Mentor Name</h1>
+			<p class="p p--strong p--tight" th:text="${mentor.roleAtCompany}">Title @ Company</p>
+			<p class="p p--muted p--tight" th:text="${mentor.tagline}">Mentor summary</p>
+			<div class="heroActions">
+				<a class="btn btn--default" th:href="@{/seeker/sessions/new(mentor=${mentor.name})}">Request session</a>
+				<a class="btn btn--outline" th:href="@{/seeker/mentors}">Back to mentors</a>
+			</div>
+		</section>
+
+		<section class="tile tile--span5" aria-label="Mentor expertise">
+			<p class="tile__kicker">Expertise</p>
+			<h2>Focus areas</h2>
+			<ul class="tags">
+				<li class="tag" th:each="skill : ${mentor.skills}" th:text="${skill}">Skill</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span7" aria-label="Interview companies">
+			<p class="tile__kicker">Interviewed at</p>
+			<h2>Company list</h2>
+			<ul class="tags">
+				<li class="tag tag--soft" th:each="company : ${mentor.interviewCompanies}" th:text="${company}">
+					Company
+				</li>
+			</ul>
+			<p class="p p--sm p--muted p--tight" th:text="${'Sessions completed: ' + mentor.sessionsCompleted}">
+				Sessions completed: 0
+			</p>
+		</section>
+	</div>
+</section>

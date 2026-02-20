@@ -2,11 +2,10 @@
 	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">PathFinder</a>
 
 	<div class="nav__links" aria-label="Primary">
-		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Mentors</a>
-		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Sessions</a>
-		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Dashboard</a>
-		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Admin</a>
-
+		<a th:href="@{/}" class="nav__link">Landing</a>
+		<a th:href="@{/seeker/home}" class="nav__link">Mentee demo</a>
+		<a th:href="@{/mentor/home}" class="nav__link">Mentor demo</a>
+		<a th:href="@{/admin/home}" class="nav__link">Admin demo</a>
 		<a th:href="@{/auth/login}" class="nav__link">Log in</a>
 		<a th:href="@{/auth/signup}" class="nav__link nav__cta">Sign up</a>
 	</div>

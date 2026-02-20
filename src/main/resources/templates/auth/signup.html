@@ -1,46 +1,31 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--aside" aria-label="About PathFinder">
+		<section class="tile tile--aside" aria-label="PathFinder onboarding details">
 			<th:block th:replace="~{fragments/auth_aside :: aside}"></th:block>
 		</section>
 
 		<section class="tile tile--form" aria-label="Create account">
-			<h1>Create your account</h1>
-			<p class="p p--muted p--tight">Create an account in under a minute.</p>
+			<p class="tile__kicker">Get started</p>
+			<h1>Create your PathFinder account</h1>
+			<p class="p p--muted p--tight">This signup flow is a frontend demo and does not persist yet.</p>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
 			<form method="post" th:action="@{/auth/signup}">
 				<div>
 					<label for="firstName" class="label label--required">First name</label>
-					<input
-						class="input"
-						id="firstName"
-						name="firstName"
-						autocomplete="given-name"
-						required
-					/>
+					<input class="input" id="firstName" name="firstName" autocomplete="given-name" required />
 				</div>
 
 				<div>
 					<label for="lastName" class="label label--required">Last name</label>
-					<input
-						id="lastName"
-						class="input"
-						name="lastName"
-						autocomplete="family-name"
-						required
-					/>
+					<input id="lastName" class="input" name="lastName" autocomplete="family-name" required />
 				</div>
 
 				<div>
 					<label for="email" class="label label--required">Email</label>
-					<input
-						id="email"
-						name="email"
-						class="input"
-						type="email"
-						autocomplete="email"
-						required
-					/>
+					<input id="email" name="email" class="input" type="email" autocomplete="email" required />
 				</div>
 
 				<div>
@@ -70,15 +55,16 @@
 				</div>
 
 				<div class="select-wrapper">
-					<label class="label label--required">Role</label>
-					<select class="select">
-						<option value="">Select a value</option>
+					<label for="signupRole" class="label label--required">Role</label>
+					<select id="signupRole" name="role" class="select" required>
+						<option value="">Select your role</option>
+						<option value="seeker">Mentee</option>
 						<option value="mentor">Mentor</option>
-						<option value="mentee">Mentee</option>
+						<option value="admin">Admin</option>
 					</select>
 				</div>
 
-				<label class="label">
+				<label class="label consentRow">
 					<input type="checkbox" name="agree" required />
 					I agree to the terms and community guidelines.
 				</label>
@@ -89,10 +75,6 @@
 			<p class="p">
 				Already have an account?
 				<a th:href="@{/auth/login}" class="link link--underline">Sign in</a>
-			</p>
-
-			<p class="p p--muted p--tight">
-				Tip: if you are signing up as a mentor, you will need verification before appearing in search.
 			</p>
 		</section>
 	</div>
