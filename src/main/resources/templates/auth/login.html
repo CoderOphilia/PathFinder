@@ -16,38 +16,26 @@
 
 			<form method="post" th:action="@{/auth/login}">
 				<div>
-					<label for="email" class="label label--required">Email</label>
-					<input
-						id="email"
-						class="input"
-						name="username"
-						type="email"
-						autocomplete="email"
-						required
-					/>
-				</div>
 
 				<div>
-					<label for="password" class="label label--required">Password</label>
-					<input
-						id="password"
-						class="input"
-						name="password"
-						type="password"
-						autocomplete="current-password"
-						required
-					/>
+					<label for="email" class="label label--required">Email</label>
+					<input id="email" name="email" class="input" type="email" autocomplete="email" required />
 				</div>
+					<div>
+						<label for="password" class="label label--required">Password</label>
+						<input
+								id="password"
+								class="input"
+								name="password"
+								type="password"
+								autocomplete="new-password"
+								required
+						/>
+					</div>
 
-				<div class="select-wrapper">
-					<label for="loginRole" class="label label--required">Role</label>
-					<select id="loginRole" name="role" class="select" required>
-						<option value="">Select your role</option>
-						<option value="seeker">Mentee</option>
-						<option value="mentor">Mentor</option>
-						<option value="admin">Admin</option>
-					</select>
-				</div>
+
+
+
 
 				<p class="p p--sm p--muted p--tight">
 					<a th:href="@{/auth/forgot}" class="link link--muted link--underline">Forgot password?</a>
