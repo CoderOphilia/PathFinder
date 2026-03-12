@@ -1,74 +1,97 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full" aria-label="Hero">
+		<section class="tile tile--full heroTile" aria-label="PathFinder hero">
 			<p class="tile__kicker">PathFinder MVP</p>
-			<h1>Turn career advice into action.</h1>
+			<h1>Turn mentorship conversations into clear next steps.</h1>
 			<p class="p p--muted p--tight">
-				Book structured mentorship sessions and leave with clear next steps you can track.
+				PathFinder helps mentees, mentors, and admins stay aligned through structured sessions,
+				action items, and lightweight tracking.
 			</p>
-			<p class="p">
+			<div class="heroActions">
 				<a class="btn btn--default" th:href="@{/auth/signup}">Create account</a>
 				<a class="btn btn--outline" th:href="@{/auth/login}">Sign in</a>
-			</p>
+				<a class="btn btn--secondary" th:href="@{/seeker/home}">Preview mentee home</a>
+			</div>
 		</section>
 
-		<section class="tile tile--span4" aria-label="Request step">
+		<section class="tile tile--full sectionHeader" id="how-it-works" aria-label="How it works">
+			<p class="tile__kicker">How it works</p>
+			<h2>Simple workflow, better follow-through.</h2>
+		</section>
+
+		<section class="tile tile--span4" aria-label="How it works step one">
 			<p class="tile__kicker">Step 1</p>
-			<h2>Request</h2>
-			<p class="p p--muted p--tight">Share goals, context, and what you want from the session.</p>
+			<h3>Request with context</h3>
+			<p class="p p--muted p--tight">Describe your objective and what you want to improve.</p>
 		</section>
 
-		<section class="tile tile--span4" aria-label="Meet step">
+		<section class="tile tile--span4" aria-label="How it works step two">
 			<p class="tile__kicker">Step 2</p>
-			<h2>Meet</h2>
-			<p class="p p--muted p--tight">Sessions happen via an external meeting link (Meet/Zoom).</p>
+			<h3>Meet on your preferred platform</h3>
+			<p class="p p--muted p--tight">Mentors share an external meeting link (Meet/Zoom) for the session.</p>
 		</section>
 
-		<section class="tile tile--span4" aria-label="Follow through step">
+		<section class="tile tile--span4" aria-label="How it works step three">
 			<p class="tile__kicker">Step 3</p>
-			<h2>Follow through</h2>
-			<p class="p p--muted p--tight">Get a summary and action items you can check off over time.</p>
+			<h3>Track action items</h3>
+			<p class="p p--muted p--tight">Use session summaries and action checklists to stay accountable.</p>
 		</section>
 
-		<section class="tile tile--span6" aria-label="Sample session">
-			<p class="tile__kicker">Sample session</p>
-			<h2>Mock interview prep (30m)</h2>
+		<section class="tile tile--full sectionHeader" aria-label="Role entry points">
+			<p class="tile__kicker">Role demos</p>
+			<h2>Start from the workspace that matches your role.</h2>
+		</section>
+
+		<section class="tile tile--span4" aria-label="Mentee demo card">
+			<p class="tile__kicker">Mentee</p>
+			<h3>Mentee home and profile</h3>
 			<ul class="tile__list">
-				<li><strong>Mentor</strong>: Priya K. (Backend, Java)</li>
-				<li><strong>Status</strong>: Approved</li>
-				<li><strong>Goal</strong>: tighten STAR answers and reduce rambling</li>
+				<li>Track current session requests</li>
+				<li>Capture career goals and preferences</li>
+				<li>Review open action items</li>
 			</ul>
+			<p class="p p--tight"><a class="link link--underline" th:href="@{/seeker/home}">Open mentee demo</a></p>
 		</section>
 
-		<section class="tile tile--span6" aria-label="Sample action items">
-			<p class="tile__kicker">Action items</p>
-			<h2>What you track</h2>
+		<section class="tile tile--span4" aria-label="Mentor demo card">
+			<p class="tile__kicker">Mentor</p>
+			<h3>Mentor home and profile</h3>
+			<ul class="tile__list">
+				<li>Review pending session requests</li>
+				<li>Manage expertise and profile details</li>
+				<li>Prepare post-session summaries</li>
+			</ul>
+			<p class="p p--tight"><a class="link link--underline" th:href="@{/mentor/home}">Open mentor demo</a></p>
+		</section>
+
+		<section class="tile tile--span4" aria-label="Admin demo card">
+			<p class="tile__kicker">Admin</p>
+			<h3>Admin home and profile</h3>
+			<ul class="tile__list">
+				<li>Preview mentor verification queue</li>
+				<li>Monitor platform-level activity</li>
+				<li>Maintain admin contact settings</li>
+			</ul>
+			<p class="p p--tight"><a class="link link--underline" th:href="@{/admin/home}">Open admin demo</a></p>
+		</section>
+
+		<section class="tile tile--span6" aria-label="MVP scope">
+			<p class="tile__kicker">What you can do in MVP</p>
+			<h3>Core product capabilities</h3>
 			<ul class="checklist">
-				<li>Rewrite 3 resume bullets with measurable impact</li>
-				<li>Practice 5 behavioral questions using STAR</li>
-				<li>Send 2 networking messages for referrals</li>
+				<li>Sign up and preview role-specific dashboards</li>
+				<li>Maintain simple profile information by role</li>
+				<li>Follow a structured session workflow and next-step tracking model</li>
 			</ul>
 		</section>
 
-		<section class="tile tile--span7" aria-label="Mentor spotlight">
-			<p class="tile__kicker">Mentor spotlight</p>
-			<h2>Alex M.</h2>
-			<p class="p p--muted p--tight">Interviewing, resume reviews, and backend system design.</p>
-			<ul class="tags">
-				<li class="tag">Java</li>
-				<li class="tag">Spring</li>
-				<li class="tag">System design</li>
-				<li class="tag">Mock interviews</li>
-			</ul>
-		</section>
-
-		<section class="tile tile--span5" aria-label="Project status">
-			<p class="tile__kicker">Project status</p>
-			<h2>In progress</h2>
-			<ul class="tile__list">
-				<li>Landing + auth pages</li>
-				<li>Role-based dashboards (next)</li>
-				<li>Sessions + action items (next)</li>
+		<section class="tile tile--span6" aria-label="MVP not included">
+			<p class="tile__kicker">Out of scope for MVP</p>
+			<h3>Not included yet</h3>
+			<ul class="checklist">
+				<li>In-app messaging and video calls</li>
+				<li>AI mentor matching or recommendation engine</li>
+				<li>Automated payment settlement and refund workflows</li>
 			</ul>
 		</section>
 	</div>

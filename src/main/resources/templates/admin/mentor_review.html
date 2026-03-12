@@ -1,0 +1,67 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full">
+			<p class="tile__kicker">Admin review</p>
+			<h1>Mentor review table</h1>
+			<p class="p p--muted p--tight">
+				Select a mentor to inspect evidence and decide whether to approve or request profile updates.
+			</p>
+		</section>
+
+		<section class="tile tile--span7" aria-label="Mentor review queue table">
+			<p class="tile__kicker">Queue</p>
+			<h2>Pending mentor items</h2>
+
+			<div class="tableWrap">
+				<table class="dataTable">
+					<caption class="srOnly">Mentor review queue</caption>
+					<thead>
+						<tr>
+							<th scope="col">Mentor</th>
+							<th scope="col">Current role</th>
+							<th scope="col">Interview evidence</th>
+							<th scope="col">Profile quality</th>
+							<th scope="col">Submitted</th>
+							<th scope="col">Status</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr
+							th:each="item : ${reviewItems}"
+						>
+							<td>
+								<a
+									class="tableRowLink"
+									th:href="@{/admin/mentors/review/details/{mentorSlug}(mentorSlug=${item.mentor.slug})}"
+									target="mentorDetailFrame"
+									th:text="${item.mentor.name}"
+								>
+									Mentor Name
+								</a>
+							</td>
+							<td th:text="${item.mentor.roleAtCompany}">Title @ Company</td>
+							<td th:text="${item.interviewEvidence}">3 of 3 companies verified</td>
+							<td th:text="${item.profileQuality}">Strong profile clarity</td>
+							<td th:text="${item.submittedDate}">Feb 17</td>
+							<td>
+								<span th:class="${item.statusClass}" th:text="${item.statusLabel}">
+									Due today
+								</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="tile tile--span5 reviewDetailsPanel" aria-label="Selected mentor details">
+			<p class="tile__kicker">Details</p>
+			<iframe
+				class="reviewDetailFrame"
+				name="mentorDetailFrame"
+				title="Mentor review details"
+				th:src="@{/admin/mentors/review/details/{mentorSlug}(mentorSlug=${defaultMentorSlug})}"
+			></iframe>
+		</section>
+	</div>
+</section>

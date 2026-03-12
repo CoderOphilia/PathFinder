@@ -1,0 +1,113 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--span5" aria-label="Mentor profile guidance">
+			<p class="tile__kicker">Mentor profile</p>
+			<h1>Show your mentoring strengths</h1>
+			<p class="p p--muted p--tight">
+				Your profile helps mentees decide if your expertise matches their objective.
+			</p>
+			<ul class="checklist">
+				<li>Keep expertise tags concise and specific.</li>
+				<li>Set a clear hourly rate for session expectations.</li>
+				<li>Use your bio to describe mentoring style and focus areas.</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span7 tile--form" aria-label="Mentor profile form">
+			<h2>Profile details</h2>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<form method="post" th:action="@{/mentor/profile}" class="profileForm">
+				<div>
+					<label for="fullName" class="label label--required">Full name</label>
+					<input id="fullName" name="fullName" class="input" required />
+				</div>
+
+				<div>
+					<label for="email" class="label">Public contact email</label>
+					<input id="email" name="email" type="email" class="input" />
+				</div>
+
+				<div>
+					<label for="expertise" class="label label--required">Core expertise</label>
+					<input id="expertise" name="expertise" class="input" placeholder="Java, Spring, System Design" required />
+				</div>
+
+				<div>
+					<label for="hourlyRate" class="label label--required">Hourly rate (CAD)</label>
+					<input id="hourlyRate" name="hourlyRate" type="number" min="0" step="5" class="input" required />
+				</div>
+
+				<div>
+					<label for="currentTitle" class="label">Current title</label>
+					<input
+						id="currentTitle"
+						name="currentTitle"
+						class="input"
+						placeholder="Senior Backend Engineer"
+						aria-describedby="currentTitleHint"
+					/>
+					<p id="currentTitleHint" class="label__hint">Used in preview as: title @ company.</p>
+				</div>
+
+				<div>
+					<label for="currentCompany" class="label">Current company</label>
+					<input
+						id="currentCompany"
+						name="currentCompany"
+						class="input"
+						placeholder="Google"
+						aria-describedby="currentCompanyHint"
+					/>
+					<p id="currentCompanyHint" class="label__hint">Company for the role preview.</p>
+				</div>
+
+				<div>
+					<label for="interviewCompanies" class="label">Interviewed-at company badges</label>
+					<input
+						id="interviewCompanies"
+						name="interviewCompanies"
+						class="input"
+						placeholder="Amazon, Shopify, Microsoft"
+						aria-describedby="interviewCompanyHint"
+					/>
+					<p id="interviewCompanyHint" class="label__hint">
+						Comma-separated companies. We create one badge per company.
+					</p>
+				</div>
+
+				<div>
+					<label for="timezone" class="label">Timezone</label>
+					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" />
+				</div>
+
+				<div>
+					<label for="bio" class="label">Mentor bio</label>
+					<textarea id="bio" name="bio" class="textarea" rows="4"></textarea>
+				</div>
+
+				<section class="badgePreview" aria-label="Company badge preview">
+					<p class="tile__kicker">Mentor preview</p>
+					<ul class="tags" th:if="${currentRoleBadge != null or !#lists.isEmpty(interviewCompanyBadges)}">
+						<li class="tag" th:if="${currentRoleBadge != null}" th:text="${currentRoleBadge}">
+							Title @ Company
+						</li>
+						<li class="tag" th:each="company : ${interviewCompanyBadges}" th:text="${company}">
+							Company
+						</li>
+					</ul>
+					<p class="p p--sm p--muted p--tight" th:if="${currentRoleBadge == null and #lists.isEmpty(interviewCompanyBadges)}">
+						Add company names and save profile to generate badges.
+					</p>
+				</section>
+
+				<div class="formActions">
+					<button type="submit" class="btn btn--default">Save profile</button>
+					<a class="btn btn--outline" th:href="@{/mentor/home}">Back to home</a>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>

@@ -1,20 +1,26 @@
 <aside xmlns:th="http://www.thymeleaf.org" th:fragment="aside">
-    <p><a th:href="@{/}">PathFinder</a> (MVP)</p>
-    <h2>Turn advice into action.</h2>
-    <p>A simple mentorship flow designed for clarity and follow-through.</p>
+	<p><a th:href="@{/}" class="link link--underline">Back to PathFinder</a></p>
+	<h2 class="asideTitle">Build momentum with structured mentorship.</h2>
+	<p class="p p--muted p--tight">
+		PathFinder keeps sessions focused and follow-through visible.
+	</p>
 
-    <ol>
-        <li>
-            <strong>Request with context</strong>
-            <div>Share goals and what you want to improve.</div>
-        </li>
-        <li>
-            <strong>Meet with a mentor</strong>
-            <div>Sessions run via an external Meet/Zoom link.</div>
-        </li>
-        <li>
-            <strong>Leave with next steps</strong>
-            <div>Get action items you can track to completion.</div>
-        </li>
-    </ol>
+	<ol class="asideList">
+		<li>
+			<strong>Set your objective</strong>
+			<div>Explain your goal before booking so the session is focused.</div>
+		</li>
+		<li>
+			<strong>Run the session</strong>
+			<div>Use an external Meet or Zoom link shared by the mentor.</div>
+		</li>
+		<li>
+			<strong>Track action items</strong>
+			<div>Leave with clear tasks and check them off over time.</div>
+		</li>
+	</ol>
+
+	<p class="p p--sm p--muted p--tight">
+		Demo mode: sign in as Mentee, Mentor, or Admin to preview each experience.
+	</p>
 </aside>

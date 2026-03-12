@@ -1,12 +1,18 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--aside" aria-label="About PathFinder">
+		<section class="tile tile--aside" aria-label="PathFinder onboarding details">
 			<th:block th:replace="~{fragments/auth_aside :: aside}"></th:block>
 		</section>
 
 		<section class="tile tile--form" aria-label="Reset password">
+			<p class="tile__kicker">Account recovery</p>
 			<h1>Reset your password</h1>
-			<p class="p p--muted p--tight">We will email you a reset link (MVP placeholder).</p>
+			<p class="p p--muted p--tight">
+				Enter your email and we will simulate sending a reset link.
+			</p>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
 			<form method="post" th:action="@{/auth/forgot}">
 				<div>
@@ -20,7 +26,7 @@
 			<p class="p">
 				<a th:href="@{/auth/login}" class="link link--underline">Back to login</a>
 			</p>
-			<p class="p p--muted p--tight">If you do not see an email, check your spam folder.</p>
+			<p class="p p--sm p--muted p--tight">If you do not see an email, check your spam folder.</p>
 		</section>
 	</div>
 </section>

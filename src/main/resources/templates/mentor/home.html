@@ -1,0 +1,109 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full">
+			<p class="tile__kicker">Mentor workspace</p>
+			<h1>Mentor home</h1>
+			<p class="p p--muted p--tight">
+				Review incoming requests and keep your mentorship profile ready for approvals.
+			</p>
+			<div class="heroActions">
+				<a class="btn btn--default" th:href="@{/mentor/profile}">Update mentor profile</a>
+				<a class="btn btn--outline" th:href="@{/mentor/requests}">View request queue</a>
+			</div>
+		</section>
+
+		<section class="tile tile--span4">
+			<p class="tile__kicker">Upcoming</p>
+			<h2>Next session</h2>
+			<ul class="tile__list">
+				<li><strong>Type:</strong> System design prep</li>
+				<li><strong>With:</strong> Mentee request from Priya track</li>
+				<li><strong>Time:</strong> Thu • 7:00 PM - 7:45 PM</li>
+			</ul>
+			<p class="p p--sm p--muted p--tight">Meeting link is added after approval.</p>
+		</section>
+
+		<section class="tile tile--span8">
+			<p class="tile__kicker">Calendar</p>
+			<h2>Session calendar (this week)</h2>
+			<div class="weekCalendar" aria-label="Mentor sessions this week">
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Mon</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--done">Resume review completed</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Tue</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--requested">Interview prep requested</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Wed</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--free">Open slot 6:30 PM</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Thu</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--approved">System design approved</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Fri</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--free">No sessions planned</span></li>
+					</ul>
+				</article>
+				<article class="weekCalendar__day">
+					<p class="weekCalendar__dayName">Sat</p>
+					<ul class="weekCalendar__events">
+						<li><span class="calendarPill calendarPill--approved">Career strategy 11:00 AM</span></li>
+					</ul>
+				</article>
+			</div>
+		</section>
+
+		<section class="tile tile--span5 tileLinkCard">
+			<a class="tileLinkCard__link" th:href="@{/mentor/requests}" aria-label="Open mentor requests">
+				<p class="tile__kicker">Requests</p>
+				<h2>Request queue</h2>
+				<ul class="tile__list">
+					<li>3 pending approvals</li>
+					<li>1 recently declined</li>
+					<li>2 need mentor notes</li>
+				</ul>
+				<p class="p p--sm p--muted p--tight">Open requests</p>
+			</a>
+		</section>
+
+		<section class="tile tile--span7">
+			<p class="tile__kicker">Priority reminders</p>
+			<h2>Session quality checklist</h2>
+			<ul class="checklist">
+				<li>Confirm session objective before accepting request</li>
+				<li>Share external meeting link after approval</li>
+				<li>Add summary and action items after each completed session</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--full">
+			<div class="dashboardStats" aria-label="Mentor stats">
+				<article class="statCard">
+					<h2>3</h2>
+					<p class="p p--sm p--muted p--tight">Pending requests</p>
+				</article>
+				<article class="statCard">
+					<h2>5</h2>
+					<p class="p p--sm p--muted p--tight">Sessions this month</p>
+				</article>
+				<article class="statCard">
+					<h2>$420</h2>
+					<p class="p p--sm p--muted p--tight">Estimated payout</p>
+				</article>
+			</div>
+		</section>
+	</div>
+</section>

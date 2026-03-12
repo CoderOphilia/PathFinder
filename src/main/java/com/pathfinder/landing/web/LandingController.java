@@ -9,6 +9,7 @@ public class LandingController {
 
     @GetMapping("/")
     public String index(Model model) {
+        model.addAttribute("title", "PathFinder");
         model.addAttribute("navbarType", "fragments/navbar :: navbar");
         model.addAttribute("content", "landing/index :: content");
         return "layout";

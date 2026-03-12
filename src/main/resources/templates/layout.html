@@ -7,11 +7,12 @@
 		<link rel="stylesheet" th:href="@{/css/app.css}" />
 	</head>
 	<body>
+		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<header>
 			<th:block th:insert="~{__${navbarType}__}"></th:block>
 		</header>
 
-		<main>
+		<main id="main-content" tabindex="-1">
 			<th:block th:insert="~{__${content}__}"></th:block>
 		</main>
 	</body>
