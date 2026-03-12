@@ -585,6 +585,68 @@ public String signup(
 }
 ```
 
+Example service response display pattern (auth):
+`src/main/java/com/pathfinder/auth/service/AuthResult.java`
+
+```java
+package com.pathfinder.auth.service;
+
+public record AuthResult(boolean success, String message) {}
+```
+
+`src/main/java/com/pathfinder/auth/service/AuthService.java`
+
+```java
+public AuthResult signup(String email, String rawPassword, Role role) {
+    if (users.existsByEmail(email)) {
+        return new AuthResult(false, "Email already exists");
+    }
+
+    UserAccount user = new UserAccount();
+    user.setEmail(email);
+    user.setPasswordHash(passwordEncoder.encode(rawPassword));
+    user.setRole(role);
+    users.save(user);
+
+    return new AuthResult(true, "Account created successfully");
+}
+```
+
+`src/main/java/com/pathfinder/auth/web/AuthController.java`
+
+```java
+@PostMapping("/signup")
+public String signup(
+    @Valid @ModelAttribute("form") SignupRequest form,
+    BindingResult bindingResult,
+    Model model,
+    RedirectAttributes redirectAttributes
+) {
+    if (bindingResult.hasErrors()) {
+        model.addAttribute("content", "auth/signup :: content");
+        return "layout";
+    }
+
+    AuthResult result = authService.signup(form.getEmail(), form.getPassword(), form.getRole());
+
+    if (!result.success()) {
+        model.addAttribute("errorMessage", result.message());
+        model.addAttribute("content", "auth/signup :: content");
+        return "layout";
+    }
+
+    redirectAttributes.addFlashAttribute("successMessage", result.message());
+    return "redirect:/auth/login";
+}
+```
+
+`src/main/resources/templates/auth/signup.html`
+
+```html
+<p th:if="${errorMessage}" class="p p--error" th:text="${errorMessage}"></p>
+<p th:if="${successMessage}" class="p p--muted" th:text="${successMessage}"></p>
+```
+
 ### Phase F: Testing and stability
 
 1. Add repository tests.
