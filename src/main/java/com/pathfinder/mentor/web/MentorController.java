@@ -1,5 +1,11 @@
 package com.pathfinder.mentor.web;
 
+import com.pathfinder.auth.domain.User;
+import com.pathfinder.auth.web.AuthController;
+import com.pathfinder.mentor.service.MentorProfileService;
+import com.pathfinder.mentor.domain.MentorProfile;
+import jakarta.servlet.http.HttpSession;
+
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +36,11 @@ public class MentorController {
             new WeekdayOption("sat", "Saturday"),
             new WeekdayOption("sun", "Sunday")
     );
+    private final MentorProfileService mentorProfileService;
+
+    public MentorController(MentorProfileService mentorProfileService) {
+        this.mentorProfileService = mentorProfileService;
+    }
 
     @GetMapping("/home")
     public String home(Model model) {
@@ -37,9 +48,23 @@ public class MentorController {
     }
 
     @GetMapping("/availability")
-    public String availability(Model model) {
+    public String availability(
+            @RequestParam(defaultValue = "") String email,
+            HttpSession session,
+            Model model
+    ) {
+        String normalizedEmail = resolveCurrentMentorEmail(session, email);
+        if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
+            model.addAttribute("email", normalizedEmail);
+        }
+        List<AvailabilityRow> availabilityRows = defaultAvailabilityRows();
+        if (!normalizedEmail.isEmpty()) {
+            List<AvailabilityRow> savedRows = mergeAvailabilityRows(availabilityRows, mentorProfileService.findAvailabilityByEmail(normalizedEmail));
+            availabilityRows = savedRows;
+        }
+
         if (!model.containsAttribute("availabilityRows")) {
-            model.addAttribute("availabilityRows", defaultAvailabilityRows());
+            model.addAttribute("availabilityRows", availabilityRows);
         }
         if (!model.containsAttribute("timezone")) {
             model.addAttribute("timezone", "America/Vancouver");
@@ -57,7 +82,7 @@ public class MentorController {
             model.addAttribute("blockedDates", "");
         }
         if (!model.containsAttribute("previewSlots")) {
-            model.addAttribute("previewSlots", buildPreviewSlots(defaultAvailabilityRows()));
+            model.addAttribute("previewSlots", buildPreviewSlots(availabilityRows));
         }
         return renderPage(model, "Mentor availability", "mentor/availability :: content");
     }
@@ -65,9 +90,11 @@ public class MentorController {
     @PostMapping("/availability")
     public String saveAvailability(
             @RequestParam MultiValueMap<String, String> formValues,
+            HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
         List<AvailabilityRow> availabilityRows = buildRowsFromForm(formValues);
+        String accountEmail = resolveCurrentMentorEmail(session, formValues.getFirst("email"));
         String timezone = normalizeText(formValues.getFirst("timezone"));
         if (timezone.isEmpty()) {
             timezone = "America/Vancouver";
@@ -78,6 +105,7 @@ public class MentorController {
         String blockedDates = normalizeText(formValues.getFirst("blockedDates"));
 
         redirectAttributes.addFlashAttribute("availabilityRows", availabilityRows);
+        redirectAttributes.addFlashAttribute("email", accountEmail);
         redirectAttributes.addFlashAttribute("timezone", timezone);
         redirectAttributes.addFlashAttribute("slotLengthMinutes", slotLengthMinutes);
         redirectAttributes.addFlashAttribute("bufferMinutes", bufferMinutes);
@@ -89,6 +117,10 @@ public class MentorController {
         boolean invalidRange = availabilityRows.stream()
                 .filter(AvailabilityRow::enabled)
                 .anyMatch(row -> !isValidTimeRange(row.startTime(), row.endTime()));
+        if (accountEmail.isEmpty()) {
+            redirectAttributes.addFlashAttribute("formError", "Sign in with a mentor account first.");
+            return "redirect:/mentor/availability";
+        }
         if (enabledDays == 0) {
             redirectAttributes.addFlashAttribute("formError", "Select at least one available day.");
             return "redirect:/mentor/availability";
@@ -98,12 +130,37 @@ public class MentorController {
             return "redirect:/mentor/availability";
         }
 
-        redirectAttributes.addFlashAttribute("flashMessage", "Availability updated (demo mode).");
+        try {
+            mentorProfileService.replaceAvailability(accountEmail, availabilityRows.stream()
+                    .filter(AvailabilityRow::enabled)
+                    .map(row -> new MentorProfileService.AvailabilityInput(
+                            weekdayToNumber(row.key()),
+                            row.startTime(),
+                            row.endTime()
+                    ))
+                    .toList());
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+            return "redirect:/mentor/availability";
+        }
+
+        redirectAttributes.addFlashAttribute("flashMessage", "Availability updated.");
         return "redirect:/mentor/availability";
     }
 
     @GetMapping("/profile")
-    public String profile(Model model) {
+    public String profile(
+            @RequestParam(defaultValue = "") String email,
+            HttpSession session,
+            Model model
+    ) {
+        String normalizedEmail = resolveCurrentMentorEmail(session, email);
+        if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
+            model.addAttribute("email", normalizedEmail);
+        }
+        if (!normalizedEmail.isEmpty()) {
+            populateProfileForm(model, normalizedEmail);
+        }
         if (!model.containsAttribute("interviewCompanyBadges")) {
             model.addAttribute("interviewCompanyBadges", List.of());
         }
@@ -113,15 +170,28 @@ public class MentorController {
     @PostMapping("/profile")
     public String saveProfile(
             @RequestParam(defaultValue = "") String fullName,
+            @RequestParam(defaultValue = "") String email,
             @RequestParam(defaultValue = "") String expertise,
             @RequestParam(defaultValue = "") String hourlyRate,
             @RequestParam(defaultValue = "") String currentTitle,
             @RequestParam(defaultValue = "") String currentCompany,
             @RequestParam(defaultValue = "") String interviewCompanies,
+            @RequestParam(defaultValue = "") String bio,
+            HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
-        if (isBlank(fullName) || isBlank(expertise) || isBlank(hourlyRate)) {
-            redirectAttributes.addFlashAttribute("formError", "Name, expertise, and hourly rate are required.");
+        String accountEmail = resolveCurrentMentorEmail(session, email);
+        redirectAttributes.addFlashAttribute("fullName", fullName);
+        redirectAttributes.addFlashAttribute("email", accountEmail);
+        redirectAttributes.addFlashAttribute("expertise", expertise);
+        redirectAttributes.addFlashAttribute("hourlyRate", hourlyRate);
+        redirectAttributes.addFlashAttribute("currentTitle", currentTitle);
+        redirectAttributes.addFlashAttribute("currentCompany", currentCompany);
+        redirectAttributes.addFlashAttribute("interviewCompanies", interviewCompanies);
+        redirectAttributes.addFlashAttribute("bio", bio);
+
+        if (isBlank(fullName) || isBlank(accountEmail) || isBlank(expertise) || isBlank(hourlyRate)) {
+            redirectAttributes.addFlashAttribute("formError", "Name, expertise, and hourly rate are required. Sign in first if needed.");
             return "redirect:/mentor/profile";
         }
 
@@ -129,12 +199,97 @@ public class MentorController {
         String currentCompanyBadge = normalizeText(currentCompany);
         String currentRoleBadge = buildRoleBadge(titleValue, currentCompanyBadge);
         List<String> interviewCompanyBadges = parseInterviewCompanyBadges(interviewCompanies);
+
+        try {
+            mentorProfileService.saveProfile(
+                    accountEmail,
+                    fullName,
+                    expertise,
+                    hourlyRate,
+                    currentTitle,
+                    currentCompany,
+                    interviewCompanies,
+                    bio
+            );
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+            return "redirect:/mentor/profile";
+        }
+
         if (!currentRoleBadge.isEmpty()) {
             redirectAttributes.addFlashAttribute("currentRoleBadge", currentRoleBadge);
         }
         redirectAttributes.addFlashAttribute("interviewCompanyBadges", interviewCompanyBadges);
-        redirectAttributes.addFlashAttribute("flashMessage", "Mentor profile saved (demo mode).");
+        redirectAttributes.addFlashAttribute("flashMessage", "Mentor profile saved.");
         return "redirect:/mentor/profile";
+    }
+
+    private void populateProfileForm(Model model, String email) {
+        User mentorUser = mentorProfileService.findMentorUserByEmail(email);
+        if (mentorUser != null && !model.containsAttribute("fullName")) {
+            model.addAttribute("fullName", buildFullName(mentorUser.getFirstName(), mentorUser.getLastName()));
+        }
+        MentorProfile profile = mentorProfileService.findProfileByEmail(email);
+        if (profile == null) {
+            return;
+        }
+        List<String> skillBadges = mentorProfileService.findSkillsByEmail(email);
+        List<String> interviewCompanyBadges = mentorProfileService.findInterviewCompaniesByEmail(email);
+
+        if (!model.containsAttribute("expertise")) {
+            model.addAttribute("expertise", profile.getExpertise());
+        }
+        if (!model.containsAttribute("hourlyRate")) {
+            model.addAttribute("hourlyRate", formatCad(profile.getHourlyRateCents()));
+        }
+        if (!model.containsAttribute("currentCompany")) {
+            model.addAttribute("currentCompany", profile.getCurrentCompany());
+        }
+        if (!model.containsAttribute("currentTitle")) {
+            model.addAttribute("currentTitle", profile.getCurrentTitle());
+        }
+        if (!model.containsAttribute("interviewCompanies")) {
+            model.addAttribute("interviewCompanies", String.join(", ", interviewCompanyBadges));
+        }
+        if (!model.containsAttribute("bio")) {
+            model.addAttribute("bio", profile.getBio());
+        }
+        if (!model.containsAttribute("skillBadges")) {
+            model.addAttribute("skillBadges", skillBadges);
+        }
+        if (!model.containsAttribute("interviewCompanyBadges")) {
+            model.addAttribute("interviewCompanyBadges", interviewCompanyBadges);
+        }
+        if (!model.containsAttribute("currentRoleBadge")) {
+            String currentRoleBadge = buildRoleBadge(
+                    normalizeText(profile.getCurrentTitle()),
+                    normalizeText(profile.getCurrentCompany())
+            );
+            if (!currentRoleBadge.isEmpty()) {
+                model.addAttribute("currentRoleBadge", currentRoleBadge);
+            }
+        }
+    }
+
+    private String resolveCurrentMentorEmail(HttpSession session, String fallbackEmail) {
+        String normalizedFallback = normalizeText(fallbackEmail);
+        if (!normalizedFallback.isEmpty()) {
+            return normalizedFallback;
+        }
+        Object sessionEmail = session.getAttribute(AuthController.SESSION_USER_EMAIL);
+        Object sessionRole = session.getAttribute(AuthController.SESSION_USER_ROLE);
+        if (sessionEmail == null || sessionRole == null) {
+            return "";
+        }
+        if (!"mentor".equalsIgnoreCase(sessionRole.toString())) {
+            return "";
+        }
+        return normalizeText(sessionEmail.toString());
+    }
+
+    private String buildFullName(String firstName, String lastName) {
+        String combined = (normalizeText(firstName) + " " + normalizeText(lastName)).trim();
+        return combined;
     }
 
     private List<String> parseInterviewCompanyBadges(String interviewCompanies) {
@@ -169,6 +324,16 @@ public class MentorController {
         return title + " @ " + company;
     }
 
+    private String formatCad(Integer amountCents) {
+        if (amountCents == null) {
+            return "";
+        }
+        if (amountCents % 100 == 0) {
+            return Integer.toString(amountCents / 100);
+        }
+        return String.format(Locale.ROOT, "%.2f", amountCents / 100.0);
+    }
+
     private String renderPage(Model model, String title, String content) {
         model.addAttribute("title", title);
         model.addAttribute("navbarType", MENTOR_NAVBAR);
@@ -190,6 +355,24 @@ public class MentorController {
                 new AvailabilityRow("sat", "Saturday", true, "10:00", "12:00"),
                 new AvailabilityRow("sun", "Sunday", false, "10:00", "12:00")
         );
+    }
+
+    private List<AvailabilityRow> mergeAvailabilityRows(
+            List<AvailabilityRow> baseRows,
+            List<MentorProfileService.AvailabilityInput> savedAvailability
+    ) {
+        return baseRows.stream()
+                .map(row -> {
+                    MentorProfileService.AvailabilityInput match = savedAvailability.stream()
+                            .filter(item -> item.weekday() == weekdayToNumber(row.key()))
+                            .findFirst()
+                            .orElse(null);
+                    if (match == null) {
+                        return row;
+                    }
+                    return new AvailabilityRow(row.key(), row.label(), true, match.startTime(), match.endTime());
+                })
+                .toList();
     }
 
     private List<AvailabilityRow> buildRowsFromForm(MultiValueMap<String, String> formValues) {
@@ -242,6 +425,19 @@ public class MentorController {
             convertedHour = 12;
         }
         return String.format(Locale.ROOT, "%d:%s %s", convertedHour, minute, period);
+    }
+
+    private int weekdayToNumber(String key) {
+        return switch (key) {
+            case "sun" -> 1;
+            case "mon" -> 2;
+            case "tue" -> 3;
+            case "wed" -> 4;
+            case "thu" -> 5;
+            case "fri" -> 6;
+            case "sat" -> 7;
+            default -> throw new IllegalArgumentException("Unknown weekday key: " + key);
+        };
     }
 
     private record WeekdayOption(String key, String label) {

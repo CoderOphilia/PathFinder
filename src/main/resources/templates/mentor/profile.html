@@ -22,22 +22,24 @@
 			<form method="post" th:action="@{/mentor/profile}" class="profileForm">
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
-					<input id="fullName" name="fullName" class="input" required />
-				</div>
-
-				<div>
-					<label for="email" class="label">Public contact email</label>
-					<input id="email" name="email" type="email" class="input" />
+					<input id="fullName" name="fullName" class="input" th:value="${fullName}" required />
 				</div>
 
 				<div>
 					<label for="expertise" class="label label--required">Core expertise</label>
-					<input id="expertise" name="expertise" class="input" placeholder="Java, Spring, System Design" required />
+					<input
+						id="expertise"
+						name="expertise"
+						class="input"
+						placeholder="Java, Spring, System Design"
+						th:value="${expertise}"
+						required
+					/>
 				</div>
 
 				<div>
 					<label for="hourlyRate" class="label label--required">Hourly rate (CAD)</label>
-					<input id="hourlyRate" name="hourlyRate" type="number" min="0" step="5" class="input" required />
+					<input id="hourlyRate" name="hourlyRate" type="number" min="0" step="5" class="input" th:value="${hourlyRate}" required />
 				</div>
 
 				<div>
@@ -47,6 +49,7 @@
 						name="currentTitle"
 						class="input"
 						placeholder="Senior Backend Engineer"
+						th:value="${currentTitle}"
 						aria-describedby="currentTitleHint"
 					/>
 					<p id="currentTitleHint" class="label__hint">Used in preview as: title @ company.</p>
@@ -59,6 +62,7 @@
 						name="currentCompany"
 						class="input"
 						placeholder="Google"
+						th:value="${currentCompany}"
 						aria-describedby="currentCompanyHint"
 					/>
 					<p id="currentCompanyHint" class="label__hint">Company for the role preview.</p>
@@ -71,6 +75,7 @@
 						name="interviewCompanies"
 						class="input"
 						placeholder="Amazon, Shopify, Microsoft"
+						th:value="${interviewCompanies}"
 						aria-describedby="interviewCompanyHint"
 					/>
 					<p id="interviewCompanyHint" class="label__hint">
@@ -80,16 +85,21 @@
 
 				<div>
 					<label for="timezone" class="label">Timezone</label>
-					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" />
+					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" th:value="${timezone}" />
 				</div>
 
 				<div>
 					<label for="bio" class="label">Mentor bio</label>
-					<textarea id="bio" name="bio" class="textarea" rows="4"></textarea>
+					<textarea id="bio" name="bio" class="textarea" rows="4" th:text="${bio}"></textarea>
 				</div>
 
 				<section class="badgePreview" aria-label="Company badge preview">
 					<p class="tile__kicker">Mentor preview</p>
+					<ul class="tags" th:if="${!#lists.isEmpty(skillBadges)}">
+						<li class="tag tag--soft" th:each="skill : ${skillBadges}" th:text="${skill}">
+							Skill
+						</li>
+					</ul>
 					<ul class="tags" th:if="${currentRoleBadge != null or !#lists.isEmpty(interviewCompanyBadges)}">
 						<li class="tag" th:if="${currentRoleBadge != null}" th:text="${currentRoleBadge}">
 							Title @ Company
