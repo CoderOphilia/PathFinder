@@ -1,6 +1,6 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full">
+		<section class="tile tile--full" style="--order: 1">
 			<p class="tile__kicker">Mentor directory</p>
 			<h1>Find mentors</h1>
 			<p class="p p--muted p--tight">
@@ -61,14 +61,21 @@
 			</p>
 		</section>
 
-		<section th:if="${#lists.isEmpty(filteredMentors)}" class="tile tile--full" aria-live="polite">
-			<h2>No mentors match those filters</h2>
-			<p class="p p--muted p--tight">
-				Try a broader search term or clear one of the selected filters.
-			</p>
+		<section th:if="${#lists.isEmpty(filteredMentors)}" class="tile tile--full" style="--order: 2" aria-live="polite">
+			<div class="emptyState">
+				<div class="emptyState__icon">🔎</div>
+				<h2>Still looking for the right match?</h2>
+				<p class="p p--muted">
+					We couldn't find any mentors matching your current filters. Try a broader search term
+					or clear your filters to explore all expertise areas.
+				</p>
+				<div class="formActions" style="justify-content: center;">
+					<a class="btn btn--default" th:href="@{/seeker/mentors}">Clear all filters</a>
+				</div>
+			</div>
 		</section>
 
-		<section th:each="mentor : ${filteredMentors}" class="tile tile--span4 mentorCard" aria-label="Mentor card">
+		<section th:each="mentor, mentorStat : ${filteredMentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 1)" aria-label="Mentor card">
 			<a class="mentorCard__link" th:href="@{/mentors/{mentorSlug}(mentorSlug=${mentor.slug})}">
 				<div class="mentorCard__top">
 					<h2 th:text="${mentor.name}">Mentor Name</h2>
@@ -100,7 +107,7 @@
 			</div>
 		</section>
 
-		<section class="tile tile--full">
+		<section class="tile tile--full" style="--order: 10">
 			<p class="p p--sm p--muted p--tight">
 				Note: booking flow and mentor search filters are placeholder UI in this frontend-only MVP.
 			</p>

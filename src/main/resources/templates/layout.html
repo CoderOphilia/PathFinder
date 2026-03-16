@@ -7,6 +7,7 @@
 		<link rel="stylesheet" th:href="@{/css/app.css}" />
 	</head>
 	<body>
+		<div th:if="${devMode}" th:insert="~{fragments/navbar_dev :: navbar}"></div>
 		<a class="skip-link" href="#main-content">Skip to main content</a>
 		<header>
 			<th:block th:insert="~{__${navbarType}__}"></th:block>

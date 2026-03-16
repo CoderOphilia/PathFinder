@@ -1,6 +1,6 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full">
+		<section class="tile tile--full tile--mentee" style="--order: 1">
 			<p class="tile__kicker">Mentee workspace</p>
 			<h1>Mentee home</h1>
 			<p class="p p--muted p--tight">
@@ -12,7 +12,7 @@
 			</div>
 		</section>
 
-		<section class="tile tile--span4">
+		<section class="tile tile--span4" style="--order: 2">
 			<p class="tile__kicker">Upcoming</p>
 			<h2>Next session</h2>
 			<ul class="tile__list">
@@ -23,7 +23,7 @@
 			<p class="p p--sm p--muted p--tight">Watch request status and meeting details here.</p>
 		</section>
 
-		<section class="tile tile--span8">
+		<section class="tile tile--span8" style="--order: 3">
 			<p class="tile__kicker">Calendar</p>
 			<h2>Session calendar (this week)</h2>
 			<div class="weekCalendar" aria-label="Mentee sessions this week">
@@ -66,27 +66,27 @@
 			</div>
 		</section>
 
-		<section class="tile tile--span7">
-			<p class="tile__kicker">Current priorities</p>
-			<h2>What to focus on this week</h2>
+		<section class="tile tile--span7 tile--mentee" style="--order: 4">
+			<p class="tile__kicker">Next steps</p>
+			<h2>Focus areas for this week</h2>
 			<ul class="checklist">
-				<li>Refine your target role statement</li>
-				<li>Prepare three questions for your next mentor session</li>
-				<li>Complete at least one open action item</li>
+				<li>Refine your career objective statement</li>
+				<li>Brainstorm 3 specific questions for your next mentor</li>
+				<li>Make progress on your open action items</li>
 			</ul>
 		</section>
 
-		<section class="tile tile--span5">
-			<p class="tile__kicker">Status flow</p>
-			<h2>Request progress</h2>
+		<section class="tile tile--span5" style="--order: 5">
+			<p class="tile__kicker">What's happening</p>
+			<h2>Track your progress</h2>
 			<ul class="tile__list">
-				<li><strong>Requested</strong>: waiting for mentor response</li>
-				<li><strong>Approved</strong>: waiting for scheduled session time</li>
-				<li><strong>Completed</strong>: summary and action items available</li>
+				<li><strong>Requested</strong>: Your mentor is reviewing your session objective</li>
+				<li><strong>Approved</strong>: Time is booked! Prepare your meeting link</li>
+				<li><strong>Completed</strong>: Access your session summary and clear next steps</li>
 			</ul>
 		</section>
 
-		<section class="tile tile--full">
+		<section class="tile tile--full" style="--order: 6">
 			<div class="dashboardStats" aria-label="Mentee stats">
 				<article class="statCard">
 					<h2>1</h2>

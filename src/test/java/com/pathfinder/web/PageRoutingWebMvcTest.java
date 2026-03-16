@@ -509,7 +509,9 @@ class PageRoutingWebMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", content))
-                .andExpect(model().attribute("navbarType", navbarType));
+                .andExpect(model().attribute("navbarType", navbarType))
+                .andExpect(model().attribute("devMode", true))
+                .andExpect(model().attributeExists("currentUrl"));
     }
 
     private String createSessionRequest(String mentorName, int slotIndex) throws Exception {
