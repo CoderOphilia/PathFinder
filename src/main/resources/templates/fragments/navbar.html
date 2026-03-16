@@ -1,12 +1,34 @@
 <nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
-	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">PathFinder</a>
+    <a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">
+        <span>📍</span> PathFinder
+    </a>
 
-	<div class="nav__links" aria-label="Primary">
-		<a th:href="@{/}" class="nav__link">Landing</a>
-		<a th:href="@{/seeker/home}" class="nav__link">Mentee demo</a>
-		<a th:href="@{/mentor/home}" class="nav__link">Mentor demo</a>
-		<a th:href="@{/admin/home}" class="nav__link">Admin demo</a>
-		<a th:href="@{/auth/login}" class="nav__link">Log in</a>
-		<a th:href="@{/auth/signup}" class="nav__link nav__cta">Sign up</a>
-	</div>
+    <div class="nav__links" aria-label="Primary navigation">
+        <a th:href="@{/}" class="nav__link" th:classappend="${currentUrl == '/' ? 'active' : ''}"
+           th:attr="aria-current=${currentUrl == '/'} ? 'page' : null">Home</a>
+        <a th:href="@{/#how-it-works}" class="nav__link">How it works</a>
+        <a th:href="@{/auth/login}" class="nav__link"
+           th:classappend="${#strings.startsWith(currentUrl, '/auth') ? 'active' : ''}"
+           th:attr="aria-current=${#strings.startsWith(currentUrl, '/auth')} ? 'page' : null">Sign in</a>
+        <a th:href="@{/auth/signup}" class="nav__link nav__cta"
+           th:classappend="${currentUrl == '/auth/signup' ? 'active' : ''}"
+           th:attr="aria-current=${currentUrl == '/auth/signup'} ? 'page' : null">Create account</a>
+    </div>
+
+    <!-- Mobile Nav (Fixed Bottom) -->
+    <div class="nav__links--mobile" aria-label="Primary mobile navigation">
+        <a th:href="@{/}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/' ? 'active' : ''}"
+           th:attr="aria-current=${currentUrl == '/'} ? 'page' : null" aria-label="Home">🏠</a>
+        <a th:href="@{/seeker/home}" class="nav__link nav__link--icon"
+           th:classappend="${#strings.startsWith(currentUrl, '/seeker') ? 'active' : ''}"
+           th:attr="aria-current=${#strings.startsWith(currentUrl, '/seeker')} ? 'page' : null"
+           aria-label="Mentee home">👤</a>
+        <a th:href="@{/mentor/home}" class="nav__link nav__link--icon"
+           th:classappend="${#strings.startsWith(currentUrl, '/mentor') ? 'active' : ''}"
+           th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentor')} ? 'page' : null"
+           aria-label="Mentor home">🎓</a>
+        <a th:href="@{/auth/login}" class="nav__link nav__link--icon"
+           th:classappend="${#strings.startsWith(currentUrl, '/auth') ? 'active' : ''}"
+           th:attr="aria-current=${#strings.startsWith(currentUrl, '/auth')} ? 'page' : null" aria-label="Sign in">🔑</a>
+    </div>
 </nav>

@@ -1,11 +1,19 @@
 <nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
-	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">PathFinder</a>
+	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">
+		<span>📍</span> PathFinder
+	</a>
 
-	<div class="nav__links" aria-label="Admin">
-		<a th:href="@{/admin/home}" class="nav__link">Home</a>
-		<a th:href="@{/admin/profile}" class="nav__link">Profile</a>
-		<a th:href="@{/admin/mentors/review}" class="nav__link">Mentor review</a>
-		<a href="#" class="nav__link nav__link--disabled" aria-disabled="true" tabindex="-1">Platform activity</a>
-		<a th:href="@{/}" class="nav__link">Public site</a>
+	<div class="nav__links" aria-label="Admin navigation">
+		<a th:href="@{/admin/home}" class="nav__link" th:classappend="${currentUrl == '/admin/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/home'} ? 'page' : null">Home</a>
+		<a th:href="@{/admin/mentors/review}" class="nav__link" th:classappend="${#strings.startsWith(currentUrl, '/admin/mentors/review') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/admin/mentors/review')} ? 'page' : null">Mentor review</a>
+		<a th:href="@{/admin/profile}" class="nav__link" th:classappend="${currentUrl == '/admin/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/profile'} ? 'page' : null">Profile</a>
+		<a th:href="@{/auth/login}" class="nav__link">Sign out</a>
+	</div>
+
+	<!-- Mobile Nav (Fixed Bottom) -->
+	<div class="nav__links--mobile" aria-label="Admin mobile navigation">
+		<a th:href="@{/admin/home}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/home'} ? 'page' : null" aria-label="Home">🏠</a>
+		<a th:href="@{/admin/mentors/review}" class="nav__link nav__link--icon" th:classappend="${#strings.startsWith(currentUrl, '/admin/mentors/review') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/admin/mentors/review')} ? 'page' : null" aria-label="Mentor review">⚖️</a>
+		<a th:href="@{/admin/profile}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/profile'} ? 'page' : null" aria-label="Profile">👤</a>
 	</div>
 </nav>

@@ -1,6 +1,6 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full">
+		<section class="tile tile--full tile--mentor" style="--order: 1">
 			<p class="tile__kicker">Mentor workspace</p>
 			<h1>Mentor home</h1>
 			<p class="p p--muted p--tight">
@@ -12,7 +12,7 @@
 			</div>
 		</section>
 
-		<section class="tile tile--span4">
+		<section class="tile tile--span4" style="--order: 2">
 			<p class="tile__kicker">Upcoming</p>
 			<h2>Next session</h2>
 			<ul class="tile__list">
@@ -23,7 +23,7 @@
 			<p class="p p--sm p--muted p--tight">Meeting link is added after approval.</p>
 		</section>
 
-		<section class="tile tile--span8">
+		<section class="tile tile--span8" style="--order: 3">
 			<p class="tile__kicker">Calendar</p>
 			<h2>Session calendar (this week)</h2>
 			<div class="weekCalendar" aria-label="Mentor sessions this week">
@@ -66,7 +66,7 @@
 			</div>
 		</section>
 
-		<section class="tile tile--span5 tileLinkCard">
+		<section class="tile tile--span5 tileLinkCard" style="--order: 4">
 			<a class="tileLinkCard__link" th:href="@{/mentor/requests}" aria-label="Open mentor requests">
 				<p class="tile__kicker">Requests</p>
 				<h2>Request queue</h2>
@@ -79,7 +79,7 @@
 			</a>
 		</section>
 
-		<section class="tile tile--span7">
+		<section class="tile tile--span7" style="--order: 5">
 			<p class="tile__kicker">Priority reminders</p>
 			<h2>Session quality checklist</h2>
 			<ul class="checklist">
@@ -89,7 +89,8 @@
 			</ul>
 		</section>
 
-		<section class="tile tile--full">
+		<section class="tile tile--full" style="--order: 6">
+
 			<div class="dashboardStats" aria-label="Mentor stats">
 				<article class="statCard">
 					<h2>3</h2>
