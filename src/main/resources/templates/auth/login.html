@@ -8,7 +8,7 @@
 			<p class="tile__kicker">Welcome back</p>
 			<h1>Sign in to PathFinder</h1>
 			<p class="p p--muted p--tight">
-				Choose your role so we can route you to the right dashboard.
+				Sign in with the email and password you used when creating your account.
 			</p>
 
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
@@ -20,7 +20,7 @@
 					<input
 						id="email"
 						class="input"
-						name="username"
+						name="email"
 						type="email"
 						autocomplete="email"
 						required
@@ -37,16 +37,6 @@
 						autocomplete="current-password"
 						required
 					/>
-				</div>
-
-				<div class="select-wrapper">
-					<label for="loginRole" class="label label--required">Role</label>
-					<select id="loginRole" name="role" class="select" required>
-						<option value="">Select your role</option>
-						<option value="seeker">Mentee</option>
-						<option value="mentor">Mentor</option>
-						<option value="admin">Admin</option>
-					</select>
 				</div>
 
 				<p class="p p--sm p--muted p--tight">

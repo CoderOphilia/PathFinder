@@ -37,8 +37,13 @@ public class AdminController {
     ) {
         List<MentorReviewItem> reviewItems = buildReviewItems();
         MentorReviewItem selectedReviewItem = selectReviewItem(reviewItems, mentor);
+        String defaultMentorSlug = selectedReviewItem == null ? "" : selectedReviewItem.mentor().slug();
         model.addAttribute("reviewItems", reviewItems);
-        model.addAttribute("defaultMentorSlug", selectedReviewItem == null ? "" : selectedReviewItem.mentor().slug());
+        model.addAttribute("defaultMentorSlug", defaultMentorSlug);
+        model.addAttribute(
+                "defaultMentorDetailPath",
+                isBlank(defaultMentorSlug) ? "" : "/admin/mentors/review/details/" + defaultMentorSlug
+        );
         return renderPage(model, "Mentor review", "admin/mentor_review :: content");
     }
 
