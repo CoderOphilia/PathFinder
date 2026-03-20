@@ -1,4 +1,4 @@
-# PathFinder Database Schema
+# PathFinder database schema
 
 This schema is based on the current Spring Boot + Thymeleaf codebase and the implemented data flow in:
 - `/auth/*`
@@ -7,9 +7,9 @@ This schema is based on the current Spring Boot + Thymeleaf codebase and the imp
 - `/admin/*`
 - `/seeker/sessions/*` and `/mentor/requests/*`
 
-It is designed for H2 now and JPA-friendly migration to MySQL later.
+It is designed for H2 now, with a straightforward path to MySQL later.
 
-## 1. Relationship Overview
+## 1. Relationship overview
 
 ```mermaid
 erDiagram
@@ -257,7 +257,7 @@ CREATE TABLE mentor_reviews (
 );
 ```
 
-## 3. Recommended Indexes
+## 3. Recommended indexes
 
 ```sql
 CREATE INDEX idx_users_role_status ON users(role, account_status);
@@ -285,7 +285,7 @@ CREATE INDEX idx_action_items_owner_status_due
     ON session_action_items(owner_user_id, status, due_date);
 ```
 
-## 4. How Current UI Flows Map to Tables
+## 4. How current UI flows map to tables
 
 1. Auth (`/auth/login`, `/auth/signup`, `/auth/forgot`)
 - `users` stores credentials, role, and account status.
@@ -325,7 +325,7 @@ CREATE INDEX idx_action_items_owner_status_due
 11. Post-session outcomes (README scope)
 - `session_summaries`, `session_action_items`, `session_payments`.
 
-## 5. Query Patterns (H2 SQL)
+## 5. Query patterns (H2 SQL)
 
 ### Mentee mentor search with filters
 
@@ -392,7 +392,7 @@ WHERE mentor_user_id = :mentor_user_id
 ORDER BY slot_start_at;
 ```
 
-## 6. JPA Entity Set (directly implied)
+## 6. JPA entity set (directly implied)
 
 - `User`
 - `MenteeProfile`
@@ -416,4 +416,4 @@ ORDER BY slot_start_at;
 1. Store timestamps in UTC in application code; timezone string stays in profile/settings.
 2. Keep `request_code` as user-facing ID (`REQ-####`), but use numeric `id` as PK/FK.
 3. Admin review is modeled as data rows (`mentor_reviews`) instead of hardcoded lists in controller.
-4. This schema is intentionally normalized so mentor filters and queue pages stay efficient as data grows.
+4. The schema is normalized so mentor filters and queue pages remain efficient as data grows.

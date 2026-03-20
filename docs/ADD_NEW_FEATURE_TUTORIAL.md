@@ -1,4 +1,4 @@
-# PathFinder Tutorial: How to Add a New Feature
+# PathFinder tutorial: how to add a new feature
 
 This guide is for teammates who are new to Java and Spring Boot.
 It shows the same pattern already used in this project so you can add features safely.
@@ -15,7 +15,7 @@ From the current code and commit history, feature work followed this order:
    - Shared `layout.html` + navbar fragments.
 4. UI was improved in `app.css` and auth/landing templates without changing route structure.
 
-The key idea: **thin controller + Thymeleaf page + shared layout/fragments**.
+In this codebase, most features follow a simple pattern: thin controller + Thymeleaf page + shared layout/fragments.
 
 ## 2. Current pattern you should follow
 
@@ -23,11 +23,11 @@ The key idea: **thin controller + Thymeleaf page + shared layout/fragments**.
 
 Each feature has this structure:
 
-- `web` -> MVC controllers
-- `service` -> business logic (planned/optional for simple pages)
-- `repo` -> database access (planned)
-- `domain` -> entities/models (planned)
-- `dto` -> data transfer objects (planned)
+- `web`: MVC controllers
+- `service`: business logic (planned/optional for simple pages)
+- `repo`: database access (planned)
+- `domain`: entities/models (planned)
+- `dto`: data transfer objects (planned)
 
 ### View rendering pattern
 
@@ -45,7 +45,7 @@ Then `layout.html` inserts:
 - navbar fragment from `navbarType`
 - page fragment from `content`
 
-## 3. Add a simple feature: "Mentor Directory" page
+## 3. Add a simple feature: "Mentor directory" page
 
 This example adds one new route and one new page.
 
@@ -157,7 +157,7 @@ Check:
    - Cause: missing `@Controller`, wrong `@RequestMapping`, or wrong `@GetMapping`.
    - Fix: compare with `AuthController` and `LandingController`.
 
-## 6. Next level (when backend is added)
+## 6. Next step (when backend is added)
 
 After adding Spring Data JPA, each feature can follow this order:
 
@@ -167,7 +167,7 @@ After adding Spring Data JPA, each feature can follow this order:
 4. `web` controller methods
 5. Thymeleaf template updates
 
-For now, PathFinder is following a view-first approach, so building pages/routes first is the correct workflow.
+For now, PathFinder uses a view-first approach, so building pages/routes first is the right workflow.
 
 ## 7. Remaining feature roadmap
 
