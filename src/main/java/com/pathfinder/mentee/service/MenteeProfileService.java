@@ -3,12 +3,15 @@ package com.pathfinder.mentee.service;
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.repo.UserRepository;
 import com.pathfinder.auth.service.UserService;
+import com.pathfinder.mentee.domain.MenteeExperienceLevel;
 import com.pathfinder.mentee.domain.MenteeProfile;
 import com.pathfinder.mentee.dto.MenteeProfileRequest;
 import com.pathfinder.mentee.repo.MenteeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -18,32 +21,31 @@ public class MenteeProfileService {
     private final UserRepository userRepository;
     private final UserService userService;
 
-    public MenteeProfile saveMenteeProfile(String email, MenteeProfileRequest request) {
-        User user = userService.findUserByEmail(email);
+    public MenteeProfile saveMenteeProfile(Long userId,
+                                           String targetRole,
+                                           String experienceLevel,
+                                           String timeZone,
+                                           String currentGoals) {
+        ;
 
-        if (user == null) {
-            throw new IllegalArgumentException("No user exists for that email.");
-        }
 
-        if (!isMenteeRole(user.getRole())) {
-            throw new IllegalArgumentException("That account is not registered as a mentee.");
-        }
 
-        User managedUser = userRepository.getReferenceById(user.getId());
-        applyUserName(managedUser, request.getFullName());
-
-        MenteeProfile profile = menteeRepository.findById(user.getId())
+        MenteeProfile profile = menteeRepository.findById(userId)
                 .orElseGet(() -> {
                     MenteeProfile p = new MenteeProfile();
-                    p.setUser(managedUser);
+                    p.setUser(userRepository.getReferenceById(userId));
                     return p;
                 });
 
-        profile.setTargetRole(request.getTargetRole());
-        profile.setExperienceLevel(request.getExperienceLevel());
-        profile.setCurrentGoals(request.getCurrentGoals());
-        profile.setTimezone(request.getTimezone());
+        profile.setTargetRole(normalizeText(targetRole));
+        profile.setExperienceLevel(MenteeExperienceLevel.valueOf(normalizeText(experienceLevel)));
+        profile.setCurrentGoals(normalizeText(currentGoals));
+        profile.setTimezone(normalizeText(timeZone));
         return menteeRepository.save(profile);
+    }
+
+    public Optional<User> findUserbyEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     public MenteeProfile findProfileByEmail(String accountEmail) {
@@ -52,6 +54,9 @@ public class MenteeProfileService {
             return null;
         }
         return menteeRepository.findById(user.getId()).orElse(null);
+    }
+    public Optional<MenteeProfile> findProfileByUser(User user) {
+        return menteeRepository.findByUser(user);
     }
 
     public User findMenteeUserByEmail(String accountEmail) {
