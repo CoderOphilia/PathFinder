@@ -7,6 +7,8 @@ import com.pathfinder.mentee.domain.MenteeExperienceLevel;
 import com.pathfinder.mentee.domain.MenteeProfile;
 import com.pathfinder.mentee.dto.MentorDirectoryItemView;
 import com.pathfinder.mentee.repo.MenteeRepository;
+import com.pathfinder.mentor.domain.MentorProfile;
+import com.pathfinder.mentor.repo.MentorProfileRepository;
 import com.pathfinder.mentor.service.MentorProfileService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -24,6 +27,12 @@ public class MenteeProfileService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final MentorProfileService mentorProfileService;
+    private final MentorProfileRepository mentorProfileRepository;
+
+
+    private List<MentorDirectoryItemView> cachedMentors = null;
+    private long cacheTime = 0;
+    private static final long CACHE_TTL_MS = 5 * 60 * 1000;
 
 
     // saving Mentee profile
@@ -51,33 +60,76 @@ public class MenteeProfileService {
     }
 
     public List<MentorDirectoryItemView> getAllMentors() {
-        return mentorProfileService.listPublicMentors().stream()
-                .map(profile -> new MentorDirectoryItemView(
-                        profile.slug(),
-                        profile.name(),
-                        profile.rate(),
-                        profile.roleAtCompany(),
-                        profile.tagline(),
-                        profile.skills(),
-                        profile.interviewCompanies(),
-                        profile.sessionsCompleted()
-                ))
-                .sorted(Comparator.comparing(MentorDirectoryItemView::name))
-                .toList();
+        if (cachedMentors == null || System.currentTimeMillis() - cacheTime > CACHE_TTL_MS) {
+            cachedMentors = mentorProfileService.listPublicMentors().stream()
+                    .map(profile -> new MentorDirectoryItemView(
+                            profile.slug(),
+                            profile.name(),
+                            profile.rate(),
+                            profile.roleAtCompany(),
+                            profile.tagline(),
+                            profile.skills(),
+                            profile.interviewCompanies(),
+                            profile.sessionsCompleted()
+                    ))
+                    .sorted(Comparator.comparing(MentorDirectoryItemView::name))
+                    .toList();
+            cacheTime = System.currentTimeMillis();
+        }
+        return cachedMentors;
+
     }
 
-//    public  List<MenteeProfile> searchMentor(String searchTerm) {
-//        if (searchTerm == null || searchTerm.trim().isEmpty()) {
-//            return getAllMentors();
-//        }
-//        return mentorProfileRepository.
-//    }
+
+    public List<MentorDirectoryItemView> searchFilterMentors(String searchTerm,String interviewCompany) {
+
+        String query = searchTerm == null ? "" : searchTerm.trim().toLowerCase(Locale.ROOT);
+        String selectedCompany = safeTrim(interviewCompany);
+        if (query.isEmpty() && selectedCompany.isEmpty()) return getAllMentors();
+
+
+        return getAllMentors().stream()
+                .filter(mentor -> matchesQuery(mentor, query))
+                .filter(mentor -> selectedCompany.isEmpty() || mentor.interviewCompanies().stream()
+                        .anyMatch(company -> company.equalsIgnoreCase(selectedCompany)))
+                .toList();
+
+    }
+
+    public  List<String> getCompaniesList(String interviewCompany) {
+        List<MentorDirectoryItemView> mentors = getAllMentors();
+        return mentors.stream()
+                .flatMap(mentor -> mentor.interviewCompanies().stream())
+                .distinct()
+                .sorted()
+                .toList();
+
+
+    }
+
+
+
+
 
 
 
 
 
     // helper functions
+
+
+    private boolean matchesQuery(MentorDirectoryItemView mentor, String query) {
+        return containsIgnoreCase(mentor.name(), query)
+                || containsIgnoreCase(mentor.roleAtCompany(), query)
+                || containsIgnoreCase(mentor.tagline(), query)
+//                || containsIgnoreCase(mentor.industry(), query)
+                || mentor.skills().stream().anyMatch(skill -> containsIgnoreCase(skill, query))
+                || mentor.interviewCompanies().stream().anyMatch(company -> containsIgnoreCase(company, query));
+    }
+    private boolean containsIgnoreCase(String value, String query) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query);
+    }
+
     public Optional<User> findUserbyEmail(String email) {
         return userRepository.findByEmail(email);
     }
@@ -100,6 +152,10 @@ public class MenteeProfileService {
         }
         return user;
     }
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
 
     private boolean isMenteeRole(String role) {
         return "mentee".equalsIgnoreCase(role) || "seeker".equalsIgnoreCase(role);

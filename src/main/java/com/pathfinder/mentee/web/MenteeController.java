@@ -9,6 +9,7 @@ import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentee.domain.MenteeProfile;
 import com.pathfinder.mentee.dto.MentorDirectoryItemView;
 import com.pathfinder.mentee.service.MenteeProfileService;
+import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
@@ -39,62 +40,22 @@ public class MenteeController {
 
     @GetMapping("/mentors")
     public String mentors(
-//            @RequestParam(defaultValue = "") String searchTerm,
-//            @RequestParam(defaultValue = "") String industry,
-//            @RequestParam(name = "interviewCompany", defaultValue = "") String interviewCompany,
+            @RequestParam(defaultValue = "") String q,
+            @RequestParam(defaultValue = "") String industry,
+            @RequestParam(name = "interviewCompany", defaultValue = "") String interviewCompany,
             Model model
     ) {
 
-        List<MentorDirectoryItemView> filteredMentors = menteeProfileService.getAllMentors();
+        List <MentorDirectoryItemView> filteredMentors = menteeProfileService.searchFilterMentors(q,interviewCompany);
+        List<String> interviewCompanies = menteeProfileService.getCompaniesList(interviewCompany);
         model.addAttribute("size", filteredMentors.size());
-        model.addAttribute("mentors", filteredMentors);
+        model.addAttribute("filteredMentors", filteredMentors);
+        model.addAttribute("query", q);
+        model.addAttribute("interviewCompanies", interviewCompanies);
+        model.addAttribute("selectedCompany", interviewCompany);
 
         return renderPage(model, "Find mentors", "mentee/mentors :: content");
     }
-
-//    @GetMapping("/mentors")
-//    public String mentors(
-//            @RequestParam(defaultValue = "") String q,
-//            @RequestParam(defaultValue = "") String industry,
-//            @RequestParam(name = "interviewCompany", defaultValue = "") String interviewCompany,
-//            Model model
-//    ) {
-//        List<MentorCard> sampleMentors = mentorCatalog.listMentors().stream()
-//                .map(this::toMentorCard)
-//                .toList();
-//
-//        String selectedIndustry = safeTrim(industry);
-//        String selectedCompany = safeTrim(interviewCompany);
-//        String query = safeTrim(q);
-//        String normalizedQuery = query.toLowerCase(Locale.ROOT);
-//
-//        List<MentorCard> filteredMentors = sampleMentors.stream()
-//                .filter(mentor -> selectedIndustry.isEmpty() || mentor.industry().equalsIgnoreCase(selectedIndustry))
-//                .filter(mentor -> selectedCompany.isEmpty() || mentor.interviewCompanies().stream()
-//                        .anyMatch(company -> company.equalsIgnoreCase(selectedCompany)))
-//                .filter(mentor -> normalizedQuery.isEmpty() || matchesQuery(mentor, normalizedQuery))
-//                .toList();
-//
-//        List<String> industries = sampleMentors.stream()
-//                .map(MentorCard::industry)
-//                .distinct()
-//                .sorted()
-//                .toList();
-//
-//        List<String> interviewCompanies = sampleMentors.stream()
-//                .flatMap(mentor -> mentor.interviewCompanies().stream())
-//                .distinct()
-//                .sorted()
-//                .toList();
-//
-//        model.addAttribute("query", query);
-//        model.addAttribute("selectedIndustry", selectedIndustry);
-//        model.addAttribute("selectedCompany", selectedCompany);
-//        model.addAttribute("filteredMentors", filteredMentors);
-//        model.addAttribute("industries", industries);
-//        model.addAttribute("interviewCompanies", interviewCompanies);
-//        return renderPage(model, "Find mentors", "mentee/mentors :: content");
-//    }
 
     @GetMapping("/profile")
     public String profile(
