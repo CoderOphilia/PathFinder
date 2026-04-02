@@ -23,7 +23,7 @@
 				<dl class="detailList">
 					<div>
 						<dt>Request</dt>
-						<dd th:text="${sessionRequest.requestId}">REQ-0000</dd>
+						<dd th:text="${sessionRequest.id}">REQ-0000</dd>
 					</div>
 					<div>
 						<dt>Mentor</dt>
@@ -31,7 +31,7 @@
 					</div>
 					<div>
 						<dt>Slot</dt>
-						<dd th:text="${sessionRequest.slotLabel}">Monday • 6:00 PM - 6:45 PM</dd>
+						<dd th:text="${sessionRequest.slotTime}">Monday • 6:00 PM - 6:45 PM</dd>
 					</div>
 					<div>
 						<dt>Amount</dt>
@@ -44,7 +44,7 @@
 				</dl>
 			</div>
 
-			<form th:if="${!previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.requestId}/payment|}" class="profileForm">
+			<form th:if="${!previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.id}/payment|}" class="profileForm">
 				<div>
 					<label for="paymentMethod" class="label label--required">Payment method</label>
 					<select id="paymentMethod" name="paymentMethod" class="select" required>
@@ -57,17 +57,17 @@
 
 					<div class="formActions">
 						<button type="submit" class="btn btn--default">Pay now</button>
-						<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.requestId}|}">Back to request</a>
+						<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.id}|}">Back to request</a>
 					</div>
 			</form>
 
-			<form th:if="${previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.requestId}/payment/preview-complete|}" class="profileForm">
+			<form th:if="${previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.id}/payment/preview-complete|}" class="profileForm">
 				<p class="p p--sm p--muted p--tight">
 					Use this to preview the post-payment completion path without changing payment status.
 				</p>
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">View completion preview</button>
-					<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.requestId}|}">Back to request</a>
+					<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.id}|}">Back to request</a>
 				</div>
 			</form>
 		</section>

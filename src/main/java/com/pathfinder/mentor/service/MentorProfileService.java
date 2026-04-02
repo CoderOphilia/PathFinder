@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class MentorProfileService {
@@ -178,6 +179,83 @@ public class MentorProfileService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public PublicMentorProfile findPublicProfileBySlug(String mentorSlug) {
+        String normalizedSlug = normalizeSlug(mentorSlug);
+        if (normalizedSlug.isEmpty()) {
+            return null;
+        }
+
+        return userRepository.findAll().stream()
+                .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .map(user -> toPublicMentorProfile(user, mentorProfileRepository.findById(user.getId()).orElse(null)))
+                .filter(profile -> profile != null)
+                .filter(profile -> profile.slug().equals(normalizedSlug))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PublicMentorProfile> listPublicMentors() {
+        return userRepository.findAll().stream()
+                .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .map(user -> toPublicMentorProfile(user, mentorProfileRepository.findById(user.getId()).orElse(null)))
+                .filter(profile -> profile != null)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public String findMentorEmailByName(String mentorName) {
+        String normalizedName = normalizeText(mentorName);
+        if (normalizedName.isEmpty()) {
+            return "";
+        }
+
+        return userRepository.findAll().stream()
+                .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .filter(user -> buildFullName(user.getFirstName(), user.getLastName()).equalsIgnoreCase(normalizedName))
+                .map(User::getEmail)
+                .findFirst()
+                .orElse("");
+    }
+
+    @Transactional(readOnly = true)
+    public List<AvailabilityInput> findAvailabilityByMentorName(String mentorName) {
+        String mentorEmail = findMentorEmailByName(mentorName);
+        if (mentorEmail.isEmpty()) {
+            return List.of();
+        }
+        return findAvailabilityByEmail(mentorEmail);
+    }
+
+    private PublicMentorProfile toPublicMentorProfile(User user, MentorProfile profile) {
+        if (user == null || profile == null) {
+            return null;
+        }
+
+        String name = buildFullName(user.getFirstName(), user.getLastName());
+        String currentTitle = normalizeText(profile.getCurrentTitle());
+        String currentCompany = normalizeText(profile.getCurrentCompany());
+        String roleAtCompany = buildRoleAtCompany(currentTitle, currentCompany);
+        List<String> skills = mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(user.getId()).stream()
+                .map(MentorSkill::getSkillName)
+                .toList();
+        List<String> interviewCompanies = mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(user.getId()).stream()
+                .map(MentorInterviewCompany::getCompanyName)
+                .toList();
+
+        return new PublicMentorProfile(
+                normalizeSlug(name),
+                name,
+                roleAtCompany,
+                formatCad(profile.getHourlyRateCents()),
+                normalizeText(profile.getBio()),
+                skills,
+                interviewCompanies,
+                profile.getSessionsCompleted() == null ? 0 : profile.getSessionsCompleted()
+        );
+    }
+
     private void applyProfileValues(
             MentorProfile profile,
             String expertise,
@@ -208,6 +286,23 @@ public class MentorProfileService {
 
         user.setFirstName(normalized.substring(0, firstSpace));
         user.setLastName(normalized.substring(firstSpace + 1).trim());
+    }
+
+    private String buildFullName(String firstName, String lastName) {
+        return (normalizeText(firstName) + " " + normalizeText(lastName)).trim();
+    }
+
+    private String buildRoleAtCompany(String title, String company) {
+        if (title.isEmpty() && company.isEmpty()) {
+            return "";
+        }
+        if (title.isEmpty()) {
+            return company;
+        }
+        if (company.isEmpty()) {
+            return title;
+        }
+        return title + " @ " + company;
     }
 
     private void replaceSkills(MentorProfile profile, String expertise) {
@@ -283,6 +378,23 @@ public class MentorProfileService {
         }
     }
 
+    private String formatCad(Integer amountCents) {
+        if (amountCents == null) {
+            return "";
+        }
+        if (amountCents % 100 == 0) {
+            return "$" + (amountCents / 100) + "/hr";
+        }
+        return String.format(Locale.ROOT, "$%.2f/hr", amountCents / 100.0);
+    }
+
+    private String normalizeSlug(String value) {
+        return normalizeText(value)
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+    }
+
     private String normalizeText(String value) {
         if (value == null) {
             return "";
@@ -294,6 +406,18 @@ public class MentorProfileService {
             int weekday,
             String startTime,
             String endTime
+    ) {
+    }
+
+    public record PublicMentorProfile(
+            String slug,
+            String name,
+            String roleAtCompany,
+            String rate,
+            String tagline,
+            List<String> skills,
+            List<String> interviewCompanies,
+            int sessionsCompleted
     ) {
     }
 }
