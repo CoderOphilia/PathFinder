@@ -7,27 +7,28 @@ progress (session summaries + action items).
 
 - The app is usable in demo mode.
 - Most core screens and flows are in place.
+- Admin moderation flows are now wired in for mentor review, user suspension/reactivation, and session oversight.
 - Backend production work is still incomplete.
 - Use unchecked backend items as the remaining implementation scope.
 
 ## MVP feature checklist (demo experience)
 
-### Job Seeker
+### Mentee
 
 - [x] Create account (name, email, password, role)
 - [x] Sign in with email and password
 - [x] Forgot-password request flow (demo)
-- [x] Use seeker dashboard and navigation
+- [x] Use mentee dashboard and navigation
 - [x] Browse mentor directory cards
 - [x] Filter mentors by search text, industry, and interview company
 - [x] Open public mentor profile pages
 - [x] Start session request from mentor directory/profile
 - [x] Select a mentor slot and submit objective + booking notes
 - [x] View session request detail (status, payment state, timeline)
-- [x] Cancel a request as a seeker when status allows it
+- [x] Cancel a request as a mentee when status allows it
 - [x] Go to payment once a mentor approves the session
-- [ ] Save seeker profile fields and load them on future visits
-- [ ] Seeker session history page (all current + past requests)
+- [ ] Save mentee profile fields and load them on future visits
+- [ ] Mentee session history page (all current + past requests)
 - [ ] Session action-item tracking (view, mark complete, reopen)
 
 ### Mentor
@@ -53,11 +54,11 @@ progress (session summaries + action items).
 - [x] View mentor review queue table
 - [x] View mentor review detail panel
 - [x] Save admin profile form
-- [ ] Approve mentor verification
-- [ ] Reject mentor verification / request profile updates
-- [ ] Suspend user accounts
-- [ ] Reactivate suspended accounts
-- [ ] Add a real admin session oversight view with actionable controls
+- [x] Approve mentor verification
+- [x] Reject mentor verification / request profile updates
+- [x] Suspend user accounts
+- [x] Reactivate suspended accounts
+- [x] Add a real admin session oversight view with actionable controls
 
 ### Session Management
 
@@ -82,7 +83,7 @@ progress (session summaries + action items).
 - [x] Cancellation refund status handling
 - [ ] Real payment gateway integration
 - [ ] Transaction IDs + provider webhook handling
-- [ ] Transaction history page for seekers and mentors
+- [ ] Transaction history page for mentees and mentors
 - [ ] Mentor payout settlement workflow
 
 ## Backend work remaining (explicit scope)
@@ -93,7 +94,7 @@ These are the backend pieces still needed before shipping.
 
 - [x] Persist users with hashed passwords
 - [ ] Add Spring Security configuration for route-level authorization
-- [ ] Enforce role guards on all protected routes (seeker/mentor/admin)
+- [ ] Enforce role guards on all protected routes (mentee/mentor/admin)
 - [ ] Add proper logout flow with session invalidation
 - [ ] Add authorization tests for cross-role access attempts
 
@@ -102,13 +103,13 @@ These are the backend pieces still needed before shipping.
 - [x] Persist mentor profile data
 - [x] Persist mentor skills/interview-company tags
 - [x] Persist mentor weekly availability rows
-- [ ] Persist seeker profile fields (target role, goals, timezone, etc.)
+- [ ] Persist mentee profile fields (target role, goals, timezone, etc.)
 - [ ] Persist admin profile fields (team, channel, notes, etc.)
 
 ### Mentor discovery backend
 
 - [ ] Replace hardcoded mentor catalog with DB-backed mentor queries
-- [ ] Source seeker mentor filters from persisted mentor data
+- [ ] Source mentee mentor filters from persisted mentor data
 - [ ] Keep public mentor profile pages DB-backed (not static/demo data)
 
 ### Session backend (durable state)
@@ -118,14 +119,14 @@ These are the backend pieces still needed before shipping.
 - [ ] Persist mentor decisions and notes
 - [ ] Persist cancellation records and fee outcomes
 - [ ] Persist completion records and completion timestamp
-- [ ] Build seeker session-history query endpoints/services
+- [ ] Build mentee session-history query endpoints/services
 - [ ] Build mentor request-history query endpoints/services
 
 ### Session output data
 
 - [ ] Persist structured session summaries
 - [ ] Persist structured action items per session
-- [ ] Add seeker action-item status updates (open/done)
+- [ ] Add mentee action-item status updates (open/done)
 - [ ] Add mentor edit/update flow for summaries and action items
 
 ### Payments backend
@@ -134,14 +135,14 @@ These are the backend pieces still needed before shipping.
 - [ ] Persist provider transaction IDs and payment metadata
 - [ ] Add webhook handling with idempotency safeguards
 - [ ] Persist payment/refund audit trail
-- [ ] Build transaction history views for seeker and mentor
+- [ ] Build transaction history views for mentee and mentor
 - [ ] Build payout calculation + payout-status backend flow
 
 ### Admin operations backend
 
 - [ ] Persist mentor verification decisions (approve/reject/request changes)
-- [ ] Implement account suspension/reactivation backend actions
-- [ ] Build admin session oversight backend with actionable controls
+- [x] Implement account suspension/reactivation backend actions
+- [x] Build admin session oversight backend with actionable controls
 - [ ] Add admin audit trail for moderation actions
 
 ### Data and platform readiness
@@ -154,7 +155,7 @@ These are the backend pieces still needed before shipping.
 ### Recommended build order
 
 - [ ] Lock down auth and route-level authorization first
-- [ ] Persist seeker/admin profiles and replace demo mentor catalog with DB queries
+- [ ] Persist mentee/admin profiles and replace demo mentor catalog with DB queries
 - [ ] Move session lifecycle from demo store to persistent entities/services
 - [ ] Implement real payments + webhooks + transaction history
 - [ ] Complete admin operations + audit trail
@@ -216,7 +217,7 @@ Java code is organized by feature. If you are working on a feature, start in tha
 
 - `src/main/java/com/pathfinder/landing/web/` - landing page controller(s)
 - `src/main/java/com/pathfinder/auth/` - authentication and session role routing
-- `src/main/java/com/pathfinder/seeker/` - mentee pages + mentor discovery
+- `src/main/java/com/pathfinder/mentee/` - mentee pages + mentor discovery
 - `src/main/java/com/pathfinder/mentor/` - mentor profile/availability/request queue
 - `src/main/java/com/pathfinder/session/` - session request lifecycle + payment-state demo
 - `src/main/java/com/pathfinder/admin/` - admin workspace and mentor review views
@@ -232,14 +233,14 @@ Within each feature:
 Views and assets:
 
 - `src/main/resources/templates/landing/` - Thymeleaf pages for landing
-- `src/main/resources/templates/{seeker,mentor,admin}/` - role-specific pages
+- `src/main/resources/templates/{mentee,mentor,admin}/` - role-specific pages
 - `src/main/resources/templates/fragments/` - shared layout fragments
 - `src/main/resources/static/` - CSS/JS/images
 - `src/main/resources/db/migration/` - Flyway migrations (planned)
 
 ## Roles
 
-- `SEEKER`
+- `MENTEE`
 - `MENTOR`
 - `ADMIN`
 

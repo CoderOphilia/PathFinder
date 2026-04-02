@@ -43,3 +43,9 @@ nbdist/
 # Local env files
 .env
 *.local
+
+# Docs
+docs/**
+!docs/
+!docs/ADD_NEW_FEATURE_TUTORIAL.md
+!docs/database-schema.md
