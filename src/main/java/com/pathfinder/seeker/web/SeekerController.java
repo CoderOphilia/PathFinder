@@ -3,38 +3,25 @@ package com.pathfinder.seeker.web;
 import java.util.List;
 import java.util.Locale;
 
-import com.pathfinder.auth.domain.User;
-import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
 
-import com.pathfinder.seeker.domain.SeekerProfile;
-import com.pathfinder.seeker.dto.SeekerProfileRequest;
-import com.pathfinder.seeker.service.SeekerProfileService;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 @RequestMapping("/seeker")
 public class SeekerController {
 
-
-
-
-
     private static final String SEEKER_NAVBAR = "fragments/navbar_seeker :: navbar";
     private final DemoMentorCatalog mentorCatalog;
-    private final SeekerProfileService seekerProfileService;
 
-    public SeekerController(DemoMentorCatalog mentorCatalog, SeekerProfileService seekerProfileService) {
+    public SeekerController(DemoMentorCatalog mentorCatalog) {
         this.mentorCatalog = mentorCatalog;
-        this.seekerProfileService = seekerProfileService;
     }
 
     @GetMapping("/home")
@@ -42,9 +29,10 @@ public class SeekerController {
         return renderPage(model, "Mentee home", "seeker/home :: content");
     }
 
-
-
-
+    @GetMapping("/profile")
+    public String profile(Model model) {
+        return renderPage(model, "Mentee profile", "seeker/profile :: content");
+    }
 
     @GetMapping("/mentors")
     public String mentors(
@@ -90,37 +78,21 @@ public class SeekerController {
         return renderPage(model, "Find mentors", "seeker/mentors :: content");
     }
 
-
-    @GetMapping("/profile")
-    public String profile(
-            @RequestParam(defaultValue = "") String email,
-            HttpSession session,
-            Model model) {
-        String normalizedEmail = resolveCurrentMenteeEmail(session, email);
-        if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
-            model.addAttribute("email", normalizedEmail);
-        }
-        if (!normalizedEmail.isEmpty()) {
-            populateProfileForm(model, normalizedEmail);
-        }
-        return renderPage(model, "Mentee profile", "seeker/profile :: content");
-    }
-
     @PostMapping("/profile")
-    public  String saveProfile(
-            @AuthenticationPrincipal UserDetails userDetails,  // from Spring Security
-            @RequestBody @Valid SeekerProfileRequest request,
-            RedirectAttributes redirectAttributes) {
-        try {
-            seekerProfileService.saveSeekerProfile(userDetails.getUsername(), request);
-            redirectAttributes.addFlashAttribute("flashMessage", "Profile saved successfully.");
+    public String saveProfile(
+            @RequestParam(defaultValue = "") String fullName,
+            @RequestParam(defaultValue = "") String email,
+            @RequestParam(defaultValue = "") String targetRole,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (isBlank(fullName) || isBlank(email) || isBlank(targetRole)) {
+            redirectAttributes.addFlashAttribute("formError", "Name, email, and target role are required.");
             return "redirect:/seeker/profile";
-        } catch (IllegalArgumentException e) {
-            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/seeker/profile/edit";
         }
-    }
 
+        redirectAttributes.addFlashAttribute("flashMessage", "Mentee profile saved (demo mode).");
+        return "redirect:/seeker/profile";
+    }
 
     private String renderPage(Model model, String title, String content) {
         model.addAttribute("title", title);
@@ -176,70 +148,4 @@ public class SeekerController {
             List<String> interviewCompanies
     ) {
     }
-
-
-
-    private String resolveCurrentMenteeEmail(HttpSession session, String fallbackEmail) {
-        String normalizedFallback = normalizeText(fallbackEmail);
-        if (!normalizedFallback.isEmpty()) {
-            return normalizedFallback;
-        }
-        Object sessionEmail = session.getAttribute(AuthController.SESSION_USER_EMAIL);
-        Object sessionRole = session.getAttribute(AuthController.SESSION_USER_ROLE);
-        if (sessionEmail == null || sessionRole == null) {
-            return "";
-        }
-        if (!"mentee".equalsIgnoreCase(sessionRole.toString())) {
-            return "";
-        }
-        return normalizeText(sessionEmail.toString());
-    }
-
-    private String normalizeText(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.trim().replaceAll("\\s+", " ");
-    }
-
-    private void populateProfileForm(Model model, String email) {
-        User menteeUser = seekerProfileService.findMenteeUserByEmail(email);
-
-        if (menteeUser != null && !model.containsAttribute("fullName")) {
-            model.addAttribute("fullName", buildFullName(menteeUser.getFirstName(), menteeUser.getLastName()));
-        }
-
-        SeekerProfile profile = seekerProfileService.findProfileByEmail(email);
-        if (profile == null) {
-            return;
-        }
-        if(!model.containsAttribute("email"))
-        {
-            model.addAttribute("email", menteeUser.getEmail());
-
-        }
-
-        if (!model.containsAttribute("targetRole"))
-        {
-            model.addAttribute("targetRole", profile.getTargetRole());
-        }
-
-        if (!model.containsAttribute("experienceLevel")) {
-            model.addAttribute("experienceLevel",profile.getExperienceLevel());
-        }
-
-        if(!model.containsAttribute("timezone")) {
-            model.addAttribute("timezone", profile.getTimezone());
-        }
-        if(!model.containsAttribute("currentGoals")) {
-            model.addAttribute("currentGoals", profile.getCurrentGoals());
-        }
-
-    }
-    private String buildFullName(String firstName, String lastName) {
-        String combined = (normalizeText(firstName) + " " + normalizeText(lastName)).trim();
-        return combined;
-    }
-
-
 }
