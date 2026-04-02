@@ -38,9 +38,9 @@
 				<div>
 					<label for="experienceLevel" class="label">Experience level</label>
 					<select id="experienceLevel" name="experienceLevel" class="select">
+						<option value="">Select one</option>
 						<option th:each="level : ${T(com.pathfinder.mentee.domain.MenteeExperienceLevel).values()}"
-						        th:value="${level}" th:text="${level}"
-						        th:selected="${profile.experienceLevel == level}">
+						        th:value="${level}" th:text="${level}">
 
 						</option>
 					</select>
