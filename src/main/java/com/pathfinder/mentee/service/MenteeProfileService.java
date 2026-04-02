@@ -5,12 +5,15 @@ import com.pathfinder.auth.repo.UserRepository;
 import com.pathfinder.auth.service.UserService;
 import com.pathfinder.mentee.domain.MenteeExperienceLevel;
 import com.pathfinder.mentee.domain.MenteeProfile;
-import com.pathfinder.mentee.dto.MenteeProfileRequest;
+import com.pathfinder.mentee.dto.MentorDirectoryItemView;
 import com.pathfinder.mentee.repo.MenteeRepository;
+import com.pathfinder.mentor.service.MentorProfileService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -20,7 +23,10 @@ public class MenteeProfileService {
     private final MenteeRepository menteeRepository;
     private final UserRepository userRepository;
     private final UserService userService;
+    private final MentorProfileService mentorProfileService;
 
+
+    // saving Mentee profile
     public MenteeProfile saveMenteeProfile(Long userId,
                                            String targetRole,
                                            String experienceLevel,
@@ -44,6 +50,34 @@ public class MenteeProfileService {
         return menteeRepository.save(profile);
     }
 
+    public List<MentorDirectoryItemView> getAllMentors() {
+        return mentorProfileService.listPublicMentors().stream()
+                .map(profile -> new MentorDirectoryItemView(
+                        profile.slug(),
+                        profile.name(),
+                        profile.rate(),
+                        profile.roleAtCompany(),
+                        profile.tagline(),
+                        profile.skills(),
+                        profile.interviewCompanies(),
+                        profile.sessionsCompleted()
+                ))
+                .sorted(Comparator.comparing(MentorDirectoryItemView::name))
+                .toList();
+    }
+
+//    public  List<MenteeProfile> searchMentor(String searchTerm) {
+//        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+//            return getAllMentors();
+//        }
+//        return mentorProfileRepository.
+//    }
+
+
+
+
+
+    // helper functions
     public Optional<User> findUserbyEmail(String email) {
         return userRepository.findByEmail(email);
     }
@@ -71,22 +105,7 @@ public class MenteeProfileService {
         return "mentee".equalsIgnoreCase(role) || "seeker".equalsIgnoreCase(role);
     }
 
-    private void applyUserName(User user, String fullName) {
-        String normalized = normalizeText(fullName);
-        if (normalized.isEmpty()) {
-            throw new IllegalArgumentException("Name is required.");
-        }
 
-        int firstSpace = normalized.indexOf(' ');
-        if (firstSpace < 0) {
-            user.setFirstName(normalized);
-            user.setLastName("");
-            return;
-        }
-
-        user.setFirstName(normalized.substring(0, firstSpace));
-        user.setLastName(normalized.substring(firstSpace + 1).trim());
-    }
 
     private String normalizeText(String value) {
         if (value == null) {
