@@ -74,6 +74,11 @@ public class SessionService {
         return sessionRequestRepository.findByMentorEmailOrderByCreatedAtDesc(normalizeEmail(mentorEmail));
     }
 
+    @Transactional(readOnly = true)
+    public List<SessionRequest> getSessionsForMentee(String menteeEmail) {
+        return  sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(menteeEmail);
+    }
+
     public SessionRequest approveSession(Long sessionId, String mentorNote) {
         SessionRequest request = requireSession(sessionId);
         if (request.getStatus() != SessionStatus.REQUESTED) {

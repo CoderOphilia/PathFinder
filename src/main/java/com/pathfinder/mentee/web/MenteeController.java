@@ -11,6 +11,8 @@ import com.pathfinder.mentee.dto.MentorDirectoryItemView;
 import com.pathfinder.mentee.service.MenteeProfileService;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -24,16 +26,32 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequestMapping({"/seeker", "/mentee"})
 public class MenteeController {
     private static final String MENTEE_NAVBAR = "fragments/navbar_mentee :: navbar";
-    private final DemoMentorCatalog mentorCatalog;
+//    private final DemoMentorCatalog mentorCatalog;
     private final MenteeProfileService menteeProfileService;
+    private  final SessionService sessionService;
 
-    public MenteeController(DemoMentorCatalog mentorCatalog, MenteeProfileService menteeProfileService) {
-        this.mentorCatalog = mentorCatalog;
+    public MenteeController(MenteeProfileService menteeProfileService,SessionService sessionService) {
+
         this.menteeProfileService = menteeProfileService;
+        this.sessionService = sessionService;
+
     }
 
     @GetMapping("/home")
     public String home(Model model, HttpSession session) {
+        String menteeEmail = resolveCurrentMenteeEmail(session, "");
+
+
+//
+        if (!menteeEmail.isEmpty()){
+            menteeProfileService.getNextSession(menteeEmail)
+                    .ifPresent(s -> model.addAttribute("nextSession", s));
+        }
+        List<SessionRequest> menteeSessions = menteeProfileService.getMenteeSession(menteeEmail);
+        long pendingRequest = menteeProfileService.getPendingCount(menteeEmail);
+
+       model.addAttribute("pendingRequest",pendingRequest);
+       model.addAttribute("calendarDays", menteeProfileService.buildCalenderDays(menteeSessions));
 
         return renderPage(model, "Mentee home", "mentee/home :: content");
     }

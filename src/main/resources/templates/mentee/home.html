@@ -15,54 +15,32 @@
 		<section class="tile tile--span4" style="--order: 2">
 			<p class="tile__kicker">Upcoming</p>
 			<h2>Next session</h2>
-			<ul class="tile__list">
-				<li><strong>Mentor:</strong> Priya K.</li>
-				<li><strong>Focus:</strong> Mock interview</li>
-				<li><strong>Time:</strong> Wed • 5:00 PM - 5:45 PM</li>
+			<ul class="tile__list" th:if="${nextSession != null}">
+				<li><strong>Mentor:</strong> <span th:text="${nextSession.mentorName}"></span></li>
+				<li><strong>Focus:</strong> <span th:text="${nextSession.sessionType}"></span></li>
+				<li><strong>Time:</strong> <span th:text="${nextSession.slotTime}"></span></li>
+				<li><strong>Status:</strong> <span th:text="${nextSession.status}"></span></li>
 			</ul>
-			<p class="p p--sm p--muted p--tight">Watch request status and meeting details here.</p>
+			<p class="p p--muted p--tight" th:if="${nextSession == null}">No approved or paid sessions yet.</p>
+			<p class="p p--sm p--muted p--tight">Meeting link is added after approval.</p>
 		</section>
 
 		<section class="tile tile--span8" style="--order: 3">
 			<p class="tile__kicker">Calendar</p>
 			<h2>Session calendar (this week)</h2>
 			<div class="weekCalendar" aria-label="Mentee sessions this week">
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Mon</p>
+				<article class="weekCalendar__day" th:each="calendarDay : ${calendarDays}">
+					<p class="weekCalendar__dayName" th:text="${calendarDay.dayName}">Mon</p>
 					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--action">Resume follow-up action item</span></li>
+						<li th:each="event : ${calendarDay.events}">
+            <span th:classappend="${event.label() == 'No sessions'} ? 'calendarPill--muted' : 'calendarPill--action'"
+                  class="calendarPill"
+                  th:text="${event.label()}">
+            </span>
+						</li>
 					</ul>
 				</article>
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Tue</p>
-					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--free">Open slot for practice</span></li>
-					</ul>
-				</article>
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Wed</p>
-					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--approved">Mock interview with Priya</span></li>
-					</ul>
-				</article>
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Thu</p>
-					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--requested">Request sent to Alex</span></li>
-					</ul>
-				</article>
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Fri</p>
-					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--free">No session booked</span></li>
-					</ul>
-				</article>
-				<article class="weekCalendar__day">
-					<p class="weekCalendar__dayName">Sat</p>
-					<ul class="weekCalendar__events">
-						<li><span class="calendarPill calendarPill--free">Open slot 11:00 AM</span></li>
-					</ul>
-				</article>
+
 			</div>
 		</section>
 
@@ -89,8 +67,8 @@
 		<section class="tile tile--full" style="--order: 6">
 			<div class="dashboardStats" aria-label="Mentee stats">
 				<article class="statCard">
-					<h2>1</h2>
-					<p class="p p--sm p--muted p--tight">Pending request</p>
+					<h2 th:text="${pendingRequest}"></h2>
+					<p class="p p--sm p--muted p--tight" >Pending request</p>
 				</article>
 				<article class="statCard">
 					<h2>2</h2>
