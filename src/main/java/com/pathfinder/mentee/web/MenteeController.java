@@ -2,6 +2,7 @@ package com.pathfinder.mentee.web;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.web.AuthController;
@@ -89,28 +90,46 @@ public class MenteeController {
             HttpSession session,
             Model model) {
         String normalizedEmail = resolveCurrentMenteeEmail(session, email);
-        if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
-            model.addAttribute("email", normalizedEmail);
-        }
-        if (!normalizedEmail.isEmpty()) {
-            populateProfileForm(model, normalizedEmail);
-        }
+        if (email == null) return "redirect:/auth/login";
+
+        Optional<User> optionalUser = menteeProfileService.findUserbyEmail(normalizedEmail);
+        if (optionalUser.isEmpty()) return "redirect:/auth/login";
+
+        User user = optionalUser.get();
+        model.addAttribute("fullName", buildFullName(user.getFirstName(), user.getLastName()));
+        model.addAttribute("email", user.getEmail());
+
+        Optional<MenteeProfile> optionalProfile = menteeProfileService.findProfileByUser(user);
+        MenteeProfile profile = optionalProfile.orElse(new MenteeProfile());
+        model.addAttribute("profile", profile);
+
         return renderPage(model, "Mentee profile", "mentee/profile :: content");
     }
 
     @PostMapping("/profile")
     public String saveProfile(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody @Valid MenteeProfileRequest request,
+            @RequestParam String email,
+            @RequestParam(required = false) String targetRole,
+            @RequestParam(required = false) String experienceLevel,
+            @RequestParam(required = false) String timezone,
+            @RequestParam(required = false) String currentGoals,
+            HttpSession session,
             RedirectAttributes redirectAttributes) {
+
+        String normalizedEmail = resolveCurrentMenteeEmail(session, email);
+        Optional<User> optionalUser = menteeProfileService.findUserbyEmail(normalizedEmail);
+        User user = optionalUser.get();
+
+
         try {
-            menteeProfileService.saveMenteeProfile(userDetails.getUsername(), request);
-            redirectAttributes.addFlashAttribute("flashMessage", "Profile saved successfully.");
-            return "redirect:/mentee/profile";
+            menteeProfileService.saveMenteeProfile(user.getId(), targetRole,experienceLevel,timezone,currentGoals);
+
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/mentee/profile/edit";
+            return "redirect:/mentee/profile";
         }
+        redirectAttributes.addFlashAttribute("flashMessage", "Profile saved successfully.");
+        return "redirect:/mentee/profile";
     }
 
 

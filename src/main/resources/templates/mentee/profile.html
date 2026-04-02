@@ -32,29 +32,30 @@
 
 				<div>
 					<label for="targetRole" class="label label--required">Target role</label>
-					<input id="targetRole" name="targetRole" class="input" placeholder="Backend Developer" required />
+					<input id="targetRole" name="targetRole" class="input" th:value="${profile.targetRole}" placeholder="Backend Developer" required />
 				</div>
 
 				<div>
 					<label for="experienceLevel" class="label">Experience level</label>
 					<select id="experienceLevel" name="experienceLevel" class="select">
-						<option value="">Select one</option>
-						<option>Student</option>
-						<option>Entry-level</option>
-						<option>Mid-level</option>
-						<option>Career switcher</option>
+						<option th:each="level : ${T(com.pathfinder.mentee.domain.MenteeExperienceLevel).values()}"
+						        th:value="${level}" th:text="${level}"
+						        th:selected="${profile.experienceLevel == level}">
+
+						</option>
 					</select>
 				</div>
 
 				<div>
 					<label for="timezone" class="label">Timezone</label>
-					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" />
+					<input id="timezone" name="timezone" class="input"  th:value="${profile.timezone}" placeholder="America/Vancouver" />
 				</div>
 
 				<div>
 					<label for="goals" class="label">Current goals</label>
-					<textarea id="goals" name="goals" class="textarea" rows="4"></textarea>
+					<textarea id="goals" name="goals" th:value="${profile.currentGoals}" class="textarea" rows="4"></textarea>
 				</div>
+
 
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">Save profile</button>
