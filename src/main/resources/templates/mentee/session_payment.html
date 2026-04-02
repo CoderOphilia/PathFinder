@@ -44,7 +44,7 @@
 				</dl>
 			</div>
 
-			<form th:if="${!previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.id}/payment|}" class="profileForm">
+			<form th:if="${!previewMode}" method="post" th:action="@{|/mentee/sessions/${sessionRequest.id}/payment|}" class="profileForm">
 				<div>
 					<label for="paymentMethod" class="label label--required">Payment method</label>
 					<select id="paymentMethod" name="paymentMethod" class="select" required>
@@ -57,17 +57,17 @@
 
 					<div class="formActions">
 						<button type="submit" class="btn btn--default">Pay now</button>
-						<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.id}|}">Back to request</a>
+						<a class="btn btn--outline" th:href="@{|/mentee/sessions/${sessionRequest.id}|}">Back to request</a>
 					</div>
 			</form>
 
-			<form th:if="${previewMode}" method="post" th:action="@{|/seeker/sessions/${sessionRequest.id}/payment/preview-complete|}" class="profileForm">
+			<form th:if="${previewMode}" method="post" th:action="@{|/mentee/sessions/${sessionRequest.id}/payment/preview-complete|}" class="profileForm">
 				<p class="p p--sm p--muted p--tight">
 					Use this to preview the post-payment completion path without changing payment status.
 				</p>
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">View completion preview</button>
-					<a class="btn btn--outline" th:href="@{|/seeker/sessions/${sessionRequest.id}|}">Back to request</a>
+					<a class="btn btn--outline" th:href="@{|/mentee/sessions/${sessionRequest.id}|}">Back to request</a>
 				</div>
 			</form>
 		</section>

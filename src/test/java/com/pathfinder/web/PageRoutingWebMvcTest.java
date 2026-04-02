@@ -8,7 +8,7 @@ import com.pathfinder.landing.web.LandingController;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
 import com.pathfinder.mentor.web.MentorController;
 import com.pathfinder.mentor.web.MentorPublicController;
-import com.pathfinder.seeker.web.SeekerController;
+import com.pathfinder.mentee.web.MenteeController;
 import com.pathfinder.session.web.DemoSessionStore;
 import com.pathfinder.session.web.SessionController;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest({
         LandingController.class,
         AuthController.class,
-        SeekerController.class,
+        MenteeController.class,
         MentorController.class,
         MentorPublicController.class,
         AdminController.class,
@@ -58,10 +58,10 @@ class PageRoutingWebMvcTest {
         assertLayoutPage("/auth/login", "auth/login :: content", "fragments/navbar :: navbar");
         assertLayoutPage("/auth/signup", "auth/signup :: content", "fragments/navbar :: navbar");
         assertLayoutPage("/auth/forgot", "auth/forgot :: content", "fragments/navbar :: navbar");
-        assertLayoutPage("/seeker/home", "seeker/home :: content", "fragments/navbar_seeker :: navbar");
-        assertLayoutPage("/seeker/profile", "seeker/profile :: content", "fragments/navbar_seeker :: navbar");
-        assertLayoutPage("/seeker/mentors", "seeker/mentors :: content", "fragments/navbar_seeker :: navbar");
-        assertLayoutPage("/seeker/sessions/new", "seeker/session_new :: content", "fragments/navbar_seeker :: navbar");
+        assertLayoutPage("/mentee/home", "mentee/home :: content", "fragments/navbar_mentee :: navbar");
+        assertLayoutPage("/mentee/profile", "mentee/profile :: content", "fragments/navbar_mentee :: navbar");
+        assertLayoutPage("/mentee/mentors", "mentee/mentors :: content", "fragments/navbar_mentee :: navbar");
+        assertLayoutPage("/mentee/sessions/new", "mentee/session_new :: content", "fragments/navbar_mentee :: navbar");
         assertLayoutPage("/mentor/home", "mentor/home :: content", "fragments/navbar_mentor :: navbar");
         assertLayoutPage("/mentor/profile", "mentor/profile :: content", "fragments/navbar_mentor :: navbar");
         assertLayoutPage("/mentor/availability", "mentor/availability :: content", "fragments/navbar_mentor :: navbar");
@@ -77,9 +77,9 @@ class PageRoutingWebMvcTest {
         mockMvc.perform(post("/auth/login")
                         .param("username", "a@example.com")
                         .param("password", "Password123!")
-                        .param("role", "seeker"))
+                        .param("role", "mentee"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/home"))
+                .andExpect(redirectedUrl("/mentee/home"))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         mockMvc.perform(post("/auth/login")
@@ -132,7 +132,7 @@ class PageRoutingWebMvcTest {
                         .param("email", "demo@example.com")
                         .param("password", "short")
                         .param("confirmPassword", "short")
-                        .param("role", "seeker"))
+                        .param("role", "mentee"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/auth/signup"))
                 .andExpect(flash().attributeExists("formError"));
@@ -143,7 +143,7 @@ class PageRoutingWebMvcTest {
                         .param("email", "demo@example.com")
                         .param("password", "Password123!")
                         .param("confirmPassword", "Mismatch123!")
-                        .param("role", "seeker"))
+                        .param("role", "mentee"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/auth/signup"))
                 .andExpect(flash().attributeExists("formError"));
@@ -164,32 +164,32 @@ class PageRoutingWebMvcTest {
 
     @Test
     void seekerProfilePostValidatesAndRedirects() throws Exception {
-        mockMvc.perform(post("/seeker/profile")
+        mockMvc.perform(post("/mentee/profile")
                         .param("fullName", "")
                         .param("email", "")
                         .param("targetRole", ""))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/profile"))
+                .andExpect(redirectedUrl("/mentee/profile"))
                 .andExpect(flash().attributeExists("formError"));
 
-        mockMvc.perform(post("/seeker/profile")
-                        .param("fullName", "Seeker User")
-                        .param("email", "seeker@example.com")
+        mockMvc.perform(post("/mentee/profile")
+                        .param("fullName", "Mentee User")
+                        .param("email", "mentee@example.com")
                         .param("targetRole", "Backend Engineer"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/profile"))
+                .andExpect(redirectedUrl("/mentee/profile"))
                 .andExpect(flash().attributeExists("flashMessage"));
     }
 
     @Test
     void seekerMentorsPageExposesFilterModel() throws Exception {
-        mockMvc.perform(get("/seeker/mentors")
+        mockMvc.perform(get("/mentee/mentors")
                         .param("q", "java")
                         .param("industry", "Technology")
                         .param("interviewCompany", "Google"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "seeker/mentors :: content"))
+                .andExpect(model().attribute("content", "mentee/mentors :: content"))
                 .andExpect(model().attribute("query", "java"))
                 .andExpect(model().attribute("selectedIndustry", "Technology"))
                 .andExpect(model().attribute("selectedCompany", "Google"))
@@ -230,34 +230,34 @@ class PageRoutingWebMvcTest {
     @Test
     void validSessionRequestRedirectsToDetailPage() throws Exception {
         String slotId = slotIdForMentor("Priya K.", 0);
-        mockMvc.perform(post("/seeker/sessions")
+        mockMvc.perform(post("/mentee/sessions")
                         .param("mentorName", "Priya K.")
                         .param("slotId", slotId)
                         .param("sessionType", "Mock interview")
                         .param("objective", "Practice behavioral answers")
                         .param("bookingNotes", "Focus on STAR examples"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/seeker/sessions/REQ-*"))
+                .andExpect(redirectedUrlPattern("/mentee/sessions/REQ-*"))
                 .andExpect(flash().attributeExists("flashMessage"));
     }
 
     @Test
     void invalidSessionRequestRedirectsToFormWithError() throws Exception {
-        mockMvc.perform(post("/seeker/sessions")
+        mockMvc.perform(post("/mentee/sessions")
                         .param("mentorName", "Priya K.")
                         .param("slotId", "")
                         .param("sessionType", "Mock interview")
                         .param("objective", ""))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/seeker/sessions/new*"))
+                .andExpect(redirectedUrlPattern("/mentee/sessions/new*"))
                 .andExpect(flash().attributeExists("formError"));
     }
 
     @Test
     void unknownSessionRequestRedirectsToMentorList() throws Exception {
-        mockMvc.perform(get("/seeker/sessions/REQ-9999"))
+        mockMvc.perform(get("/mentee/sessions/REQ-9999"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/mentors"))
+                .andExpect(redirectedUrl("/mentee/mentors"))
                 .andExpect(flash().attributeExists("formError"));
     }
 
@@ -278,10 +278,10 @@ class PageRoutingWebMvcTest {
         String requestId = createSessionRequest("Priya K.", 0);
         approveRequest(requestId);
 
-        mockMvc.perform(get("/seeker/sessions/" + requestId + "/payment"))
+        mockMvc.perform(get("/mentee/sessions/" + requestId + "/payment"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "seeker/session_payment :: content"))
+                .andExpect(model().attribute("content", "mentee/session_payment :: content"))
                 .andExpect(model().attributeExists("sessionRequest"))
                 .andExpect(model().attributeExists("quotedAmountLabel"));
     }
@@ -290,10 +290,10 @@ class PageRoutingWebMvcTest {
     void paymentPreviewFlowRendersWithoutApproval() throws Exception {
         String requestId = createSessionRequest("Priya K.", 0);
 
-        mockMvc.perform(get("/seeker/sessions/" + requestId + "/payment").param("preview", "true"))
+        mockMvc.perform(get("/mentee/sessions/" + requestId + "/payment").param("preview", "true"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "seeker/session_payment :: content"))
+                .andExpect(model().attribute("content", "mentee/session_payment :: content"))
                 .andExpect(model().attribute("previewMode", true));
     }
 
@@ -301,9 +301,9 @@ class PageRoutingWebMvcTest {
     void paymentPreviewCompleteRedirectsWithoutMutation() throws Exception {
         String requestId = createSessionRequest("Priya K.", 0);
 
-        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment/preview-complete"))
+        mockMvc.perform(post("/mentee/sessions/" + requestId + "/payment/preview-complete"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(redirectedUrl("/mentee/sessions/" + requestId))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
@@ -315,10 +315,10 @@ class PageRoutingWebMvcTest {
     void paymentPostRequiresApprovedRequest() throws Exception {
         String requestId = createSessionRequest("Priya K.", 0);
 
-        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment")
+        mockMvc.perform(post("/mentee/sessions/" + requestId + "/payment")
                         .param("paymentMethod", "card_visa_demo"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(redirectedUrl("/mentee/sessions/" + requestId))
                 .andExpect(flash().attributeExists("formError"));
     }
 
@@ -328,10 +328,10 @@ class PageRoutingWebMvcTest {
         approveRequest(requestId);
         payRequest(requestId);
 
-        mockMvc.perform(get("/seeker/sessions/" + requestId))
+        mockMvc.perform(get("/mentee/sessions/" + requestId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "seeker/session_detail :: content"))
+                .andExpect(model().attribute("content", "mentee/session_detail :: content"))
                 .andExpect(model().attribute("statusLabel", "Approved - paid"))
                 .andExpect(model().attribute("paymentStatusLabel", "Paid"))
                 .andExpect(model().attributeExists("sessionRequest"));
@@ -342,14 +342,14 @@ class PageRoutingWebMvcTest {
         String slotId = slotIdForMentor("Priya K.", 0);
         createSessionRequest("Priya K.", 0);
 
-        mockMvc.perform(post("/seeker/sessions")
+        mockMvc.perform(post("/mentee/sessions")
                         .param("mentorName", "Priya K.")
                         .param("slotId", slotId)
                         .param("sessionType", "Mock interview")
                         .param("objective", "Second booking attempt")
                         .param("bookingNotes", "Attempt duplicate"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/seeker/sessions/new*"))
+                .andExpect(redirectedUrlPattern("/mentee/sessions/new*"))
                 .andExpect(flash().attributeExists("formError"));
     }
 
@@ -360,18 +360,18 @@ class PageRoutingWebMvcTest {
 
         demoSessionStore.advanceTime(Duration.ofHours(25));
 
-        mockMvc.perform(get("/seeker/sessions/" + requestId))
+        mockMvc.perform(get("/mentee/sessions/" + requestId))
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("statusLabel", "Expired"));
 
-        mockMvc.perform(post("/seeker/sessions")
+        mockMvc.perform(post("/mentee/sessions")
                         .param("mentorName", "Priya K.")
                         .param("slotId", slotId)
                         .param("sessionType", "System design")
                         .param("objective", "Re-book after expiry")
                         .param("bookingNotes", "Same slot reused"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/seeker/sessions/REQ-*"));
+                .andExpect(redirectedUrlPattern("/mentee/sessions/REQ-*"));
     }
 
     @Test
@@ -380,9 +380,9 @@ class PageRoutingWebMvcTest {
         approveRequest(requestId);
         payRequest(requestId);
 
-        mockMvc.perform(post("/seeker/sessions/" + requestId + "/cancel"))
+        mockMvc.perform(post("/mentee/sessions/" + requestId + "/cancel"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(redirectedUrl("/mentee/sessions/" + requestId))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
@@ -397,9 +397,9 @@ class PageRoutingWebMvcTest {
         approveRequest(requestId);
         payRequest(requestId);
 
-        mockMvc.perform(post("/seeker/sessions/" + requestId + "/cancel"))
+        mockMvc.perform(post("/mentee/sessions/" + requestId + "/cancel"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(redirectedUrl("/mentee/sessions/" + requestId))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         DemoSessionStore.SessionRequestView request = demoSessionStore.findRequest(requestId).orElseThrow();
@@ -516,14 +516,14 @@ class PageRoutingWebMvcTest {
 
     private String createSessionRequest(String mentorName, int slotIndex) throws Exception {
         String slotId = slotIdForMentor(mentorName, slotIndex);
-        MvcResult result = mockMvc.perform(post("/seeker/sessions")
+        MvcResult result = mockMvc.perform(post("/mentee/sessions")
                         .param("mentorName", mentorName)
                         .param("slotId", slotId)
                         .param("sessionType", "Mock interview")
                         .param("objective", "Practice behavioral answers")
                         .param("bookingNotes", "Please focus on leadership examples"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrlPattern("/seeker/sessions/REQ-*"))
+                .andExpect(redirectedUrlPattern("/mentee/sessions/REQ-*"))
                 .andReturn();
 
         String redirectedUrl = result.getResponse().getRedirectedUrl();
@@ -544,10 +544,10 @@ class PageRoutingWebMvcTest {
     }
 
     private void payRequest(String requestId) throws Exception {
-        mockMvc.perform(post("/seeker/sessions/" + requestId + "/payment")
+        mockMvc.perform(post("/mentee/sessions/" + requestId + "/payment")
                         .param("paymentMethod", "card_visa_demo"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/seeker/sessions/" + requestId))
+                .andExpect(redirectedUrl("/mentee/sessions/" + requestId))
                 .andExpect(flash().attributeExists("flashMessage"));
     }
 }

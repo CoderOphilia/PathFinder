@@ -17,7 +17,7 @@
 			<h2>Next session</h2>
 			<ul class="tile__list" th:if="${nextSession != null}">
 				<li><strong>Type:</strong> <span th:text="${nextSession.sessionType}">System design prep</span></li>
-				<li><strong>With:</strong> <span th:text="${nextSession.seekerEmail}">mentee@example.com</span></li>
+				<li><strong>With:</strong> <span th:text="${nextSession.menteeEmail}">mentee@example.com</span></li>
 				<li><strong>Time:</strong> <span th:text="${nextSession.slotTime}">Thu • 7:00 PM - 7:45 PM</span></li>
 			</ul>
 			<p class="p p--muted p--tight" th:if="${nextSession == null}">No approved or paid sessions yet.</p>

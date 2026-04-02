@@ -38,10 +38,10 @@ class SessionServiceTest {
     @Test
     // Creates a new session request.
     void createSession() {
-        User seeker = createUser("seeker@example.com", "seeker", "Seeker", "User");
+        User mentee = createUser("mentee@example.com", "mentee", "Mentee", "User");
         User mentor = createUser("mentor@example.com", "mentor", "Mentor", "User");
 
-        when(userService.findUserByEmail("seeker@example.com")).thenReturn(seeker);
+        when(userService.findUserByEmail("mentee@example.com")).thenReturn(mentee);
         when(userService.findUserByEmail("mentor@example.com")).thenReturn(mentor);
         when(sessionRequestRepository.existsByMentorEmailAndSlotTimeAndStatusIn(
                 eq("mentor@example.com"),
@@ -51,7 +51,7 @@ class SessionServiceTest {
         when(sessionRequestRepository.save(any(SessionRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         SessionRequest result = sessionService.createSession(
-                "seeker@example.com",
+                "mentee@example.com",
                 "mentor@example.com",
                 "Mentor User",
                 "Mon 6:00 PM",
@@ -60,7 +60,7 @@ class SessionServiceTest {
                 "Focus on confidence"
         );
 
-        assertEquals("seeker@example.com", result.getSeekerEmail());
+        assertEquals("mentee@example.com", result.getMenteeEmail());
         assertEquals("mentor@example.com", result.getMentorEmail());
         assertEquals(SessionStatus.REQUESTED, result.getStatus());
         assertFalse(result.isPaymentCompleted());
@@ -70,10 +70,10 @@ class SessionServiceTest {
     @Test
     // Rejects booking the same mentor slot twice.
     void rejectDuplicateSlot() {
-        User seeker = createUser("seeker@example.com", "seeker", "Seeker", "User");
+        User mentee = createUser("mentee@example.com", "mentee", "Mentee", "User");
         User mentor = createUser("mentor@example.com", "mentor", "Mentor", "User");
 
-        when(userService.findUserByEmail("seeker@example.com")).thenReturn(seeker);
+        when(userService.findUserByEmail("mentee@example.com")).thenReturn(mentee);
         when(userService.findUserByEmail("mentor@example.com")).thenReturn(mentor);
         when(sessionRequestRepository.existsByMentorEmailAndSlotTimeAndStatusIn(
                 eq("mentor@example.com"),
@@ -83,7 +83,7 @@ class SessionServiceTest {
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
                 sessionService.createSession(
-                        "seeker@example.com",
+                        "mentee@example.com",
                         "mentor@example.com",
                         "Mentor User",
                         "Mon 6:00 PM",

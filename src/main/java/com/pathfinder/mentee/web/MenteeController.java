@@ -1,50 +1,43 @@
-package com.pathfinder.seeker.web;
+package com.pathfinder.mentee.web;
 
 import java.util.List;
 import java.util.Locale;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.web.AuthController;
+import com.pathfinder.mentee.domain.MenteeProfile;
+import com.pathfinder.mentee.dto.MenteeProfileRequest;
+import com.pathfinder.mentee.service.MenteeProfileService;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
-
-import com.pathfinder.seeker.domain.SeekerProfile;
-import com.pathfinder.seeker.dto.SeekerProfileRequest;
-import com.pathfinder.seeker.service.SeekerProfileService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
-@RequestMapping("/seeker")
-public class SeekerController {
-
-
-
-
-
-    private static final String SEEKER_NAVBAR = "fragments/navbar_seeker :: navbar";
+@RequestMapping({"/seeker", "/mentee"})
+public class MenteeController {
+    private static final String MENTEE_NAVBAR = "fragments/navbar_mentee :: navbar";
     private final DemoMentorCatalog mentorCatalog;
-    private final SeekerProfileService seekerProfileService;
+    private final MenteeProfileService menteeProfileService;
 
-    public SeekerController(DemoMentorCatalog mentorCatalog, SeekerProfileService seekerProfileService) {
+    public MenteeController(DemoMentorCatalog mentorCatalog, MenteeProfileService menteeProfileService) {
         this.mentorCatalog = mentorCatalog;
-        this.seekerProfileService = seekerProfileService;
+        this.menteeProfileService = menteeProfileService;
     }
 
     @GetMapping("/home")
     public String home(Model model) {
-        return renderPage(model, "Mentee home", "seeker/home :: content");
+        return renderPage(model, "Mentee home", "mentee/home :: content");
     }
-
-
-
-
 
     @GetMapping("/mentors")
     public String mentors(
@@ -87,9 +80,8 @@ public class SeekerController {
         model.addAttribute("filteredMentors", filteredMentors);
         model.addAttribute("industries", industries);
         model.addAttribute("interviewCompanies", interviewCompanies);
-        return renderPage(model, "Find mentors", "seeker/mentors :: content");
+        return renderPage(model, "Find mentors", "mentee/mentors :: content");
     }
-
 
     @GetMapping("/profile")
     public String profile(
@@ -103,44 +95,28 @@ public class SeekerController {
         if (!normalizedEmail.isEmpty()) {
             populateProfileForm(model, normalizedEmail);
         }
-        return renderPage(model, "Mentee profile", "seeker/profile :: content");
+        return renderPage(model, "Mentee profile", "mentee/profile :: content");
     }
 
-//    @PostMapping("/profile")
-//    public String saveProfile(
-//            @RequestParam(defaultValue = "") String fullName,
-//            @RequestParam(defaultValue = "") String email,
-//            @RequestParam(defaultValue = "") String targetRole,
-//            RedirectAttributes redirectAttributes
-//    ) {
-//        if (isBlank(fullName) || isBlank(email) || isBlank(targetRole)) {
-//            redirectAttributes.addFlashAttribute("formError", "Name, email, and target role are required.");
-//            return "redirect:/seeker/profile";
-//        }
-//
-//        redirectAttributes.addFlashAttribute("flashMessage", "Mentee profile saved (demo mode).");
-//        return "redirect:/seeker/profile";
-//    }
-
     @PostMapping("/profile")
-    public  String saveProfile(
-            @AuthenticationPrincipal UserDetails userDetails,  // from Spring Security
-            @RequestBody @Valid SeekerProfileRequest request,
+    public String saveProfile(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestBody @Valid MenteeProfileRequest request,
             RedirectAttributes redirectAttributes) {
         try {
-            seekerProfileService.saveSeekerProfile(userDetails.getUsername(), request);
+            menteeProfileService.saveMenteeProfile(userDetails.getUsername(), request);
             redirectAttributes.addFlashAttribute("flashMessage", "Profile saved successfully.");
-            return "redirect:/seeker/profile";
+            return "redirect:/mentee/profile";
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/seeker/profile/edit";
+            return "redirect:/mentee/profile/edit";
         }
     }
 
 
     private String renderPage(Model model, String title, String content) {
         model.addAttribute("title", title);
-        model.addAttribute("navbarType", SEEKER_NAVBAR);
+        model.addAttribute("navbarType", MENTEE_NAVBAR);
         model.addAttribute("content", content);
         return "layout";
     }
@@ -205,10 +181,14 @@ public class SeekerController {
         if (sessionEmail == null || sessionRole == null) {
             return "";
         }
-        if (!"mentee".equalsIgnoreCase(sessionRole.toString())) {
+        if (!isMenteeRole(sessionRole.toString())) {
             return "";
         }
         return normalizeText(sessionEmail.toString());
+    }
+
+    private boolean isMenteeRole(String role) {
+        return "mentee".equalsIgnoreCase(role) || "seeker".equalsIgnoreCase(role);
     }
 
     private String normalizeText(String value) {
@@ -219,39 +199,36 @@ public class SeekerController {
     }
 
     private void populateProfileForm(Model model, String email) {
-        User menteeUser = seekerProfileService.findMenteeUserByEmail(email);
+        User menteeUser = menteeProfileService.findMenteeUserByEmail(email);
 
         if (menteeUser != null && !model.containsAttribute("fullName")) {
             model.addAttribute("fullName", buildFullName(menteeUser.getFirstName(), menteeUser.getLastName()));
         }
 
-        SeekerProfile profile = seekerProfileService.findProfileByEmail(email);
+        MenteeProfile profile = menteeProfileService.findProfileByEmail(email);
         if (profile == null) {
             return;
         }
-        if(!model.containsAttribute("email"))
-        {
+        if (!model.containsAttribute("email")) {
             model.addAttribute("email", menteeUser.getEmail());
-
         }
 
-        if (!model.containsAttribute("targetRole"))
-        {
+        if (!model.containsAttribute("targetRole")) {
             model.addAttribute("targetRole", profile.getTargetRole());
         }
 
         if (!model.containsAttribute("experienceLevel")) {
-            model.addAttribute("experienceLevel",profile.getExperienceLevel());
+            model.addAttribute("experienceLevel", profile.getExperienceLevel());
         }
 
-        if(!model.containsAttribute("timezone")) {
+        if (!model.containsAttribute("timezone")) {
             model.addAttribute("timezone", profile.getTimezone());
         }
-        if(!model.containsAttribute("currentGoals")) {
+        if (!model.containsAttribute("currentGoals")) {
             model.addAttribute("currentGoals", profile.getCurrentGoals());
         }
-
     }
+
     private String buildFullName(String firstName, String lastName) {
         String combined = (normalizeText(firstName) + " " + normalizeText(lastName)).trim();
         return combined;

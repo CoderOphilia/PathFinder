@@ -27,7 +27,7 @@ public class SessionService {
     }
 
     public SessionRequest createSession(
-            String seekerEmail,
+            String menteeEmail,
             String mentorEmail,
             String mentorName,
             String slotTime,
@@ -35,7 +35,7 @@ public class SessionService {
             String objective,
             String bookingNotes
     ) {
-        User seeker = requireUser(seekerEmail, "seeker");
+        User mentee = requireUser(menteeEmail, "mentee");
         User mentor = requireUser(mentorEmail, "mentor");
 
         String normalizedSlotTime = normalizeText(slotTime);
@@ -51,7 +51,7 @@ public class SessionService {
         }
 
         SessionRequest request = new SessionRequest();
-        request.setSeekerEmail(seeker.getEmail());
+        request.setMenteeEmail(mentee.getEmail());
         request.setMentorEmail(mentor.getEmail());
         request.setMentorName(normalizeText(mentorName).isEmpty() ? buildFullName(mentor) : normalizeText(mentorName));
         request.setSlotTime(normalizedSlotTime);

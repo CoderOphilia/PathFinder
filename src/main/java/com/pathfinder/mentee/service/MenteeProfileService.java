@@ -1,73 +1,69 @@
-package com.pathfinder.seeker.service;
+package com.pathfinder.mentee.service;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.repo.UserRepository;
 import com.pathfinder.auth.service.UserService;
-import com.pathfinder.mentor.domain.MentorProfile;
-import com.pathfinder.seeker.domain.SeekerProfile;
-import com.pathfinder.seeker.dto.SeekerProfileRequest;
-import com.pathfinder.seeker.repo.SeekerRepository;
-import jakarta.persistence.EntityNotFoundException;
+import com.pathfinder.mentee.domain.MenteeProfile;
+import com.pathfinder.mentee.dto.MenteeProfileRequest;
+import com.pathfinder.mentee.repo.MenteeRepository;
 import jakarta.transaction.Transactional;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class SeekerProfileService {
-    private final SeekerRepository seekerRepository;
+public class MenteeProfileService {
+    private final MenteeRepository menteeRepository;
     private final UserRepository userRepository;
     private final UserService userService;
 
-
-
-    public SeekerProfile saveSeekerProfile(String email, SeekerProfileRequest request) {
-
+    public MenteeProfile saveMenteeProfile(String email, MenteeProfileRequest request) {
         User user = userService.findUserByEmail(email);
 
-        if (user == null)
-        {
+        if (user == null) {
             throw new IllegalArgumentException("No user exists for that email.");
         }
 
-        if (!"mentee".equalsIgnoreCase(user.getRole())) {
-            throw new IllegalArgumentException("That account is not registered as a mentor.");
+        if (!isMenteeRole(user.getRole())) {
+            throw new IllegalArgumentException("That account is not registered as a mentee.");
         }
 
         User managedUser = userRepository.getReferenceById(user.getId());
-        applyUserName(user, request.getFullName());
+        applyUserName(managedUser, request.getFullName());
 
-
-        SeekerProfile profile = seekerRepository.findById(user.getId())
+        MenteeProfile profile = menteeRepository.findById(user.getId())
                 .orElseGet(() -> {
-                    SeekerProfile p = new SeekerProfile();
-                    p.setUser(user);
+                    MenteeProfile p = new MenteeProfile();
+                    p.setUser(managedUser);
                     return p;
                 });
 
         profile.setTargetRole(request.getTargetRole());
         profile.setExperienceLevel(request.getExperienceLevel());
         profile.setCurrentGoals(request.getCurrentGoals());
-        return seekerRepository.save(profile);
+        profile.setTimezone(request.getTimezone());
+        return menteeRepository.save(profile);
     }
 
-
-    public SeekerProfile findProfileByEmail(String accountEmail) {
+    public MenteeProfile findProfileByEmail(String accountEmail) {
         User user = findMenteeUserByEmail(accountEmail);
         if (user == null) {
             return null;
         }
-        return seekerRepository.findById(user.getId()).orElse(null);
+        return menteeRepository.findById(user.getId()).orElse(null);
     }
 
     public User findMenteeUserByEmail(String accountEmail) {
         User user = userService.findUserByEmail(accountEmail);
-        if (user == null || !"mentee".equalsIgnoreCase(user.getRole())) {
+        if (user == null || !isMenteeRole(user.getRole())) {
             return null;
         }
         return user;
+    }
+
+    private boolean isMenteeRole(String role) {
+        return "mentee".equalsIgnoreCase(role) || "seeker".equalsIgnoreCase(role);
     }
 
     private void applyUserName(User user, String fullName) {
@@ -93,9 +89,4 @@ public class SeekerProfileService {
         }
         return value.trim().replaceAll("\\s+", " ");
     }
-
-
-
-
-
 }

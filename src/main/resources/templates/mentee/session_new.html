@@ -32,7 +32,7 @@
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
-			<form method="get" th:action="@{/seeker/sessions/new}" class="mentorPickerForm">
+			<form method="get" th:action="@{/mentee/sessions/new}" class="mentorPickerForm">
 				<div>
 					<label for="mentorPicker" class="label label--required">Mentor</label>
 					<select id="mentorPicker" name="mentor" class="select" required>
@@ -49,7 +49,7 @@
 				<button type="submit" class="btn btn--secondary">Load availability</button>
 			</form>
 
-			<form method="post" th:action="@{/seeker/sessions}" class="profileForm">
+			<form method="post" th:action="@{/mentee/sessions}" class="profileForm">
 				<input type="hidden" name="mentorName" th:value="${selectedMentor}" />
 
 				<div>
@@ -122,7 +122,7 @@
 					>
 						Submit request
 					</button>
-					<a class="btn btn--outline" th:href="@{/seeker/mentors}">Back to mentors</a>
+					<a class="btn btn--outline" th:href="@{/mentee/mentors}">Back to mentors</a>
 				</div>
 				<p class="p p--sm p--muted p--tight">
 					Submitting reserves your selected slot for up to 24 hours while the mentor reviews your request.

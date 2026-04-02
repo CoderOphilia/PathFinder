@@ -11,7 +11,7 @@ public interface SessionRequestRepository extends JpaRepository<SessionRequest, 
 
     List<SessionRequest> findByMentorEmailOrderByCreatedAtDesc(String mentorEmail);
 
-    List<SessionRequest> findBySeekerEmailOrderByCreatedAtDesc(String seekerEmail);
+    List<SessionRequest> findByMenteeEmailOrderByCreatedAtDesc(String menteeEmail);
 
     boolean existsByMentorEmailAndSlotTimeAndStatusIn(
             String mentorEmail,

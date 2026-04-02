@@ -98,25 +98,25 @@
 				<a
 					class="btn btn--default"
 					th:if="${canPay}"
-					th:href="@{|/seeker/sessions/${sessionRequest.id}/payment|}"
+					th:href="@{|/mentee/sessions/${sessionRequest.id}/payment|}"
 				>
 					Proceed to payment
 				</a>
 				<a
 					class="btn btn--secondary"
-					th:href="@{|/seeker/sessions/${sessionRequest.id}/payment?preview=true|}"
+					th:href="@{|/mentee/sessions/${sessionRequest.id}/payment?preview=true|}"
 				>
 					View payment flow
 				</a>
 				<form
 					th:if="${canCancelAsMentee}"
 					method="post"
-					th:action="@{|/seeker/sessions/${sessionRequest.id}/cancel|}"
+					th:action="@{|/mentee/sessions/${sessionRequest.id}/cancel|}"
 				>
 					<button type="submit" class="btn btn--destructive">Cancel request</button>
 				</form>
-				<a class="btn btn--outline" th:href="@{/seeker/mentors}">Find more mentors</a>
-				<a class="btn btn--secondary" th:href="@{/seeker/home}">Back to mentee home</a>
+				<a class="btn btn--outline" th:href="@{/mentee/mentors}">Find more mentors</a>
+				<a class="btn btn--secondary" th:href="@{/mentee/home}">Back to mentee home</a>
 			</div>
 		</section>
 	</div>

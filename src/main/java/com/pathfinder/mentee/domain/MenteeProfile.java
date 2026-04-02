@@ -1,4 +1,4 @@
-package com.pathfinder.seeker.domain;
+package com.pathfinder.mentee.domain;
 
 
 import com.pathfinder.auth.domain.User;
@@ -8,11 +8,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "seek_profiles")
+@Table(name = "mentee_profiles")
 @Getter
 @Setter
 @NoArgsConstructor
-public class SeekerProfile {
+public class MenteeProfile {
 
     @Id
     @Column(name = "user_id")
@@ -28,7 +28,7 @@ public class SeekerProfile {
     private String targetRole;
 
     @Column(name = "experience_level", nullable = false)
-    private SeekerExperienceLevel experienceLevel;
+    private MenteeExperienceLevel experienceLevel;
 
     @Column(name = "timezone", nullable = false)
     private String timezone;

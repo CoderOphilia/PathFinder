@@ -19,9 +19,9 @@
     <div class="nav__links--mobile" aria-label="Primary mobile navigation">
         <a th:href="@{/}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/' ? 'active' : ''}"
            th:attr="aria-current=${currentUrl == '/'} ? 'page' : null" aria-label="Home">🏠</a>
-        <a th:href="@{/seeker/home}" class="nav__link nav__link--icon"
-           th:classappend="${#strings.startsWith(currentUrl, '/seeker') ? 'active' : ''}"
-           th:attr="aria-current=${#strings.startsWith(currentUrl, '/seeker')} ? 'page' : null"
+        <a th:href="@{/mentee/home}" class="nav__link nav__link--icon"
+           th:classappend="${#strings.startsWith(currentUrl, '/mentee') || #strings.startsWith(currentUrl, '/seeker') ? 'active' : ''}"
+           th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentee') || #strings.startsWith(currentUrl, '/seeker')} ? 'page' : null"
            aria-label="Mentee home">👤</a>
         <a th:href="@{/mentor/home}" class="nav__link nav__link--icon"
            th:classappend="${#strings.startsWith(currentUrl, '/mentor') ? 'active' : ''}"

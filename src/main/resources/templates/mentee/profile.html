@@ -19,7 +19,7 @@
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
-			<form method="post" th:action="@{/seeker/profile}" class="profileForm">
+			<form method="post" th:action="@{/mentee/profile}" class="profileForm">
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
 					<input id="fullName" name="fullName" class="input" th:value="${fullName}" required />
@@ -58,7 +58,7 @@
 
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">Save profile</button>
-					<a class="btn btn--outline" th:href="@{/seeker/home}">Back to home</a>
+					<a class="btn btn--outline" th:href="@{/mentee/home}">Back to home</a>
 				</div>
 			</form>
 		</section>

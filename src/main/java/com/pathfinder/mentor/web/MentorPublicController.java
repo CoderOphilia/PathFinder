@@ -27,7 +27,7 @@ public class MentorPublicController {
         MentorProfileService.PublicMentorProfile mentor = mentorProfileService.findPublicProfileBySlug(mentorSlug);
         if (mentor == null) {
             redirectAttributes.addFlashAttribute("formError", "Mentor profile not found.");
-            return "redirect:/seeker/mentors";
+            return "redirect:/mentee/mentors";
         }
 
         model.addAttribute("mentor", mentor);

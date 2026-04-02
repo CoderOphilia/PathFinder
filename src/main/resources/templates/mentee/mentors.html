@@ -7,7 +7,7 @@
 				Browse mentor profiles by expertise, industry, and interview experience.
 			</p>
 
-			<form method="get" th:action="@{/seeker/mentors}" class="mentorFilters" aria-label="Mentor filters">
+			<form method="get" th:action="@{/mentee/mentors}" class="mentorFilters" aria-label="Mentor filters">
 				<div>
 					<label for="mentorSearch" class="label">Search mentors</label>
 					<input
@@ -52,7 +52,7 @@
 
 				<div class="formActions">
 					<button class="btn btn--default" type="submit">Apply filters</button>
-					<a class="btn btn--outline" th:href="@{/seeker/mentors}">Clear filters</a>
+					<a class="btn btn--outline" th:href="@{/mentee/mentors}">Clear filters</a>
 				</div>
 			</form>
 
@@ -70,7 +70,7 @@
 					or clear your filters to explore all expertise areas.
 				</p>
 				<div class="formActions" style="justify-content: center;">
-					<a class="btn btn--default" th:href="@{/seeker/mentors}">Clear all filters</a>
+					<a class="btn btn--default" th:href="@{/mentee/mentors}">Clear all filters</a>
 				</div>
 			</div>
 		</section>
@@ -103,7 +103,7 @@
 				</p>
 			</a>
 			<div class="formActions">
-				<a class="btn btn--default" th:href="@{/seeker/sessions/new(mentor=${mentor.name})}">Request session</a>
+				<a class="btn btn--default" th:href="@{/mentee/sessions/new(mentor=${mentor.name})}">Request session</a>
 			</div>
 		</section>
 

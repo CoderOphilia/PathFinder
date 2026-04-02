@@ -25,7 +25,7 @@ public class SessionRequest {
     private Long id;
 
     @Column(nullable = false)
-    private String seekerEmail;
+    private String menteeEmail;
 
     @Column(nullable = false)
     private String mentorEmail;

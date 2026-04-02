@@ -128,13 +128,13 @@ public class AuthController {
 
     private String homePathForRole(String role) {
         String normalizedRole = role == null ? "" : role.trim().toLowerCase();
-        if ("mentee".equals(normalizedRole)) {
-            return "/seeker/home";
+        if ("mentee".equals(normalizedRole) || "seeker".equals(normalizedRole)) {
+            return "/mentee/home";
         }
         return switch (normalizedRole) {
             case "mentor" -> "/mentor/home";
             case "admin" -> "/admin/home";
-            default -> "/seeker/home";
+            default -> "/mentee/home";
         };
     }
 

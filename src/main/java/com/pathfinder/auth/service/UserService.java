@@ -49,12 +49,13 @@ public class UserService {
 
     private String normalizeRole(String role) {
         if (role == null) {
-            return "seeker";
+            return "mentee";
         }
         String normalizedRole = role.trim().toLowerCase();
         return switch (normalizedRole) {
+            case "seeker", "mentee" -> "mentee";
             case "mentor", "admin" -> normalizedRole;
-            default -> "seeker";
+            default -> "mentee";
         };
     }
 }

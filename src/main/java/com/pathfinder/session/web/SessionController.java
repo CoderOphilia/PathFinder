@@ -22,7 +22,7 @@ import java.util.Locale;
 @Controller
 public class SessionController {
 
-    private static final String SEEKER_NAVBAR = "fragments/navbar_seeker :: navbar";
+    private static final String MENTEE_NAVBAR = "fragments/navbar_mentee :: navbar";
     private static final String MENTOR_NAVBAR = "fragments/navbar_mentor :: navbar";
     private static final DateTimeFormatter CREATED_AT_FORMATTER =
             DateTimeFormatter.ofPattern("EEE, MMM d • h:mm a", Locale.ENGLISH);
@@ -41,7 +41,7 @@ public class SessionController {
         this.sessionService = sessionService;
     }
 
-    @GetMapping("/seeker/sessions/new")
+    @GetMapping({"/seeker/sessions/new", "/mentee/sessions/new"})
     public String newSessionRequest(
             @RequestParam(defaultValue = "") String mentor,
             Model model
@@ -76,10 +76,10 @@ public class SessionController {
 
         model.addAttribute("selectedQuoteLabel", "");
         model.addAttribute("selectedPricingLabel", selectedMentorInfo == null ? "" : "Mentor profile pricing");
-        return renderSeekerPage(model, "Request session", "seeker/session_new :: content");
+        return renderMenteePage(model, "Request session", "mentee/session_new :: content");
     }
 
-    @PostMapping("/seeker/sessions")
+    @PostMapping({"/seeker/sessions", "/mentee/sessions"})
     public String createSessionRequest(
             @RequestParam(defaultValue = "") String mentorName,
             @RequestParam(defaultValue = "") String slotId,
@@ -89,11 +89,11 @@ public class SessionController {
             HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
-        String seekerEmail = currentSessionEmail(session);
-        if (isBlank(seekerEmail)) {
+        String menteeEmail = currentSessionEmail(session);
+        if (isBlank(menteeEmail)) {
             return redirectToSessionFormWithError(
                     redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
-                    "Sign in as a seeker before requesting a session."
+                    "Sign in as a mentee before requesting a session."
             );
         }
 
@@ -111,7 +111,7 @@ public class SessionController {
         try {
             String mentorEmail = mentorProfileService.findMentorEmailByName(mentorName);
             SessionRequest request = sessionService.createSession(
-                    seekerEmail,
+                    menteeEmail,
                     mentorEmail,
                     mentorName,
                     slot.displayLabel(),
@@ -120,7 +120,7 @@ public class SessionController {
                     bookingNotes
             );
             redirectAttributes.addFlashAttribute("flashMessage", "Session request submitted successfully.");
-            return "redirect:/seeker/sessions/" + request.getId();
+            return "redirect:/mentee/sessions/" + request.getId();
         } catch (IllegalArgumentException exception) {
             return redirectToSessionFormWithError(
                     redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
@@ -129,7 +129,7 @@ public class SessionController {
         }
     }
 
-    @GetMapping("/seeker/sessions/{requestId}")
+    @GetMapping({"/seeker/sessions/{requestId}", "/mentee/sessions/{requestId}"})
     public String sessionRequestDetail(
             @PathVariable Long requestId,
             Model model,
@@ -138,7 +138,7 @@ public class SessionController {
         SessionRequest request = sessionService.getSessionById(requestId);
         if (request == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
-            return "redirect:/seeker/mentors";
+            return "redirect:/mentee/mentors";
         }
 
         model.addAttribute("sessionRequest", request);
@@ -153,10 +153,10 @@ public class SessionController {
         model.addAttribute("canPay", request.getStatus() == SessionStatus.APPROVED);
         model.addAttribute("canCancelAsMentee", canCancelAsMentee(request.getStatus()));
         model.addAttribute("cancellationLabel", "");
-        return renderSeekerPage(model, "Session request details", "seeker/session_detail :: content");
+        return renderMenteePage(model, "Session request details", "mentee/session_detail :: content");
     }
 
-    @GetMapping("/seeker/sessions/{requestId}/payment")
+    @GetMapping({"/seeker/sessions/{requestId}/payment", "/mentee/sessions/{requestId}/payment"})
     public String paymentPage(
             @PathVariable Long requestId,
             @RequestParam(defaultValue = "false") boolean preview,
@@ -166,12 +166,12 @@ public class SessionController {
         SessionRequest request = sessionService.getSessionById(requestId);
         if (request == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
-            return "redirect:/seeker/mentors";
+            return "redirect:/mentee/mentors";
         }
 
         if (request.getStatus() != SessionStatus.APPROVED && !preview) {
             redirectAttributes.addFlashAttribute("formError", "Payment is available only after mentor approval.");
-            return "redirect:/seeker/sessions/" + requestId;
+            return "redirect:/mentee/sessions/" + requestId;
         }
 
         if (!model.containsAttribute("paymentMethod")) {
@@ -181,19 +181,19 @@ public class SessionController {
         model.addAttribute("sessionRequest", request);
         model.addAttribute("quotedAmountLabel", "Estimated payment");
         model.addAttribute("paymentDueLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
-        return renderSeekerPage(model, "Session payment", "seeker/session_payment :: content");
+        return renderMenteePage(model, "Session payment", "mentee/session_payment :: content");
     }
 
-    @PostMapping("/seeker/sessions/{requestId}/payment")
+    @PostMapping({"/seeker/sessions/{requestId}/payment", "/mentee/sessions/{requestId}/payment"})
     public String submitPayment(
             @PathVariable Long requestId,
             @RequestParam(defaultValue = "") String paymentMethod,
-            RedirectAttributes redirectAttributes
+        RedirectAttributes redirectAttributes
     ) {
         if (isBlank(paymentMethod)) {
             redirectAttributes.addFlashAttribute("formError", "Choose a payment method.");
             redirectAttributes.addFlashAttribute("paymentMethod", paymentMethod);
-            return "redirect:/seeker/sessions/" + requestId + "/payment";
+            return "redirect:/mentee/sessions/" + requestId + "/payment";
         }
 
         try {
@@ -202,23 +202,23 @@ public class SessionController {
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-        return "redirect:/seeker/sessions/" + requestId;
+        return "redirect:/mentee/sessions/" + requestId;
     }
 
-    @PostMapping("/seeker/sessions/{requestId}/payment/preview-complete")
+    @PostMapping({"/seeker/sessions/{requestId}/payment/preview-complete", "/mentee/sessions/{requestId}/payment/preview-complete"})
     public String previewPaymentCompletion(
             @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
         if (sessionService.getSessionById(requestId) == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
-            return "redirect:/seeker/mentors";
+            return "redirect:/mentee/mentors";
         }
         redirectAttributes.addFlashAttribute("flashMessage", "Payment completion flow previewed (no changes made).");
-        return "redirect:/seeker/sessions/" + requestId;
+        return "redirect:/mentee/sessions/" + requestId;
     }
 
-    @PostMapping("/seeker/sessions/{requestId}/cancel")
+    @PostMapping({"/seeker/sessions/{requestId}/cancel", "/mentee/sessions/{requestId}/cancel"})
     public String cancelAsMentee(
             @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
@@ -229,7 +229,7 @@ public class SessionController {
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-        return "redirect:/seeker/sessions/" + requestId;
+        return "redirect:/mentee/sessions/" + requestId;
     }
 
     @GetMapping("/mentor/requests")
@@ -323,7 +323,7 @@ public class SessionController {
         if (!isBlank(mentorName)) {
             redirectAttributes.addAttribute("mentor", mentorName);
         }
-        return "redirect:/seeker/sessions/new";
+        return "redirect:/mentee/sessions/new";
     }
 
     private String resolveMentorName(String mentorName, List<MentorDirectoryItemView> mentors) {
@@ -423,9 +423,9 @@ public class SessionController {
         return paymentCompleted ? "statusBadge statusBadge--approved" : "statusBadge statusBadge--neutral";
     }
 
-    private String renderSeekerPage(Model model, String title, String content) {
+    private String renderMenteePage(Model model, String title, String content) {
         model.addAttribute("title", title);
-        model.addAttribute("navbarType", SEEKER_NAVBAR);
+        model.addAttribute("navbarType", MENTEE_NAVBAR);
         model.addAttribute("content", content);
         return "layout";
     }

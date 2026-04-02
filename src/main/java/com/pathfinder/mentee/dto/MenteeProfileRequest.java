@@ -1,11 +1,11 @@
-package com.pathfinder.seeker.dto;
+package com.pathfinder.mentee.dto;
 
 
-import com.pathfinder.seeker.domain.SeekerExperienceLevel;
+import com.pathfinder.mentee.domain.MenteeExperienceLevel;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public class SeekerProfileRequest {
+public class MenteeProfileRequest {
 
     @NotBlank
     private String fullName;         // → split into user.firstName / lastName
@@ -17,7 +17,7 @@ public class SeekerProfileRequest {
     @NotBlank
     private String targetRole;
 
-    private SeekerExperienceLevel experienceLevel;
+    private MenteeExperienceLevel experienceLevel;
 
     private String timezone;
 
@@ -47,11 +47,11 @@ public class SeekerProfileRequest {
         this.targetRole = targetRole;
     }
 
-    public SeekerExperienceLevel getExperienceLevel() {
+    public MenteeExperienceLevel getExperienceLevel() {
         return experienceLevel;
     }
 
-    public void setExperienceLevel(SeekerExperienceLevel experienceLevel) {
+    public void setExperienceLevel(MenteeExperienceLevel experienceLevel) {
         this.experienceLevel = experienceLevel;
     }
 

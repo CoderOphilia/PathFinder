@@ -1,0 +1,22 @@
+<nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
+	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">
+		<span>📍</span> PathFinder
+	</a>
+
+	<div class="nav__links" aria-label="Mentee navigation">
+		<a th:href="@{/mentee/home}" class="nav__link" th:classappend="${currentUrl == '/mentee/home' || currentUrl == '/seeker/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/home' || currentUrl == '/seeker/home'} ? 'page' : null">Home</a>
+		<a th:href="@{/mentee/profile}" class="nav__link" th:classappend="${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile'} ? 'page' : null">Profile</a>
+		<a th:href="@{/mentee/mentors}" class="nav__link" th:classappend="${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors'} ? 'page' : null">Find mentors</a>
+		<a th:href="@{/mentee/sessions/new}" class="nav__link" th:classappend="${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions')} ? 'page' : null">Sessions</a>
+		<a th:href="@{/}" class="nav__link">Public site</a>
+		<a th:href="@{/auth/login}" class="nav__link">Sign out</a>
+	</div>
+
+	<!-- Mobile Nav (Fixed Bottom) -->
+	<div class="nav__links--mobile" aria-label="Mentee mobile navigation">
+		<a th:href="@{/mentee/home}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentee/home' || currentUrl == '/seeker/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/home' || currentUrl == '/seeker/home'} ? 'page' : null" aria-label="Home">🏠</a>
+		<a th:href="@{/mentee/sessions/new}" class="nav__link nav__link--icon" th:classappend="${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions')} ? 'page' : null" aria-label="Sessions">📅</a>
+		<a th:href="@{/mentee/mentors}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors'} ? 'page' : null" aria-label="Find mentors">🔍</a>
+		<a th:href="@{/mentee/profile}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile'} ? 'page' : null" aria-label="Profile">👤</a>
+	</div>
+</nav>
