@@ -3,6 +3,8 @@ package com.pathfinder.mentor.domain;
 import com.pathfinder.auth.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -45,8 +47,12 @@ public class MentorProfile {
     @Column(columnDefinition = "TEXT")
     private String bio;
 
-    @Column(name = "is_verified", nullable = false)
-    private Boolean isVerified;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "verification_status", nullable = false, length = 20)
+    private VerificationStatus verificationStatus;
+
+    @Column(name = "admin_note", columnDefinition = "TEXT")
+    private String adminNote;
 
     @Column(name = "sessions_completed", nullable = false)
     private Integer sessionsCompleted;
@@ -56,8 +62,11 @@ public class MentorProfile {
         if (hourlyRateCents == null) {
             hourlyRateCents = 0;
         }
-        if (isVerified == null) {
-            isVerified = false;
+        if (verificationStatus == null) {
+            verificationStatus = VerificationStatus.PENDING;
+        }
+        if (adminNote == null) {
+            adminNote = "";
         }
         if (sessionsCompleted == null) {
             sessionsCompleted = 0;

@@ -9,6 +9,7 @@ import com.pathfinder.mentor.domain.MentorInterviewCompanyId;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.domain.MentorSkill;
 import com.pathfinder.mentor.domain.MentorSkillId;
+import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.repo.MentorAvailabilityRepository;
 import com.pathfinder.mentor.repo.MentorInterviewCompanyRepository;
 import com.pathfinder.mentor.repo.MentorProfileRepository;
@@ -78,6 +79,8 @@ public class MentorProfileService {
             MentorProfile newProfile = new MentorProfile();
             newProfile.setUserId(managedUser.getId());
             newProfile.setUser(managedUser);
+            newProfile.setVerificationStatus(VerificationStatus.PENDING);
+            newProfile.setAdminNote("");
             applyProfileValues(newProfile, expertise, hourlyRateCad, currentTitle, currentCompany, bio);
             entityManager.persist(newProfile);
             replaceSkills(newProfile, expertise);
