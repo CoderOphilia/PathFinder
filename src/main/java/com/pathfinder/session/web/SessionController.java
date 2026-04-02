@@ -1,9 +1,10 @@
 package com.pathfinder.session.web;
 
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
-
+import com.pathfinder.auth.web.AuthController;
+import com.pathfinder.mentor.service.MentorProfileService;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.domain.SessionStatus;
+import com.pathfinder.session.service.SessionService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,14 +13,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.servlet.http.HttpSession;
+import java.util.Comparator;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+
 @Controller
 public class SessionController {
 
     private static final String SEEKER_NAVBAR = "fragments/navbar_seeker :: navbar";
     private static final String MENTOR_NAVBAR = "fragments/navbar_mentor :: navbar";
-    private static final DateTimeFormatter SUBMITTED_AT_FORMATTER =
-            DateTimeFormatter.ofPattern("EEE, MMM d • h:mm a", Locale.ENGLISH);
-    private static final DateTimeFormatter PAYMENT_DUE_FORMATTER =
+    private static final DateTimeFormatter CREATED_AT_FORMATTER =
             DateTimeFormatter.ofPattern("EEE, MMM d • h:mm a", Locale.ENGLISH);
     private static final List<String> SESSION_TYPES = List.of(
             "Mock interview",
@@ -28,10 +33,12 @@ public class SessionController {
             "Career strategy"
     );
 
-    private final DemoSessionStore sessionStore;
+    private final MentorProfileService mentorProfileService;
+    private final SessionService sessionService;
 
-    public SessionController(DemoSessionStore sessionStore) {
-        this.sessionStore = sessionStore;
+    public SessionController(MentorProfileService mentorProfileService, SessionService sessionService) {
+        this.mentorProfileService = mentorProfileService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/seeker/sessions/new")
@@ -39,27 +46,23 @@ public class SessionController {
             @RequestParam(defaultValue = "") String mentor,
             Model model
     ) {
-        List<DemoSessionStore.MentorDirectoryItemView> mentors = sessionStore.getMentors();
-        String requestedMentor = firstNonBlank((String) model.asMap().get("selectedMentor"), mentor);
-        String selectedMentor = resolveMentorName(requestedMentor, mentors);
-        DemoSessionStore.MentorDirectoryItemView selectedMentorInfo = sessionStore.getMentorByName(selectedMentor).orElse(null);
-        List<DemoSessionStore.AvailabilitySlotView> availableSlots = sessionStore.getAvailabilityForMentor(selectedMentor);
+        List<MentorDirectoryItemView> mentors = mentorProfileService.listPublicMentors().stream()
+                .map(profile -> new MentorDirectoryItemView(profile.name(), profile.rate(), profile.tagline()))
+                .sorted(Comparator.comparing(MentorDirectoryItemView::name))
+                .toList();
+        String selectedMentor = resolveMentorName(mentor, mentors);
+        MentorDirectoryItemView selectedMentorInfo = mentors.stream()
+                .filter(item -> item.name().equalsIgnoreCase(selectedMentor))
+                .findFirst()
+                .orElse(null);
+        List<AvailabilitySlotView> availableSlots = buildAvailabilitySlots(selectedMentor);
 
         model.addAttribute("mentors", mentors);
         model.addAttribute("selectedMentor", selectedMentor);
         model.addAttribute("selectedMentorInfo", selectedMentorInfo);
         model.addAttribute("availableSlots", availableSlots);
         model.addAttribute("sessionTypes", SESSION_TYPES);
-
-        String selectedSlotId = firstNonBlank((String) model.asMap().get("selectedSlotId"), "");
-        if (isBlank(selectedSlotId) && !availableSlots.isEmpty()) {
-            selectedSlotId = availableSlots.getFirst().slotId();
-        }
-        String selectedSlotIdSnapshot = selectedSlotId;
-        if (!availableSlots.stream().anyMatch(slot -> slot.slotId().equalsIgnoreCase(selectedSlotIdSnapshot))) {
-            selectedSlotId = availableSlots.isEmpty() ? "" : availableSlots.getFirst().slotId();
-        }
-        model.addAttribute("selectedSlotId", selectedSlotId);
+        model.addAttribute("selectedSlotId", availableSlots.isEmpty() ? "" : availableSlots.getFirst().slotId());
 
         if (!model.containsAttribute("selectedSessionType")) {
             model.addAttribute("selectedSessionType", SESSION_TYPES.getFirst());
@@ -71,9 +74,8 @@ public class SessionController {
             model.addAttribute("bookingNotes", "");
         }
 
-        model.addAttribute("selectedQuoteLabel", quotePreviewLabel(selectedMentorInfo, selectedSlotId));
-        model.addAttribute("selectedPricingLabel", pricingModelLabel(selectedMentorInfo));
-
+        model.addAttribute("selectedQuoteLabel", "");
+        model.addAttribute("selectedPricingLabel", selectedMentorInfo == null ? "" : "Mentor profile pricing");
         return renderSeekerPage(model, "Request session", "seeker/session_new :: content");
     }
 
@@ -84,139 +86,92 @@ public class SessionController {
             @RequestParam(defaultValue = "") String sessionType,
             @RequestParam(defaultValue = "") String objective,
             @RequestParam(defaultValue = "") String bookingNotes,
+            HttpSession session,
             RedirectAttributes redirectAttributes
     ) {
-        String normalizedMentor = safeTrim(mentorName);
-        String normalizedSlotId = safeTrim(slotId);
-        String normalizedSessionType = safeTrim(sessionType);
-        String normalizedObjective = safeTrim(objective);
-        String normalizedNotes = safeTrim(bookingNotes);
-
-        if (isBlank(normalizedMentor) || isBlank(normalizedSlotId) || isBlank(normalizedSessionType) || isBlank(normalizedObjective)) {
+        String seekerEmail = currentSessionEmail(session);
+        if (isBlank(seekerEmail)) {
             return redirectToSessionFormWithError(
-                    redirectAttributes,
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes,
-                    "Mentor, availability slot, session type, and objective are required."
+                    redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
+                    "Sign in as a seeker before requesting a session."
             );
         }
 
-        if (sessionStore.getMentorByName(normalizedMentor).isEmpty()) {
+        AvailabilitySlotView slot = buildAvailabilitySlots(mentorName).stream()
+                .filter(item -> item.slotId().equalsIgnoreCase(slotId))
+                .findFirst()
+                .orElse(null);
+        if (slot == null) {
             return redirectToSessionFormWithError(
-                    redirectAttributes,
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes,
-                    "Select a valid mentor."
+                    redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
+                    "Select a valid mentor slot."
             );
         }
 
-        if (!sessionStore.isSlotValidForMentor(normalizedMentor, normalizedSlotId)) {
-            return redirectToSessionFormWithError(
-                    redirectAttributes,
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes,
-                    "Select a valid availability slot for this mentor."
-            );
-        }
-
-        if (!sessionStore.isSlotAvailableForMentor(normalizedMentor, normalizedSlotId)) {
-            return redirectToSessionFormWithError(
-                    redirectAttributes,
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes,
-                    "That slot was just reserved. Choose another available time."
-            );
-        }
-
-        DemoSessionStore.SessionRequestView request;
         try {
-            request = sessionStore.createRequest(
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes
+            String mentorEmail = mentorProfileService.findMentorEmailByName(mentorName);
+            SessionRequest request = sessionService.createSession(
+                    seekerEmail,
+                    mentorEmail,
+                    mentorName,
+                    slot.displayLabel(),
+                    sessionType,
+                    objective,
+                    bookingNotes
             );
-        } catch (IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("flashMessage", "Session request submitted successfully.");
+            return "redirect:/seeker/sessions/" + request.getId();
+        } catch (IllegalArgumentException exception) {
             return redirectToSessionFormWithError(
-                    redirectAttributes,
-                    normalizedMentor,
-                    normalizedSlotId,
-                    normalizedSessionType,
-                    normalizedObjective,
-                    normalizedNotes,
-                    "That slot is no longer available."
+                    redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
+                    exception.getMessage()
             );
         }
-
-        redirectAttributes.addFlashAttribute(
-                "flashMessage",
-                "Session request submitted and slot reserved for 24 hours."
-        );
-        return "redirect:/seeker/sessions/" + request.requestId();
     }
 
     @GetMapping("/seeker/sessions/{requestId}")
     public String sessionRequestDetail(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.findRequest(requestId).orElse(null);
+        SessionRequest request = sessionService.getSessionById(requestId);
         if (request == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
             return "redirect:/seeker/mentors";
         }
 
         model.addAttribute("sessionRequest", request);
-        model.addAttribute("submittedAtLabel", request.submittedAt().format(SUBMITTED_AT_FORMATTER));
-        model.addAttribute("statusLabel", toStatusLabel(request.status()));
-        model.addAttribute("statusClass", toStatusClass(request.status()));
-        model.addAttribute("paymentStatusLabel", toPaymentStatusLabel(request.paymentStatus()));
-        model.addAttribute("paymentStatusClass", toPaymentStatusClass(request.paymentStatus()));
-        model.addAttribute("quotedAmountLabel", sessionStore.formatAmount(request.quotedAmountCents()));
-        model.addAttribute("pricingModelLabel", request.pricingModelSnapshot() == DemoSessionStore.PricingModel.HOURLY ? "Hourly" : "Flat");
-        model.addAttribute("paymentDueLabel", request.paymentDueAt() == null ? "" : request.paymentDueAt().format(PAYMENT_DUE_FORMATTER));
-        model.addAttribute("canPay", request.status() == DemoSessionStore.SessionStatus.APPROVED_PENDING_PAYMENT);
-        model.addAttribute("canCancelAsMentee", canCancelAsMentee(request.status()));
-        model.addAttribute("cancellationLabel", cancellationLabel(request));
+        model.addAttribute("submittedAtLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
+        model.addAttribute("statusLabel", toStatusLabel(request.getStatus()));
+        model.addAttribute("statusClass", toStatusClass(request.getStatus()));
+        model.addAttribute("paymentStatusLabel", toPaymentStatusLabel(request.isPaymentCompleted()));
+        model.addAttribute("paymentStatusClass", toPaymentStatusClass(request.isPaymentCompleted()));
+        model.addAttribute("quotedAmountLabel", "Estimated payment");
+        model.addAttribute("pricingModelLabel", "Mentor pricing");
+        model.addAttribute("paymentDueLabel", "");
+        model.addAttribute("canPay", request.getStatus() == SessionStatus.APPROVED);
+        model.addAttribute("canCancelAsMentee", canCancelAsMentee(request.getStatus()));
+        model.addAttribute("cancellationLabel", "");
         return renderSeekerPage(model, "Session request details", "seeker/session_detail :: content");
     }
 
     @GetMapping("/seeker/sessions/{requestId}/payment")
     public String paymentPage(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             @RequestParam(defaultValue = "false") boolean preview,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.findRequest(requestId).orElse(null);
+        SessionRequest request = sessionService.getSessionById(requestId);
         if (request == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
             return "redirect:/seeker/mentors";
         }
 
-        boolean payable = request.status() == DemoSessionStore.SessionStatus.APPROVED_PENDING_PAYMENT;
-        if (request.status() == DemoSessionStore.SessionStatus.APPROVED_PAID && !preview) {
-            redirectAttributes.addFlashAttribute("flashMessage", "This session has already been paid.");
-            return "redirect:/seeker/sessions/" + request.requestId();
-        }
-
-        if (!payable && !preview) {
+        if (request.getStatus() != SessionStatus.APPROVED && !preview) {
             redirectAttributes.addFlashAttribute("formError", "Payment is available only after mentor approval.");
-            return "redirect:/seeker/sessions/" + request.requestId();
+            return "redirect:/seeker/sessions/" + requestId;
         }
 
         if (!model.containsAttribute("paymentMethod")) {
@@ -224,76 +179,75 @@ public class SessionController {
         }
         model.addAttribute("previewMode", preview);
         model.addAttribute("sessionRequest", request);
-        model.addAttribute("quotedAmountLabel", sessionStore.formatAmount(request.quotedAmountCents()));
-        model.addAttribute(
-                "paymentDueLabel",
-                request.paymentDueAt() == null ? request.slotStartAt().format(PAYMENT_DUE_FORMATTER) : request.paymentDueAt().format(PAYMENT_DUE_FORMATTER)
-        );
+        model.addAttribute("quotedAmountLabel", "Estimated payment");
+        model.addAttribute("paymentDueLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
         return renderSeekerPage(model, "Session payment", "seeker/session_payment :: content");
     }
 
     @PostMapping("/seeker/sessions/{requestId}/payment")
     public String submitPayment(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             @RequestParam(defaultValue = "") String paymentMethod,
             RedirectAttributes redirectAttributes
     ) {
-        String normalizedPaymentMethod = safeTrim(paymentMethod);
-        if (isBlank(normalizedPaymentMethod)) {
+        if (isBlank(paymentMethod)) {
             redirectAttributes.addFlashAttribute("formError", "Choose a payment method.");
-            redirectAttributes.addFlashAttribute("paymentMethod", normalizedPaymentMethod);
+            redirectAttributes.addFlashAttribute("paymentMethod", paymentMethod);
             return "redirect:/seeker/sessions/" + requestId + "/payment";
         }
 
-        DemoSessionStore.SessionRequestView request = sessionStore.markPaymentPaid(requestId, normalizedPaymentMethod).orElse(null);
-        if (request == null) {
-            redirectAttributes.addFlashAttribute("formError", "Unable to process payment for this request.");
-            return "redirect:/seeker/sessions/" + requestId;
+        try {
+            sessionService.paySession(requestId);
+            redirectAttributes.addFlashAttribute("flashMessage", "Payment recorded successfully.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-
-        redirectAttributes.addFlashAttribute("flashMessage", "Payment recorded successfully (demo mode).");
-        return "redirect:/seeker/sessions/" + request.requestId();
+        return "redirect:/seeker/sessions/" + requestId;
     }
 
     @PostMapping("/seeker/sessions/{requestId}/payment/preview-complete")
     public String previewPaymentCompletion(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
-        if (sessionStore.findRequest(requestId).isEmpty()) {
+        if (sessionService.getSessionById(requestId) == null) {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
             return "redirect:/seeker/mentors";
         }
-
         redirectAttributes.addFlashAttribute("flashMessage", "Payment completion flow previewed (no changes made).");
         return "redirect:/seeker/sessions/" + requestId;
     }
 
     @PostMapping("/seeker/sessions/{requestId}/cancel")
     public String cancelAsMentee(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.cancelRequest(requestId, DemoSessionStore.CancellationActor.MENTEE).orElse(null);
-        if (request == null) {
-            redirectAttributes.addFlashAttribute("formError", "Unable to cancel this session request.");
-            return "redirect:/seeker/sessions/" + requestId;
+        try {
+            sessionService.cancelSession(requestId);
+            redirectAttributes.addFlashAttribute("flashMessage", "Session cancelled.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-
-        redirectAttributes.addFlashAttribute("flashMessage", cancellationFlashMessage(request, "Mentee"));
-        return "redirect:/seeker/sessions/" + request.requestId();
+        return "redirect:/seeker/sessions/" + requestId;
     }
 
     @GetMapping("/mentor/requests")
-    public String mentorRequestQueue(Model model) {
-        List<DemoSessionStore.SessionRequestView> requests = sessionStore.listRequestsForMentorQueue();
-        List<DemoSessionStore.SessionRequestView> pendingRequests = requests.stream()
-                .filter(request -> request.status() == DemoSessionStore.SessionStatus.REQUESTED)
+    public String mentorRequestQueue(HttpSession session, Model model) {
+        String mentorEmail = currentSessionEmail(session);
+        List<SessionRequest> requests = (isBlank(mentorEmail)
+                ? List.<SessionRequest>of()
+                : sessionService.getSessionsForMentor(mentorEmail));
+        List<SessionRequest> pendingRequests = requests.stream()
+                .filter(request -> request.getStatus() == SessionStatus.REQUESTED)
                 .toList();
-        List<DemoSessionStore.SessionRequestView> previousRequests = requests.stream()
-                .filter(request -> request.status() != DemoSessionStore.SessionStatus.REQUESTED)
+        List<SessionRequest> previousRequests = requests.stream()
+                .filter(request -> request.getStatus() != SessionStatus.REQUESTED)
                 .toList();
 
+        if (isBlank(mentorEmail)) {
+            model.addAttribute("formError", "Sign in as a mentor to view your request queue.");
+        }
         model.addAttribute("requests", requests);
         model.addAttribute("pendingRequests", pendingRequests);
         model.addAttribute("previousRequests", previousRequests);
@@ -302,51 +256,52 @@ public class SessionController {
 
     @PostMapping("/mentor/requests/{requestId}/decision")
     public String applyDecision(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             @RequestParam(defaultValue = "") String decision,
             @RequestParam(defaultValue = "") String mentorNote,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.applyDecision(requestId, decision, mentorNote).orElse(null);
-        if (request == null) {
-            redirectAttributes.addFlashAttribute("formError", "Unable to update this request.");
-            return "redirect:/mentor/requests";
+        try {
+            if ("approve".equalsIgnoreCase(decision)) {
+                sessionService.approveSession(requestId, mentorNote);
+                redirectAttributes.addFlashAttribute("flashMessage", "Session approved.");
+            } else if ("decline".equalsIgnoreCase(decision)) {
+                sessionService.declineSession(requestId, mentorNote);
+                redirectAttributes.addFlashAttribute("flashMessage", "Session declined.");
+            } else {
+                redirectAttributes.addFlashAttribute("formError", "Choose approve or decline.");
+            }
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-
-        redirectAttributes.addFlashAttribute(
-                "flashMessage",
-                "Request " + request.requestId() + " marked as " + toStatusLabel(request.status()).toLowerCase(Locale.ROOT) + "."
-        );
         return "redirect:/mentor/requests";
     }
 
     @PostMapping("/mentor/sessions/{requestId}/cancel")
     public String cancelAsMentor(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.cancelRequest(requestId, DemoSessionStore.CancellationActor.MENTOR).orElse(null);
-        if (request == null) {
-            redirectAttributes.addFlashAttribute("formError", "Unable to cancel this session.");
-            return "redirect:/mentor/requests";
+        try {
+            sessionService.cancelSession(requestId);
+            redirectAttributes.addFlashAttribute("flashMessage", "Session cancelled.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-
-        redirectAttributes.addFlashAttribute("flashMessage", cancellationFlashMessage(request, "Mentor"));
         return "redirect:/mentor/requests";
     }
 
     @PostMapping("/mentor/sessions/{requestId}/complete")
     public String completeSession(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
-        DemoSessionStore.SessionRequestView request = sessionStore.markCompleted(requestId).orElse(null);
-        if (request == null) {
-            redirectAttributes.addFlashAttribute("formError", "Only paid sessions can be marked completed.");
-            return "redirect:/mentor/requests";
+        try {
+            sessionService.completeSession(requestId);
+            redirectAttributes.addFlashAttribute("flashMessage", "Session completed.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
-
-        redirectAttributes.addFlashAttribute("flashMessage", "Session completed. Mentor payout is now ready (demo mode).");
         return "redirect:/mentor/requests";
     }
 
@@ -371,7 +326,7 @@ public class SessionController {
         return "redirect:/seeker/sessions/new";
     }
 
-    private String resolveMentorName(String mentorName, List<DemoSessionStore.MentorDirectoryItemView> mentors) {
+    private String resolveMentorName(String mentorName, List<MentorDirectoryItemView> mentors) {
         if (mentors.isEmpty()) {
             return "";
         }
@@ -379,114 +334,93 @@ public class SessionController {
             return mentors.getFirst().name();
         }
         return mentors.stream()
-                .map(DemoSessionStore.MentorDirectoryItemView::name)
+                .map(MentorDirectoryItemView::name)
                 .filter(name -> name.equalsIgnoreCase(mentorName.trim()))
                 .findFirst()
                 .orElse(mentors.getFirst().name());
     }
 
-    private String quotePreviewLabel(DemoSessionStore.MentorDirectoryItemView mentor, String slotId) {
-        if (mentor == null || isBlank(slotId)) {
-            return "";
+    private List<AvailabilitySlotView> buildAvailabilitySlots(String mentorName) {
+        String timezone = "America/Vancouver";
+        return mentorProfileService.findAvailabilityByMentorName(mentorName).stream()
+                .map(item -> new AvailabilitySlotView(
+                        slotIdFor(item),
+                        weekdayLabel(item.weekday()),
+                        timeRange(item.startTime(), item.endTime()),
+                        timezone
+                ))
+                .toList();
+    }
+
+    private String slotIdFor(MentorProfileService.AvailabilityInput item) {
+        return "slot-" + item.weekday() + "-" + item.startTime().replace(":", "") + "-" + item.endTime().replace(":", "");
+    }
+
+    private String weekdayLabel(int weekday) {
+        return switch (weekday) {
+            case 1 -> "Sunday";
+            case 2 -> "Monday";
+            case 3 -> "Tuesday";
+            case 4 -> "Wednesday";
+            case 5 -> "Thursday";
+            case 6 -> "Friday";
+            case 7 -> "Saturday";
+            default -> "Day";
+        };
+    }
+
+    private String timeRange(String startTime, String endTime) {
+        return formatTime(startTime) + " - " + formatTime(endTime);
+    }
+
+    private String formatTime(String time24h) {
+        if (isBlank(time24h) || !time24h.contains(":")) {
+            return time24h;
         }
-
-        DemoSessionStore.AvailabilitySlotView slot = mentor.availability().stream()
-                .filter(item -> item.slotId().equalsIgnoreCase(slotId))
-                .findFirst()
-                .orElse(null);
-        if (slot == null) {
-            return "";
+        int hour = Integer.parseInt(time24h.substring(0, 2));
+        String minute = time24h.substring(3, 5);
+        String period = hour >= 12 ? "PM" : "AM";
+        int convertedHour = hour % 12;
+        if (convertedHour == 0) {
+            convertedHour = 12;
         }
-
-        int quotedAmount = quoteAmount(mentor, slot);
-        return sessionStore.formatAmount(quotedAmount)
-                + (mentor.defaultPricingModel() == DemoSessionStore.PricingModel.HOURLY ? " estimated for this slot" : " flat session rate");
+        return convertedHour + ":" + minute + " " + period;
     }
 
-    private String pricingModelLabel(DemoSessionStore.MentorDirectoryItemView mentor) {
-        if (mentor == null) {
-            return "";
-        }
-        return mentor.defaultPricingModel() == DemoSessionStore.PricingModel.HOURLY
-                ? "Hourly pricing"
-                : "Flat session pricing";
+    private boolean canCancelAsMentee(SessionStatus status) {
+        return status == SessionStatus.REQUESTED
+                || status == SessionStatus.APPROVED
+                || status == SessionStatus.PAID;
     }
 
-    private int quoteAmount(DemoSessionStore.MentorDirectoryItemView mentor, DemoSessionStore.AvailabilitySlotView slot) {
-        if (mentor.defaultPricingModel() == DemoSessionStore.PricingModel.FLAT) {
-            return mentor.flatRateCents() == null ? 0 : mentor.flatRateCents();
-        }
-        int hourly = mentor.hourlyRateCents() == null ? 0 : mentor.hourlyRateCents();
-        long minutes = Math.max(1, java.time.Duration.between(slot.slotStartAt(), slot.slotEndAt()).toMinutes());
-        return (int) ((hourly * minutes + 59) / 60);
-    }
-
-    private boolean canCancelAsMentee(DemoSessionStore.SessionStatus status) {
-        return status == DemoSessionStore.SessionStatus.REQUESTED
-                || status == DemoSessionStore.SessionStatus.APPROVED_PENDING_PAYMENT
-                || status == DemoSessionStore.SessionStatus.APPROVED_PAID;
-    }
-
-    private String cancellationFlashMessage(DemoSessionStore.SessionRequestView request, String actorLabel) {
-        String feeText = request.cancellationFeePercent() > 0
-                ? request.cancellationFeePercent() + "% cancellation fee applied."
-                : "No cancellation fee applied.";
-        return actorLabel + " cancelled request " + request.requestId() + ". " + feeText;
-    }
-
-    private String cancellationLabel(DemoSessionStore.SessionRequestView request) {
-        if (request.status() != DemoSessionStore.SessionStatus.CANCELLED) {
-            return "";
-        }
-        return request.cancellationFeePercent() > 0
-                ? "Cancelled within 24 hours. 50% cancellation fee applied."
-                : "Cancelled more than 24 hours before session. No cancellation fee.";
-    }
-
-    private String toStatusLabel(DemoSessionStore.SessionStatus status) {
+    private String toStatusLabel(SessionStatus status) {
         return switch (status) {
             case REQUESTED -> "Requested";
-            case APPROVED_PENDING_PAYMENT -> "Approved - payment pending";
-            case APPROVED_PAID -> "Approved - paid";
+            case APPROVED -> "Approved - payment pending";
+            case PAID -> "Approved - paid";
             case DECLINED -> "Declined";
             case CANCELLED -> "Cancelled";
-            case EXPIRED -> "Expired";
             case COMPLETED -> "Completed";
         };
     }
 
-    private String toStatusClass(DemoSessionStore.SessionStatus status) {
+    private String toStatusClass(SessionStatus status) {
         return switch (status) {
             case REQUESTED -> "statusBadge statusBadge--requested";
-            case APPROVED_PENDING_PAYMENT -> "statusBadge statusBadge--pendingPayment";
-            case APPROVED_PAID -> "statusBadge statusBadge--approved";
+            case APPROVED -> "statusBadge statusBadge--pendingPayment";
+            case PAID -> "statusBadge statusBadge--approved";
             case DECLINED -> "statusBadge statusBadge--declined";
             case CANCELLED -> "statusBadge statusBadge--cancelled";
-            case EXPIRED -> "statusBadge statusBadge--expired";
             case COMPLETED -> "statusBadge statusBadge--completed";
         };
     }
 
-    private String toPaymentStatusLabel(DemoSessionStore.PaymentStatus status) {
-        return switch (status) {
-            case NOT_STARTED -> "Not started";
-            case PENDING -> "Pending";
-            case PAID -> "Paid";
-            case PARTIAL_REFUND -> "Partially refunded";
-            case REFUNDED -> "Refunded";
-            case FAILED -> "Failed";
-        };
+    private String toPaymentStatusLabel(boolean paymentCompleted) {
+        return paymentCompleted ? "Paid" : "Not started";
     }
 
-    private String toPaymentStatusClass(DemoSessionStore.PaymentStatus status) {
-        return switch (status) {
-            case NOT_STARTED -> "statusBadge statusBadge--neutral";
-            case PENDING -> "statusBadge statusBadge--pendingPayment";
-            case PAID -> "statusBadge statusBadge--approved";
-            case PARTIAL_REFUND -> "statusBadge statusBadge--cancelled";
-            case REFUNDED -> "statusBadge statusBadge--expired";
-            case FAILED -> "statusBadge statusBadge--declined";
-        };
+    private String toPaymentStatusClass(boolean paymentCompleted) {
+        return paymentCompleted ? "statusBadge statusBadge--approved" : "statusBadge statusBadge--neutral";
     }
 
     private String renderSeekerPage(Model model, String title, String content) {
@@ -503,15 +437,30 @@ public class SessionController {
         return "layout";
     }
 
-    private String firstNonBlank(String first, String second) {
-        return !isBlank(first) ? first : second;
-    }
-
-    private String safeTrim(String value) {
-        return value == null ? "" : value.trim();
+    private String currentSessionEmail(HttpSession session) {
+        Object email = session.getAttribute(AuthController.SESSION_USER_EMAIL);
+        return email == null ? "" : email.toString().trim().toLowerCase(Locale.ROOT);
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private record MentorDirectoryItemView(
+            String name,
+            String rate,
+            String tagline
+    ) {
+    }
+
+    private record AvailabilitySlotView(
+            String slotId,
+            String weekday,
+            String timeRange,
+            String timezone
+    ) {
+        private String displayLabel() {
+            return weekday + " • " + timeRange + " (" + timezone + ")";
+        }
     }
 }

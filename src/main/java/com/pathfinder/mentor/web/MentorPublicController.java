@@ -1,5 +1,6 @@
 package com.pathfinder.mentor.web;
 
+import com.pathfinder.mentor.service.MentorProfileService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,10 +12,10 @@ public class MentorPublicController {
 
     private static final String PUBLIC_NAVBAR = "fragments/navbar :: navbar";
 
-    private final DemoMentorCatalog mentorCatalog;
+    private final MentorProfileService mentorProfileService;
 
-    public MentorPublicController(DemoMentorCatalog mentorCatalog) {
-        this.mentorCatalog = mentorCatalog;
+    public MentorPublicController(MentorProfileService mentorProfileService) {
+        this.mentorProfileService = mentorProfileService;
     }
 
     @GetMapping("/mentors/{mentorSlug}")
@@ -23,7 +24,7 @@ public class MentorPublicController {
             Model model,
             RedirectAttributes redirectAttributes
     ) {
-        DemoMentorCatalog.MentorCatalogItem mentor = mentorCatalog.findBySlug(mentorSlug).orElse(null);
+        MentorProfileService.PublicMentorProfile mentor = mentorProfileService.findPublicProfileBySlug(mentorSlug);
         if (mentor == null) {
             redirectAttributes.addFlashAttribute("formError", "Mentor profile not found.");
             return "redirect:/seeker/mentors";

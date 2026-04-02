@@ -4,10 +4,15 @@ import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.mentor.domain.MentorProfile;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.domain.SessionStatus;
+import com.pathfinder.session.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -37,13 +42,42 @@ public class MentorController {
             new WeekdayOption("sun", "Sunday")
     );
     private final MentorProfileService mentorProfileService;
+    private final SessionService sessionService;
 
-    public MentorController(MentorProfileService mentorProfileService) {
+    public MentorController(MentorProfileService mentorProfileService, SessionService sessionService) {
         this.mentorProfileService = mentorProfileService;
+        this.sessionService = sessionService;
     }
 
     @GetMapping("/home")
-    public String home(Model model) {
+    public String home(HttpSession session, Model model) {
+        String mentorEmail = resolveCurrentMentorEmail(session, "");
+        List<SessionRequest> mentorSessions = mentorEmail.isEmpty()
+                ? List.of()
+                : sessionService.getSessionsForMentor(mentorEmail);
+        if (mentorSessions.isEmpty()) {
+            mentorSessions = sessionService.getAllSessions();
+        }
+
+        SessionRequest nextSession = mentorSessions.stream()
+                .filter(request -> request.getStatus() == SessionStatus.APPROVED || request.getStatus() == SessionStatus.PAID)
+                .max(Comparator.comparing(SessionRequest::getCreatedAt))
+                .orElse(null);
+
+        long pendingRequestCount = mentorSessions.stream()
+                .filter(request -> request.getStatus() == SessionStatus.REQUESTED)
+                .count();
+
+        long sessionsThisMonth = mentorSessions.stream()
+                .filter(request -> request.getCreatedAt() != null)
+                .filter(request -> request.getCreatedAt().getMonth() == LocalDate.now().getMonth())
+                .filter(request -> request.getStatus() != SessionStatus.DECLINED && request.getStatus() != SessionStatus.CANCELLED)
+                .count();
+
+        model.addAttribute("nextSession", nextSession);
+        model.addAttribute("pendingRequestCount", pendingRequestCount);
+        model.addAttribute("sessionsThisMonth", sessionsThisMonth);
+        model.addAttribute("calendarDays", buildCalendarDays(mentorSessions));
         return renderPage(model, "Mentor home", "mentor/home :: content");
     }
 
@@ -324,6 +358,53 @@ public class MentorController {
         return title + " @ " + company;
     }
 
+    private List<CalendarDay> buildCalendarDays(List<SessionRequest> mentorSessions) {
+        List<CalendarDay> calendarDays = new ArrayList<>();
+        for (WeekdayOption weekday : WEEKDAYS.stream().filter(day -> !"sun".equals(day.key())).toList()) {
+            List<CalendarEvent> events = mentorSessions.stream()
+                    .filter(request -> matchesWeekday(request.getSlotTime(), weekday.label()))
+                    .limit(3)
+                    .map(request -> new CalendarEvent(
+                            shortenSessionLabel(request.getSessionType(), request.getSlotTime()),
+                            statusPillClass(request.getStatus())
+                    ))
+                    .toList();
+
+            if (events.isEmpty()) {
+                events = List.of(new CalendarEvent("No sessions planned", "calendarPill calendarPill--free"));
+            }
+            calendarDays.add(new CalendarDay(shortDayLabel(weekday.label()), events));
+        }
+        return calendarDays;
+    }
+
+    private boolean matchesWeekday(String slotTime, String weekdayLabel) {
+        String normalizedSlot = normalizeText(slotTime).toLowerCase(Locale.ROOT);
+        return normalizedSlot.contains(weekdayLabel.toLowerCase(Locale.ROOT));
+    }
+
+    private String shortDayLabel(String weekdayLabel) {
+        return weekdayLabel.substring(0, 3).toUpperCase(Locale.ROOT);
+    }
+
+    private String shortenSessionLabel(String sessionType, String slotTime) {
+        String type = normalizeText(sessionType);
+        String slot = normalizeText(slotTime);
+        if (slot.isEmpty()) {
+            return type;
+        }
+        return type + " • " + slot;
+    }
+
+    private String statusPillClass(SessionStatus status) {
+        return switch (status) {
+            case REQUESTED -> "calendarPill calendarPill--requested";
+            case APPROVED, PAID -> "calendarPill calendarPill--approved";
+            case COMPLETED -> "calendarPill calendarPill--done";
+            case DECLINED, CANCELLED -> "calendarPill calendarPill--free";
+        };
+    }
+
     private String formatCad(Integer amountCents) {
         if (amountCents == null) {
             return "";
@@ -449,6 +530,18 @@ public class MentorController {
             boolean enabled,
             String startTime,
             String endTime
+    ) {
+    }
+
+    private record CalendarDay(
+            String dayName,
+            List<CalendarEvent> events
+    ) {
+    }
+
+    private record CalendarEvent(
+            String label,
+            String cssClass
     ) {
     }
 }

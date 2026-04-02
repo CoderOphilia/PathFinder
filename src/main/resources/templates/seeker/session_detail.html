@@ -11,7 +11,7 @@
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
 			<div class="requestHeader">
-				<p class="p p--strong p--tight" th:text="${'Request ID: ' + sessionRequest.requestId}">Request ID</p>
+				<p class="p p--strong p--tight" th:text="${'Request ID: ' + sessionRequest.id}">Request ID</p>
 				<span th:class="${statusClass}" th:text="${statusLabel}">Requested</span>
 			</div>
 		</section>
@@ -25,7 +25,7 @@
 				</div>
 				<div>
 					<dt>Slot</dt>
-					<dd th:text="${sessionRequest.slotLabel}">Slot</dd>
+					<dd th:text="${sessionRequest.slotTime}">Slot</dd>
 				</div>
 				<div>
 					<dt>Session type</dt>
@@ -98,20 +98,20 @@
 				<a
 					class="btn btn--default"
 					th:if="${canPay}"
-					th:href="@{|/seeker/sessions/${sessionRequest.requestId}/payment|}"
+					th:href="@{|/seeker/sessions/${sessionRequest.id}/payment|}"
 				>
 					Proceed to payment
 				</a>
 				<a
 					class="btn btn--secondary"
-					th:href="@{|/seeker/sessions/${sessionRequest.requestId}/payment?preview=true|}"
+					th:href="@{|/seeker/sessions/${sessionRequest.id}/payment?preview=true|}"
 				>
 					View payment flow
 				</a>
 				<form
 					th:if="${canCancelAsMentee}"
 					method="post"
-					th:action="@{|/seeker/sessions/${sessionRequest.requestId}/cancel|}"
+					th:action="@{|/seeker/sessions/${sessionRequest.id}/cancel|}"
 				>
 					<button type="submit" class="btn btn--destructive">Cancel request</button>
 				</form>
