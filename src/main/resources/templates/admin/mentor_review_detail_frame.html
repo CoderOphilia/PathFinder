@@ -16,24 +16,14 @@
 
 				<dl class="detailList">
 					<div>
-						<dt>Review stage</dt>
-						<dd th:text="${selectedReviewItem.stage}">Credential check</dd>
-					</div>
-					<div>
-						<dt>Interview evidence</dt>
-						<dd th:text="${selectedReviewItem.interviewEvidence}">3 of 3 companies verified</dd>
-					</div>
-					<div>
-						<dt>Profile quality</dt>
-						<dd th:text="${selectedReviewItem.profileQuality}">Strong profile clarity</dd>
+						<dt>Review status</dt>
+						<dd th:text="${selectedReviewItem.reviewStatus}">Pending review</dd>
 					</div>
 					<div>
 						<dt>Admin note</dt>
-						<dd th:text="${selectedReviewItem.note}">Review note</dd>
-					</div>
-					<div>
-						<dt>Recommended next step</dt>
-						<dd th:text="${selectedReviewItem.nextStep}">Ready for final decision.</dd>
+						<dd th:text="${selectedReviewItem.adminNote != null and !selectedReviewItem.adminNote.isEmpty() ? selectedReviewItem.adminNote : 'No admin note yet.'}">
+							No admin note yet.
+						</dd>
 					</div>
 				</dl>
 
@@ -49,10 +39,34 @@
 					</li>
 				</ul>
 
-				<div class="formActions">
-					<a href="#" class="btn btn--default" aria-disabled="true">Approve mentor</a>
-					<a href="#" class="btn btn--outline" aria-disabled="true">Request updates</a>
-				</div>
+				<form
+					method="post"
+					target="_top"
+					th:action="@{|/admin/mentors/review/${selectedMentor.slug}/approve|}"
+					class="queueDecisionForm"
+				>
+					<div>
+						<label for="adminNote" class="label">Admin note</label>
+						<textarea
+							id="adminNote"
+							name="adminNote"
+							class="textarea"
+							rows="4"
+							placeholder="Optional note for approval or requested changes."
+							th:text="${selectedReviewItem.adminNote}"
+						></textarea>
+					</div>
+					<div class="formActions">
+						<button type="submit" class="btn btn--default">Approve mentor</button>
+						<button
+							type="submit"
+							class="btn btn--outline"
+							th:formaction="@{|/admin/mentors/review/${selectedMentor.slug}/request-updates|}"
+						>
+							Request changes
+						</button>
+					</div>
+				</form>
 			</section>
 		</main>
 	</body>

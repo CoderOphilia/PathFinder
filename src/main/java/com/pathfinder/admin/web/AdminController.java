@@ -1,10 +1,11 @@
 package com.pathfinder.admin.web;
 
 import java.util.List;
-import java.util.stream.IntStream;
+import java.util.Optional;
 
-import com.pathfinder.mentor.web.DemoMentorCatalog;
-
+import com.pathfinder.admin.service.AdminAccountService;
+import com.pathfinder.admin.service.AdminReviewService;
+import com.pathfinder.admin.service.AdminSessionOversightService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,14 +20,25 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AdminController {
 
     private static final String ADMIN_NAVBAR = "fragments/navbar_admin :: navbar";
-    private final DemoMentorCatalog mentorCatalog;
+    private final AdminReviewService adminReviewService;
+    private final AdminAccountService adminAccountService;
+    private final AdminSessionOversightService adminSessionOversightService;
 
-    public AdminController(DemoMentorCatalog mentorCatalog) {
-        this.mentorCatalog = mentorCatalog;
+    public AdminController(
+            AdminReviewService adminReviewService,
+            AdminAccountService adminAccountService,
+            AdminSessionOversightService adminSessionOversightService
+    ) {
+        this.adminReviewService = adminReviewService;
+        this.adminAccountService = adminAccountService;
+        this.adminSessionOversightService = adminSessionOversightService;
     }
 
     @GetMapping("/home")
     public String home(Model model) {
+        model.addAttribute("pendingMentorReviewCount", adminReviewService.pendingReviewCount());
+        model.addAttribute("managedUserCount", adminAccountService.totalUserCount());
+        model.addAttribute("activeSessionCount", adminSessionOversightService.activeSessionCount());
         return renderPage(model, "Admin home", "admin/home :: content");
     }
 
@@ -35,10 +47,12 @@ public class AdminController {
             @RequestParam(defaultValue = "") String mentor,
             Model model
     ) {
-        List<MentorReviewItem> reviewItems = buildReviewItems();
-        MentorReviewItem selectedReviewItem = selectReviewItem(reviewItems, mentor);
+        List<AdminReviewService.MentorReviewItemView> reviewItems = adminReviewService.listReviewItems();
+        AdminReviewService.MentorReviewItemView selectedReviewItem = selectReviewItem(reviewItems, mentor);
         String defaultMentorSlug = selectedReviewItem == null ? "" : selectedReviewItem.mentor().slug();
         model.addAttribute("reviewItems", reviewItems);
+        model.addAttribute("selectedReviewItem", selectedReviewItem);
+        model.addAttribute("selectedMentor", selectedReviewItem == null ? null : selectedReviewItem.mentor());
         model.addAttribute("defaultMentorSlug", defaultMentorSlug);
         model.addAttribute(
                 "defaultMentorDetailPath",
@@ -52,15 +66,98 @@ public class AdminController {
             @PathVariable String mentorSlug,
             Model model
     ) {
-        List<MentorReviewItem> reviewItems = buildReviewItems();
-        MentorReviewItem selectedReviewItem = selectReviewItem(reviewItems, mentorSlug);
-        if (selectedReviewItem == null) {
+        Optional<AdminReviewService.MentorReviewItemView> selectedReviewItem = adminReviewService.findReviewItem(mentorSlug);
+        if (selectedReviewItem.isEmpty()) {
             return "redirect:/admin/mentors/review";
         }
 
-        model.addAttribute("selectedReviewItem", selectedReviewItem);
-        model.addAttribute("selectedMentor", selectedReviewItem.mentor());
+        model.addAttribute("selectedReviewItem", selectedReviewItem.get());
+        model.addAttribute("selectedMentor", selectedReviewItem.get().mentor());
         return "admin/mentor_review_detail_frame";
+    }
+
+    @PostMapping("/mentors/review/{mentorSlug}/approve")
+    public String approveMentor(
+            @PathVariable String mentorSlug,
+            @RequestParam(defaultValue = "") String adminNote,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            adminReviewService.approveMentor(mentorSlug, adminNote);
+            redirectAttributes.addFlashAttribute("flashMessage", "Mentor verification approved.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/mentors/review?mentor=" + mentorSlug;
+    }
+
+    @PostMapping("/mentors/review/{mentorSlug}/request-updates")
+    public String requestMentorUpdates(
+            @PathVariable String mentorSlug,
+            @RequestParam(defaultValue = "") String adminNote,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            adminReviewService.requestUpdates(mentorSlug, adminNote);
+            redirectAttributes.addFlashAttribute("flashMessage", "Profile updates requested from mentor.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/mentors/review?mentor=" + mentorSlug;
+    }
+
+    @GetMapping("/users")
+    public String users(Model model) {
+        model.addAttribute("managedUsers", adminAccountService.listUsers());
+        return renderPage(model, "User moderation", "admin/users :: content");
+    }
+
+    @PostMapping("/users/{userId}/suspend")
+    public String suspendUser(
+            @PathVariable Long userId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            adminAccountService.suspendUser(userId);
+            redirectAttributes.addFlashAttribute("flashMessage", "User account suspended.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/users/{userId}/reactivate")
+    public String reactivateUser(
+            @PathVariable Long userId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            adminAccountService.reactivateUser(userId);
+            redirectAttributes.addFlashAttribute("flashMessage", "User account reactivated.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @GetMapping("/sessions")
+    public String sessions(Model model) {
+        model.addAttribute("sessionItems", adminSessionOversightService.listRequests());
+        return renderPage(model, "Session oversight", "admin/sessions :: content");
+    }
+
+    @PostMapping("/sessions/{requestId}/cancel")
+    public String cancelSession(
+            @PathVariable String requestId,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            adminSessionOversightService.cancelRequest(requestId);
+            redirectAttributes.addFlashAttribute("flashMessage", "Session request cancelled from admin oversight.");
+        } catch (IllegalArgumentException | IllegalStateException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/sessions";
     }
 
     @GetMapping("/profile")
@@ -95,7 +192,10 @@ public class AdminController {
         return value == null || value.trim().isEmpty();
     }
 
-    private MentorReviewItem selectReviewItem(List<MentorReviewItem> reviewItems, String selectedSlug) {
+    private AdminReviewService.MentorReviewItemView selectReviewItem(
+            List<AdminReviewService.MentorReviewItemView> reviewItems,
+            String selectedSlug
+    ) {
         if (reviewItems.isEmpty()) {
             return null;
         }
@@ -108,95 +208,5 @@ public class AdminController {
                 .filter(item -> item.mentor().slug().equalsIgnoreCase(normalizedSlug))
                 .findFirst()
                 .orElse(reviewItems.getFirst());
-    }
-
-    private List<MentorReviewItem> buildReviewItems() {
-        List<DemoMentorCatalog.MentorCatalogItem> mentors = mentorCatalog.listMentors();
-        List<String> stages = List.of(
-                "Credential check",
-                "Interview history review",
-                "Final approval",
-                "Profile quality review",
-                "Reference check"
-        );
-        List<String> submittedLabels = List.of(
-                "Feb 17",
-                "Feb 16",
-                "Feb 15",
-                "Feb 14",
-                "Feb 13"
-        );
-        List<String> interviewEvidence = List.of(
-                "2 of 3 companies verified",
-                "3 of 3 companies verified",
-                "1 of 3 companies verified",
-                "2 of 2 companies verified",
-                "Pending verification response"
-        );
-        List<String> profileQuality = List.of(
-                "Needs stronger expertise summary",
-                "Strong profile clarity",
-                "Missing company evidence details",
-                "Strong profile clarity",
-                "Update required on headline"
-        );
-        List<String> nextSteps = List.of(
-                "Request one more credential artifact.",
-                "Ready for final decision after quick QA pass.",
-                "Block approval until missing evidence is uploaded.",
-                "Approve if no policy issues are found.",
-                "Request profile headline update and re-review."
-        );
-        List<String> statusLabels = List.of(
-                "Due today",
-                "On track",
-                "Blocked",
-                "On track",
-                "Due today"
-        );
-        List<String> statusClasses = List.of(
-                "statusBadge statusBadge--requested",
-                "statusBadge statusBadge--approved",
-                "statusBadge statusBadge--declined",
-                "statusBadge statusBadge--approved",
-                "statusBadge statusBadge--requested"
-        );
-        List<String> notes = List.of(
-                "Needs credential document confirmation.",
-                "Interview list verified, waiting final note.",
-                "Missing company evidence for one interview entry.",
-                "Bio and expertise quality checks complete.",
-                "Reference email follow-up pending."
-        );
-
-        return IntStream.range(0, mentors.size())
-                .mapToObj(index -> {
-                    int idx = index % stages.size();
-                    return new MentorReviewItem(
-                            mentors.get(index),
-                            stages.get(idx),
-                            submittedLabels.get(idx),
-                            interviewEvidence.get(idx),
-                            profileQuality.get(idx),
-                            nextSteps.get(idx),
-                            statusLabels.get(idx),
-                            statusClasses.get(idx),
-                            notes.get(idx)
-                    );
-                })
-                .toList();
-    }
-
-    private record MentorReviewItem(
-            DemoMentorCatalog.MentorCatalogItem mentor,
-            String stage,
-            String submittedDate,
-            String interviewEvidence,
-            String profileQuality,
-            String nextStep,
-            String statusLabel,
-            String statusClass,
-            String note
-    ) {
     }
 }

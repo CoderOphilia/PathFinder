@@ -699,7 +699,8 @@ public class DemoSessionStore {
 
     public enum CancellationActor {
         MENTEE,
-        MENTOR
+        MENTOR,
+        ADMIN
     }
 
     public enum SlotLockState {

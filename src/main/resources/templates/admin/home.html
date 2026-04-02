@@ -9,22 +9,24 @@
 			<div class="heroActions">
 				<a class="btn btn--default" th:href="@{/admin/profile}">Update admin profile</a>
 				<a class="btn btn--outline" th:href="@{/admin/mentors/review}">Open mentor review</a>
+				<a class="btn btn--outline" th:href="@{/admin/users}">Moderate accounts</a>
+				<a class="btn btn--outline" th:href="@{/admin/sessions}">Review sessions</a>
 			</div>
 		</section>
 
 		<section class="tile tile--full" style="--order: 2">
 			<div class="dashboardStats" aria-label="Admin stats">
 				<article class="statCard">
-					<h2>12</h2>
-					<p class="p p--sm p--muted p--tight">New mentor applications</p>
+					<h2 th:text="${pendingMentorReviewCount}">0</h2>
+					<p class="p p--sm p--muted p--tight">Mentor reviews still pending</p>
 				</article>
 				<article class="statCard">
-					<h2>31</h2>
-					<p class="p p--sm p--muted p--tight">Active mentors</p>
+					<h2 th:text="${managedUserCount}">0</h2>
+					<p class="p p--sm p--muted p--tight">Users visible to moderation</p>
 				</article>
 				<article class="statCard">
-					<h2>94%</h2>
-					<p class="p p--sm p--muted p--tight">Completed session rate</p>
+					<h2 th:text="${activeSessionCount}">0</h2>
+					<p class="p p--sm p--muted p--tight">Open session requests</p>
 				</article>
 			</div>
 		</section>
@@ -38,33 +40,25 @@
 					<thead>
 						<tr>
 							<th scope="col">Mentor</th>
-							<th scope="col">Interview evidence</th>
-							<th scope="col">Profile quality</th>
-							<th scope="col">Submitted</th>
-							<th scope="col">SLA</th>
+							<th scope="col">Role</th>
+							<th scope="col">Status</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr>
 							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='priya-k')}">Priya K.</a></td>
-							<td>2 of 3 verified</td>
-							<td>Needs stronger expertise summary</td>
-							<td>Feb 17</td>
-							<td><span class="statusBadge statusBadge--requested">Due today</span></td>
+							<td>Staff Engineer @ Meta</td>
+							<td><span class="statusBadge statusBadge--requested">Pending review</span></td>
 						</tr>
 						<tr>
 							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='marcus-l')}">Marcus L.</a></td>
-							<td>3 of 3 verified</td>
-							<td>Strong profile clarity</td>
-							<td>Feb 16</td>
-							<td><span class="statusBadge statusBadge--approved">On track</span></td>
+							<td>Principal Engineer @ Stripe</td>
+							<td><span class="statusBadge statusBadge--approved">Approved</span></td>
 						</tr>
 						<tr>
 							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='sonia-v')}">Sonia V.</a></td>
-							<td>1 of 3 verified</td>
-							<td>Missing evidence details</td>
-							<td>Feb 15</td>
-							<td><span class="statusBadge statusBadge--declined">Blocked</span></td>
+							<td>Engineering Manager @ Shopify</td>
+							<td><span class="statusBadge statusBadge--declined">Changes requested</span></td>
 						</tr>
 					</tbody>
 				</table>
@@ -72,23 +66,25 @@
 		</section>
 
 		<section class="tile tile--span6" style="--order: 4">
-			<p class="tile__kicker">Platform checks</p>
-			<h2>Operational checklist</h2>
-			<ul class="checklist">
-				<li>Watch for stalled session requests</li>
-				<li>Review payment status anomalies</li>
-				<li>Monitor suspended/reactivated account activity</li>
-			</ul>
+			<p class="tile__kicker">Operations</p>
+			<h2>User moderation</h2>
+			<p class="p p--muted p--tight">
+				Suspend or reactivate user accounts with explicit admin actions.
+			</p>
+			<div class="formActions">
+				<a class="btn btn--default" th:href="@{/admin/users}">Open user moderation</a>
+			</div>
 		</section>
 
 		<section class="tile tile--span6" style="--order: 5">
-			<p class="tile__kicker">Priorities</p>
-			<h2>Admin focus today</h2>
-			<ul class="tile__list">
-				<li>Close mentor verifications older than 48 hours</li>
-				<li>Resolve pending payout exception notes</li>
-				<li>Validate session completion anomaly alerts</li>
-			</ul>
+			<p class="tile__kicker">Oversight</p>
+			<h2>Session controls</h2>
+			<p class="p p--muted p--tight">
+				Open current session requests and cancel active items when direct intervention is needed.
+			</p>
+			<div class="formActions">
+				<a class="btn btn--default" th:href="@{/admin/sessions}">Open session oversight</a>
+			</div>
 		</section>
 	</div>
 </section>
