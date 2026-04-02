@@ -7,18 +7,18 @@
 				Browse mentor profiles by expertise, industry, and interview experience.
 			</p>
 
-<!--			<form method="get" th:action="@{/mentee/mentors}" class="mentorFilters" aria-label="Mentor filters">-->
-<!--				<div>-->
-<!--					<label for="mentorSearch" class="label">Search mentors</label>-->
-<!--					<input-->
-<!--							id="mentorSearch"-->
-<!--							class="input"-->
-<!--							type="search"-->
-<!--							name="q"-->
-<!--							th:value="${query}"-->
-<!--							placeholder="Name, skill, industry, or company"-->
-<!--					/>-->
-<!--				</div>-->
+			<form method="get" th:action="@{/mentee/mentors}" class="mentorFilters" aria-label="Mentor filters">
+				<div>
+					<label for="mentorSearch" class="label">Search mentors</label>
+					<input
+							id="mentorSearch"
+							class="input"
+							type="search"
+							name="q"
+							th:value="${query}"
+							placeholder="Name, skill, industry, or company"
+					/>
+				</div>
 
 <!--				<div>-->
 <!--					<label for="industry" class="label">Industry</label>-->
@@ -35,33 +35,33 @@
 <!--					</select>-->
 <!--				</div>-->
 
-<!--				<div>-->
-<!--					<label for="interviewCompany" class="label">Interview company</label>-->
-<!--					<select id="interviewCompany" class="select" name="interviewCompany">-->
-<!--						<option value="">All companies</option>-->
-<!--						<option-->
-<!--								th:each="company : ${interviewCompanies}"-->
-<!--								th:value="${company}"-->
-<!--								th:text="${company}"-->
-<!--								th:selected="${company == selectedCompany}"-->
-<!--						>-->
-<!--							Company-->
-<!--						</option>-->
-<!--					</select>-->
-<!--				</div>-->
+				<div>
+					<label for="interviewCompany" class="label">Interview company</label>
+					<select id="interviewCompany" class="select" name="interviewCompany">
+						<option value="">All companies</option>
+						<option
+								th:each="company : ${interviewCompanies}"
+								th:value="${company}"
+								th:text="${company}"
+								th:selected="${company == selectedCompany}"
+						>
+							Company
+						</option>
+					</select>
+				</div>
 
-<!--				<div class="formActions">-->
-<!--					<button class="btn btn&#45;&#45;default" type="submit">Apply filters</button>-->
-<!--					<a class="btn btn&#45;&#45;outline" th:href="@{/mentee/mentors}">Clear filters</a>-->
-<!--				</div>-->
-<!--			</form>-->
+				<div class="formActions">
+					<button class="btn btn--default" type="submit">Apply filters</button>
+					<a class="btn btn--outline" th:href="@{/mentee/mentors}">Clear filters</a>
+				</div>
+			</form>
 
 			<p class="p p--sm p--muted p--tight" aria-live="polite">
-				<span th:text="${'Showing ' + #lists.size(mentors) + ' mentors'}">Showing 0 mentors</span>
+				<span th:text="${'Showing ' + #lists.size(filteredMentors) + ' mentors'}">Showing 0 mentors</span>
 			</p>
 		</section>
 
-		<section th:if="${#lists.isEmpty(mentors)}" class="tile tile--full" style="--order: 2" aria-live="polite">
+		<section th:if="${#lists.isEmpty(filteredMentors)}" class="tile tile--full" style="--order: 2" aria-live="polite">
 			<div class="emptyState">
 				<div class="emptyState__icon">🔎</div>
 				<h2>Still looking for the right match?</h2>
@@ -75,7 +75,7 @@
 			</div>
 		</section>
 
-		<section th:each="mentor : ${mentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 1)" aria-label="Mentor card">
+		<section th:each="mentor : ${filteredMentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 1)" aria-label="Mentor card">
 			<a class="mentorCard__link" th:href="@{/mentors/{mentorSlug}(mentorSlug=${mentor.slug})}">
 				<div class="mentorCard__top">
 					<h2 th:text="${mentor.name}">Mentor Name</h2>
