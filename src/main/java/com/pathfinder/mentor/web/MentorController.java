@@ -55,9 +55,6 @@ public class MentorController {
         List<SessionRequest> mentorSessions = mentorEmail.isEmpty()
                 ? List.of()
                 : sessionService.getSessionsForMentor(mentorEmail);
-        if (mentorSessions.isEmpty()) {
-            mentorSessions = sessionService.getAllSessions();
-        }
 
         SessionRequest nextSession = mentorSessions.stream()
                 .filter(request -> request.getStatus() == SessionStatus.APPROVED || request.getStatus() == SessionStatus.PAID)
