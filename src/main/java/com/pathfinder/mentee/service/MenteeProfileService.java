@@ -5,19 +5,28 @@ import com.pathfinder.auth.repo.UserRepository;
 import com.pathfinder.auth.service.UserService;
 import com.pathfinder.mentee.domain.MenteeExperienceLevel;
 import com.pathfinder.mentee.domain.MenteeProfile;
+import com.pathfinder.mentee.dto.CalendarEvent;
+import com.pathfinder.mentee.dto.CalenderDay;
 import com.pathfinder.mentee.dto.MentorDirectoryItemView;
+import com.pathfinder.mentee.dto.WeekdayOption;
 import com.pathfinder.mentee.repo.MenteeRepository;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.repo.MentorProfileRepository;
 import com.pathfinder.mentor.service.MentorProfileService;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.domain.SessionStatus;
+import com.pathfinder.session.repo.SessionRequestRepository;
+import com.pathfinder.session.service.SessionService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +36,22 @@ public class MenteeProfileService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final MentorProfileService mentorProfileService;
-    private final MentorProfileRepository mentorProfileRepository;
+    private final SessionRequestRepository sessionRequestRepository;
+    private final SessionService sessionService;
 
 
     private List<MentorDirectoryItemView> cachedMentors = null;
     private long cacheTime = 0;
     private static final long CACHE_TTL_MS = 5 * 60 * 1000;
+    private static final List<WeekdayOption> WEEKDAYS = List.of(
+            new WeekdayOption("mon", "Monday"),
+            new WeekdayOption("tue", "Tuesday"),
+            new WeekdayOption("wed", "Wednesday"),
+            new WeekdayOption("thu", "Thursday"),
+            new WeekdayOption("fri", "Friday"),
+            new WeekdayOption("sat", "Saturday"),
+            new WeekdayOption("sun", "Sunday")
+    );
 
 
     // saving Mentee profile
@@ -108,6 +127,77 @@ public class MenteeProfileService {
     }
 
 
+    // Getting session
+
+    public Optional<SessionRequest> getNextSessionForMentee(String menteeEmail) {
+        return  sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(normalizeText(menteeEmail))
+                .stream()
+             //   .filter(s -> s.getStatus() == SessionStatus.APPROVED)
+                .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
+                .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
+    }
+
+    public Optional<SessionRequest> getNextSession(String menteeEmail) {
+        List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
+        return sessionRequests.stream()
+                .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
+                .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
+
+    }
+
+    public List<SessionRequest> getMenteeSession(String menteeEmail) {
+        return menteeEmail.isEmpty()
+                ? List.of() : sessionService.getSessionsForMentee(menteeEmail);
+    }
+
+    public long getPendingCount(String menteeEmail) {
+        List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
+        return sessionRequests.stream()
+                .filter(request -> request.getStatus() == SessionStatus.REQUESTED)
+                .count();
+    }
+
+    // session calender
+
+//    public List<CalenderDay>  buildCalenderDays(List<SessionRequest> menteeSessions) {
+//        List<CalenderDay> calenderDays = new ArrayList<>();
+//
+//        for (WeekdayOption weekday: WEEKDAYS.stream().filter(day -> !"sun".equals(day.key())).toList()){
+//            List<CalendarEvent> events = menteeSessions.stream()
+//                    .filter(request -> matchesWeekday(request.getSlotTime(), weekday.label()))
+//                    .limit(3)
+//                    .map(request -> new CalendarEvent(
+//                            shortenSessionLabel(request.getSessionType(), request.getSlotTime())
+//                    ))
+//                    .toList();
+//
+//            if(events.isEmpty()) {
+//                events = List.of(new CalendarEvent("No sessions planned"));
+//            }
+//            calenderDays.add(new CalenderDay(shortDayLabel(weekday.label()), events));
+//        }
+//        return  calenderDays;
+//    }
+    public List<CalenderDay> buildCalenderDays(List<SessionRequest> menteeSessions) {
+        List<String> weekdays = List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
+
+        return weekdays.stream()
+                .map(day -> {
+                    List<CalendarEvent> events = menteeSessions.stream()
+                            .filter(s -> matchesWeekday(s.getSlotTime(), day))
+                            .limit(3)
+                            .map(s -> new CalendarEvent(shortenSessionLabel(s.getSessionType(), s.getSlotTime())))
+                            .toList();
+
+                    if (events.isEmpty()) {
+                        events = List.of(new CalendarEvent("No sessions"));
+                    }
+
+                    return new CalenderDay(day.substring(0, 3), events); // "Mon", "Tue" etc
+                })
+                .toList();
+    }
+
 
 
 
@@ -155,10 +245,30 @@ public class MenteeProfileService {
     private String safeTrim(String value) {
         return value == null ? "" : value.trim();
     }
+    private boolean matchesWeekday(String slotTime, String weekdayLabel) {
+        String normalizedSlot = normalizeText(slotTime).toLowerCase(Locale.ROOT);
+        return normalizedSlot.contains(weekdayLabel.toLowerCase(Locale.ROOT));
+    }
+
+
 
 
     private boolean isMenteeRole(String role) {
         return "mentee".equalsIgnoreCase(role) || "seeker".equalsIgnoreCase(role);
+    }
+    private LocalDateTime parseSlotTime(String slotTime) {
+        try {
+
+            String timePart = slotTime.split("•")[1].trim().split("-")[0].trim();
+
+
+            String tz = slotTime.replaceAll(".*\\((.*)\\).*", "$1").trim();
+            LocalTime time = LocalTime.parse(timePart, DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH));
+            ZoneId zone = ZoneId.of(tz);
+            return LocalDate.now(zone).atTime(time);
+        } catch (Exception e) {
+            return LocalDateTime.MAX; // push unparseable slots to the end
+        }
     }
 
 
@@ -168,5 +278,17 @@ public class MenteeProfileService {
             return "";
         }
         return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private String shortenSessionLabel(String sessionType, String slotTime) {
+        String type = normalizeText(sessionType);
+        String slot = normalizeText(slotTime);
+        if (slot.isEmpty()){
+            return type;
+        }
+        return type + " • " + slot;
+    }
+    private String shortDayLabel(String weekdayLabel) {
+        return weekdayLabel.substring(0, 3).toUpperCase(Locale.ROOT);
     }
 }
