@@ -1,10 +1,15 @@
 package com.pathfinder.session.web;
 
 import com.pathfinder.auth.web.AuthController;
+import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.domain.SessionStatus;
 import com.pathfinder.session.service.SessionService;
+import com.stripe.Stripe;
+import com.stripe.param.checkout.SessionCreateParams;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,14 +18,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import jakarta.servlet.http.HttpSession;
-import java.util.Comparator;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
 @Controller
 public class SessionController {
+
+    @Value("${stripe.api.secret.key}")
+    private String stripeApiKey;
 
     private static final String MENTEE_NAVBAR = "fragments/navbar_mentee :: navbar";
     private static final String MENTOR_NAVBAR = "fragments/navbar_mentor :: navbar";
@@ -187,21 +194,85 @@ public class SessionController {
     @PostMapping({"/seeker/sessions/{requestId}/payment", "/mentee/sessions/{requestId}/payment"})
     public String submitPayment(
             @PathVariable Long requestId,
-            @RequestParam(defaultValue = "") String paymentMethod,
-        RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes
     ) {
-        if (isBlank(paymentMethod)) {
-            redirectAttributes.addFlashAttribute("formError", "Choose a payment method.");
-            redirectAttributes.addFlashAttribute("paymentMethod", paymentMethod);
-            return "redirect:/mentee/sessions/" + requestId + "/payment";
+        SessionRequest request = sessionService.getSessionById(requestId);
+        if (request == null) {
+            redirectAttributes.addFlashAttribute("formError", "Session request not found.");
+            return "redirect:/mentee/mentors";
         }
 
+        String mentorEmail = mentorProfileService.findMentorEmailByName(request.getMentorName());
+        MentorProfile mentorProfile = mentorProfileService.findProfileByEmail(mentorEmail);
+
+        if (mentorProfile == null || mentorProfile.getHourlyRateCents() == null) {
+            redirectAttributes.addFlashAttribute("formError", "Could not process payment: Mentor pricing is unavailable.");
+            return "redirect:/mentee/sessions/" + requestId;
+        }
+
+        long sessionCostCents = mentorProfile.getHourlyRateCents();
+        long taxCents = Math.round(sessionCostCents * 0.05);
+
+        Stripe.apiKey = stripeApiKey;
+
+        try {
+            SessionCreateParams params = SessionCreateParams.builder()
+                    .setMode(SessionCreateParams.Mode.PAYMENT)
+                    .setSuccessUrl("http://localhost:8080/mentee/sessions/" + requestId + "/payment/success")
+                    .setCancelUrl("http://localhost:8080/mentee/sessions/" + requestId + "/payment/cancel")
+                    .addLineItem(
+                            SessionCreateParams.LineItem.builder()
+                                    .setQuantity(1L)
+                                    .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                                            .setCurrency("cad")
+                                            .setUnitAmount(sessionCostCents)
+                                            .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                    .setName("Session with " + request.getMentorName())
+                                                    .build())
+                                            .build())
+                                    .build())
+                    .addLineItem(
+                            SessionCreateParams.LineItem.builder()
+                                    .setQuantity(1L)
+                                    .setPriceData(SessionCreateParams.LineItem.PriceData.builder()
+                                            .setCurrency("cad")
+                                            .setUnitAmount(taxCents)
+                                            .setProductData(SessionCreateParams.LineItem.PriceData.ProductData.builder()
+                                                    .setName("Sales Tax (5%)")
+                                                    .build())
+                                            .build())
+                                    .build())
+                    .build();
+
+            com.stripe.model.checkout.Session stripeSession = com.stripe.model.checkout.Session.create(params);
+            return "redirect:" + stripeSession.getUrl();
+
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("formError", "Stripe Error: " + e.getMessage());
+            return "redirect:/mentee/sessions/" + requestId;
+        }
+    }
+
+    @GetMapping({"/seeker/sessions/{requestId}/payment/success", "/mentee/sessions/{requestId}/payment/success"})
+    public String paymentSuccess(
+            @PathVariable Long requestId,
+            RedirectAttributes redirectAttributes
+    ) {
         try {
             sessionService.paySession(requestId);
-            redirectAttributes.addFlashAttribute("flashMessage", "Payment recorded successfully.");
-        } catch (IllegalArgumentException exception) {
-            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+            redirectAttributes.addFlashAttribute("flashMessage", "Payment successful! Your session is confirmed.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("formError", e.getMessage());
         }
+        return "redirect:/mentee/sessions/" + requestId;
+    }
+
+    @GetMapping({"/seeker/sessions/{requestId}/payment/cancel", "/mentee/sessions/{requestId}/payment/cancel"})
+    public String paymentCancel(
+            @PathVariable Long requestId,
+            RedirectAttributes redirectAttributes
+    ) {
+        redirectAttributes.addFlashAttribute("formError", "Checkout cancelled. You can pay whenever you are ready.");
         return "redirect:/mentee/sessions/" + requestId;
     }
 
