@@ -74,18 +74,6 @@ public class SessionService {
         return sessionRequestRepository.findByMentorEmailOrderByCreatedAtDesc(normalizeEmail(mentorEmail));
     }
 
-    @Transactional(readOnly = true)
-    public List<SessionRequest> getSessionsForSeeker(String seekerEmail) {
-        return sessionRequestRepository.findBySeekerEmailOrderByCreatedAtDesc(normalizeEmail(seekerEmail));
-    }
-
-    @Transactional(readOnly = true)
-    public List<SessionRequest> getAllSessions() {
-        return sessionRequestRepository.findAll().stream()
-                .sorted((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()))
-                .toList();
-    }
-
     public SessionRequest approveSession(Long sessionId, String mentorNote) {
         SessionRequest request = requireSession(sessionId);
         if (request.getStatus() != SessionStatus.REQUESTED) {
@@ -154,8 +142,8 @@ public class SessionService {
 
     private boolean matchesRole(String actualRole, String expectedRole) {
         String normalizedActual = normalizeText(actualRole).toLowerCase();
-        if ("seeker".equals(expectedRole)) {
-            return "seeker".equals(normalizedActual) || "mentee".equals(normalizedActual);
+        if ("mentee".equals(expectedRole)) {
+            return "mentee".equals(normalizedActual);
         }
         return expectedRole.equals(normalizedActual);
     }
