@@ -4,8 +4,8 @@
 			<p class="tile__kicker">Session payment</p>
 			<h1 th:text="${previewMode ? 'View payment completion flow' : 'Confirm payment before the session'}">Confirm payment before the session</h1>
 			<p class="p p--muted p--tight">
-				<span th:if="${previewMode}">Preview mode only. No charge and no status update are applied.</span>
-				<span th:unless="${previewMode}">This is a demo payment step. No real charge is processed yet.</span>
+				<span th:if="${previewMode}">Review the completion step without changing this request.</span>
+				<span th:unless="${previewMode}">Choose a saved payment method to confirm your session.</span>
 			</p>
 			<ul class="checklist">
 				<li>Pay after mentor approval to keep booking friction low.</li>
@@ -63,7 +63,7 @@
 
 			<form th:if="${previewMode}" method="post" th:action="@{|/mentee/sessions/${sessionRequest.id}/payment/preview-complete|}" class="profileForm">
 				<p class="p p--sm p--muted p--tight">
-					Use this to preview the post-payment completion path without changing payment status.
+					Use this to review the post-payment completion path before returning to the request.
 				</p>
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">View completion preview</button>

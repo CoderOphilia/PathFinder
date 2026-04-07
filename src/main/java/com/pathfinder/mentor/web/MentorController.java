@@ -78,6 +78,11 @@ public class MentorController {
         return renderPage(model, "Mentor home", "mentor/home :: content");
     }
 
+    @GetMapping("/pay")
+    public String pay(Model model) {
+        return renderPage(model, "My pay", "mentor/pay :: content");
+    }
+
     @GetMapping("/availability")
     public String availability(
             @RequestParam(defaultValue = "") String email,
@@ -390,7 +395,14 @@ public class MentorController {
         if (slot.isEmpty()) {
             return type;
         }
-        return type + " • " + slot;
+        String timeRange = slot.contains("•")
+                ? normalizeText(slot.substring(slot.lastIndexOf('•') + 1))
+                : slot;
+        int timezoneStart = timeRange.indexOf(" (");
+        if (timezoneStart >= 0) {
+            timeRange = normalizeText(timeRange.substring(0, timezoneStart));
+        }
+        return type + " • " + timeRange;
     }
 
     private String statusPillClass(SessionStatus status) {

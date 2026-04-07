@@ -1,11 +1,12 @@
 <nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
 	<a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">
-		<span>📍</span> PathFinder
+		PathFinder
 	</a>
 
 	<div class="nav__links" aria-label="Mentor navigation">
 		<a th:href="@{/mentor/home}" class="nav__link" th:classappend="${currentUrl == '/mentor/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/home'} ? 'page' : null">Home</a>
 		<a th:href="@{/mentor/requests}" class="nav__link" th:classappend="${#strings.startsWith(currentUrl, '/mentor/requests') || #strings.startsWith(currentUrl, '/mentor/sessions') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentor/requests') || #strings.startsWith(currentUrl, '/mentor/sessions')} ? 'page' : null">Requests</a>
+		<a th:href="@{/mentor/pay}" class="nav__link" th:classappend="${currentUrl == '/mentor/pay' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/pay'} ? 'page' : null">My pay</a>
 		<a th:href="@{/mentor/availability}" class="nav__link" th:classappend="${currentUrl == '/mentor/availability' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/availability'} ? 'page' : null">Availability</a>
 		<a th:href="@{/mentor/profile}" class="nav__link" th:classappend="${currentUrl == '/mentor/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/profile'} ? 'page' : null">Profile</a>
 		<a th:href="@{/auth/login}" class="nav__link">Sign out</a>
@@ -15,6 +16,7 @@
 	<div class="nav__links--mobile" aria-label="Mentor mobile navigation">
 		<a th:href="@{/mentor/home}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentor/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/home'} ? 'page' : null" aria-label="Home">🏠</a>
 		<a th:href="@{/mentor/requests}" class="nav__link nav__link--icon" th:classappend="${#strings.startsWith(currentUrl, '/mentor/requests') || #strings.startsWith(currentUrl, '/mentor/sessions') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentor/requests') || #strings.startsWith(currentUrl, '/mentor/sessions')} ? 'page' : null" aria-label="Requests">📥</a>
+		<a th:href="@{/mentor/pay}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentor/pay' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/pay'} ? 'page' : null" aria-label="My pay">$</a>
 		<a th:href="@{/mentor/availability}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentor/availability' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/availability'} ? 'page' : null" aria-label="Availability">📅</a>
 		<a th:href="@{/mentor/profile}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/mentor/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/profile'} ? 'page' : null" aria-label="Profile">👤</a>
 	</div>

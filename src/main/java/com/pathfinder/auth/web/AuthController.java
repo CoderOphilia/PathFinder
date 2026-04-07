@@ -57,7 +57,7 @@ public class AuthController {
 
         session.setAttribute(SESSION_USER_EMAIL, dbUser.getEmail());
         session.setAttribute(SESSION_USER_ROLE, dbUser.getRole());
-        redirectAttributes.addFlashAttribute("flashMessage", "Signed in successfully (demo mode).");
+        redirectAttributes.addFlashAttribute("flashMessage", "Signed in successfully.");
         return "redirect:" + homePathForRole(dbUser.getRole());
     }
 
@@ -96,7 +96,7 @@ public class AuthController {
 
         session.setAttribute(SESSION_USER_EMAIL, createdUser.getEmail());
         session.setAttribute(SESSION_USER_ROLE, createdUser.getRole());
-        redirectAttributes.addFlashAttribute("flashMessage", "Account created successfully (demo mode).");
+        redirectAttributes.addFlashAttribute("flashMessage", "Account created successfully.");
         return "redirect:" + homePathForRole(user.getRole());
     }
 
@@ -115,7 +115,7 @@ public class AuthController {
             return "redirect:/auth/forgot";
         }
 
-        redirectAttributes.addFlashAttribute("flashMessage", "If your email exists, a reset link has been sent (demo mode).");
+        redirectAttributes.addFlashAttribute("flashMessage", "If your email exists, a reset link has been sent.");
         return "redirect:/auth/login";
     }
 

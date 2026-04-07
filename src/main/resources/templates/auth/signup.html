@@ -7,7 +7,7 @@
 		<section class="tile tile--form" aria-label="Create account">
 			<p class="tile__kicker">Get started</p>
 			<h1>Create your PathFinder account</h1>
-			<p class="p p--muted p--tight">This signup flow is a frontend demo and does not persist yet.</p>
+			<p class="p p--muted p--tight">Choose how you want to use PathFinder and set up your account.</p>
 
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
@@ -60,7 +60,6 @@
 						<option value="">Select your role</option>
 						<option value="mentee">Mentee</option>
 						<option value="mentor">Mentor</option>
-						<option value="admin">Admin</option>
 					</select>
 				</div>
 

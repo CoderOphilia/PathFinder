@@ -1,0 +1,75 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full tile--mentor" aria-label="Mentor pay summary">
+			<p class="tile__kicker">My pay</p>
+			<h1>Current pay period</h1>
+			<p class="p p--muted p--tight">
+				A simple 14-day summary of completed sessions.
+			</p>
+			<p class="p p--sm p--muted p--tight">Stub data for the current pay period.</p>
+		</section>
+
+		<section class="tile tile--full" aria-label="Pay period stats">
+			<div class="dashboardStats">
+				<article class="statCard">
+					<h2>4.5</h2>
+					<p class="p p--sm p--muted p--tight">Hours</p>
+				</article>
+				<article class="statCard">
+					<h2>6</h2>
+					<p class="p p--sm p--muted p--tight">Sessions</p>
+				</article>
+				<article class="statCard">
+					<h2>4</h2>
+					<p class="p p--sm p--muted p--tight">Clients</p>
+				</article>
+			</div>
+		</section>
+
+		<section class="tile tile--full tile--panel" aria-label="Expected pay invoice">
+			<p class="tile__kicker">Expected pay</p>
+			<h2>Pay period invoice</h2>
+			<p class="p p--sm p--muted p--tight">Stub payout estimate before final review. BC taxes are estimated for display.</p>
+
+			<div class="tableWrap">
+				<table class="dataTable">
+					<caption class="srOnly">Expected mentor payout invoice</caption>
+					<thead>
+						<tr>
+							<th scope="col">Item</th>
+							<th scope="col">Qty</th>
+							<th scope="col">Rate</th>
+							<th scope="col">Amount</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Completed mentor sessions</td>
+							<td>4.5 hrs</td>
+							<td>$100/hr</td>
+							<td>$450.00</td>
+						</tr>
+						<tr>
+							<td>PathFinder platform fee</td>
+							<td>15%</td>
+							<td>-</td>
+							<td>-$67.50</td>
+						</tr>
+						<tr>
+							<td>GST + BC PST on platform fee</td>
+							<td>12%</td>
+							<td>5% + 7%</td>
+							<td>-$8.10</td>
+						</tr>
+						<tr>
+							<td><strong>Expected payout</strong></td>
+							<td></td>
+							<td></td>
+							<td><strong>$374.40</strong></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</div>
+</section>

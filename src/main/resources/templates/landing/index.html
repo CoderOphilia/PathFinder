@@ -1,97 +1,87 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
-	<div class="gridPage">
+	<div class="gridPage landingPage">
 		<section class="tile tile--full tile--primary heroTile" style="--order: 1" aria-label="PathFinder hero">
-			<p class="tile__kicker">PathFinder Platform</p>
-			<h1>Turn mentorship into clear next steps.</h1>
-			<p class="p p--muted p--loose">
-				PathFinder helps mentees and mentors stay aligned through structured sessions,
-				action items, and lightweight tracking.
-			</p>
-			<div class="heroActions">
-				<a class="btn btn--default btn--lg" th:href="@{/auth/signup}">Get Started</a>
-				<a class="btn btn--outline btn--lg" th:href="@{/auth/login}">Sign In</a>
+			<div class="heroTile__body">
+				<p class="tile__kicker">Career guidance, booked simply</p>
+				<h1>Find a mentor for your next career move.</h1>
+				<p class="p p--muted p--loose">
+					PathFinder helps you find a relevant mentor, request a time, and keep your session
+					details in one place.
+				</p>
+				<ul class="tags" aria-label="Who PathFinder is for">
+					<li class="tag">Students</li>
+					<li class="tag">Career changers</li>
+					<li class="tag">Professionals</li>
+					<li class="tag">Mentors</li>
+				</ul>
+				<div class="heroActions">
+					<a class="btn btn--default btn--lg" th:href="@{/auth/signup}">Choose your role</a>
+					<a class="btn btn--outline btn--lg" th:href="@{/auth/login}">Sign In</a>
+				</div>
 			</div>
 		</section>
 
-		<section class="tile tile--full sectionHeader" style="--order: 2" id="how-it-works" aria-label="How it works">
-			<p class="tile__kicker">Process</p>
-			<h2>Simple workflow, better follow-through.</h2>
+		<section class="tile tile--span4 landingLead" style="--order: 2" id="how-it-works" aria-label="How it works">
+			<p class="tile__kicker">How it works</p>
+			<h2>Three steps, no extra setup.</h2>
+			<p class="p p--muted p--tight">
+				Search, request a time, and come back to the same session record when you need details.
+			</p>
 		</section>
 
-		<section class="tile tile--span4" style="--order: 3" aria-label="How it works step one">
-			<p class="tile__kicker">01</p>
-			<h3>Request with context</h3>
-			<p class="p p--muted p--tight">Describe your objective and what you want to improve.</p>
+		<div class="tile tile--span8 landingFlow" style="--order: 3" aria-label="How it works steps">
+			<section class="landingStep" aria-label="How it works step one">
+				<p class="tile__kicker">01</p>
+				<h3>Look for the right person</h3>
+				<p class="p p--muted p--tight">
+					Search by skill, background, or interview experience.
+				</p>
+			</section>
+
+			<section class="landingStep" aria-label="How it works step two">
+				<p class="tile__kicker">02</p>
+				<h3>Book a time that works</h3>
+				<p class="p p--muted p--tight">
+					Review availability and send a focused request.
+				</p>
+			</section>
+
+			<section class="landingStep" aria-label="How it works step three">
+				<p class="tile__kicker">03</p>
+				<h3>Keep track after the call</h3>
+				<p class="p p--muted p--tight">
+					Keep notes, meeting links, and next steps attached to the session.
+				</p>
+			</section>
+		</div>
+
+		<section class="tile tile--span4 landingLead" style="--order: 4" aria-label="Audience sections">
+			<p class="tile__kicker">For both sides</p>
+			<h2>Built for mentees and mentors.</h2>
+			<p class="p p--muted p--tight">
+				One product for finding guidance, offering guidance, and managing session details.
+			</p>
 		</section>
 
-		<section class="tile tile--span4" style="--order: 4" aria-label="How it works step two">
-			<p class="tile__kicker">02</p>
-			<h3>Meet anywhere</h3>
-			<p class="p p--muted p--tight">Connect on Meet, Zoom, or your preferred platform.</p>
-		</section>
-
-		<section class="tile tile--span4" style="--order: 5" aria-label="How it works step three">
-			<p class="tile__kicker">03</p>
-			<h3>Track action items</h3>
-			<p class="p p--muted p--tight">Use summaries and action checklists to stay accountable.</p>
-		</section>
-
-		<section class="tile tile--full sectionHeader" style="--order: 6" aria-label="Role entry points">
-			<p class="tile__kicker">Role demos</p>
-			<h2>Start from the workspace that matches your role.</h2>
-		</section>
-
-		<section class="tile tile--span4" style="--order: 7" aria-label="Mentee demo card">
+		<section class="tile landingCard tile--span4" style="--order: 5" aria-label="Mentee value card">
 			<p class="tile__kicker">Mentee</p>
-			<h3>Mentee home and profile</h3>
+			<h3>Find help for a specific career question</h3>
 			<ul class="tile__list">
-				<li>Track current session requests</li>
-				<li>Capture career goals and preferences</li>
-				<li>Review open action items</li>
+				<li>Compare mentor background, skills, and rates</li>
+				<li>Send your goal before requesting a session</li>
 			</ul>
-			<p class="p p--tight"><a class="link link--underline" th:href="@{/mentee/home}">Open mentee demo</a></p>
+			<p class="p p--tight"><a class="link link--underline" th:href="@{/auth/signup}">Join as a mentee</a></p>
 		</section>
 
-		<section class="tile tile--span4" style="--order: 8" aria-label="Mentor demo card">
+		<section class="tile landingCard tile--span4" style="--order: 6" aria-label="Mentor value card">
 			<p class="tile__kicker">Mentor</p>
-			<h3>Mentor home and profile</h3>
+			<h3>Offer sessions without extra coordination</h3>
 			<ul class="tile__list">
-				<li>Review pending session requests</li>
-				<li>Manage expertise and profile details</li>
-				<li>Prepare post-session summaries</li>
+				<li>Show your availability, rate, and focus areas</li>
+				<li>Review requests and keep session notes in one place</li>
 			</ul>
-			<p class="p p--tight"><a class="link link--underline" th:href="@{/mentor/home}">Open mentor demo</a></p>
+			<p class="p p--tight"><a class="link link--underline" th:href="@{/auth/signup}">Join as a mentor</a></p>
 		</section>
 
-		<section class="tile tile--span4" style="--order: 9" aria-label="Admin demo card">
-			<p class="tile__kicker">Admin</p>
-			<h3>Admin home and profile</h3>
-			<ul class="tile__list">
-				<li>Preview mentor verification queue</li>
-				<li>Monitor platform-level activity</li>
-				<li>Maintain admin contact settings</li>
-			</ul>
-			<p class="p p--tight"><a class="link link--underline" th:href="@{/admin/home}">Open admin demo</a></p>
-		</section>
-
-		<section class="tile tile--span6" style="--order: 10" aria-label="MVP scope">
-			<p class="tile__kicker">What you can do in MVP</p>
-			<h3>Core product capabilities</h3>
-			<ul class="checklist">
-				<li>Sign up and preview role-specific dashboards</li>
-				<li>Maintain simple profile information by role</li>
-				<li>Follow a structured session workflow and next-step tracking model</li>
-			</ul>
-		</section>
-
-		<section class="tile tile--span6" style="--order: 11" aria-label="MVP not included">
-			<p class="tile__kicker">Out of scope for MVP</p>
-			<h3>Not included yet</h3>
-			<ul class="checklist">
-				<li>In-app messaging and video calls</li>
-				<li>AI mentor matching or recommendation engine</li>
-				<li>Automated payment settlement and refund workflows</li>
-			</ul>
-		</section>
 	</div>
 </section>

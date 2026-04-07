@@ -19,7 +19,7 @@
 					<li th:each="slot : ${previewSlots}" th:text="${slot}">Monday • 6:00 PM - 8:00 PM</li>
 					<li th:if="${#lists.isEmpty(previewSlots)}">No bookable slots yet</li>
 				</ul>
-				<p class="p p--sm p--muted p--tight">Preview is demo-only until backend scheduling is connected.</p>
+				<p class="p p--sm p--muted p--tight">Preview updates from the schedule above.</p>
 			</section>
 		</section>
 

@@ -177,7 +177,7 @@ public class AdminController {
             return "redirect:/admin/profile";
         }
 
-        redirectAttributes.addFlashAttribute("flashMessage", "Admin profile saved (demo mode).");
+        redirectAttributes.addFlashAttribute("flashMessage", "Admin profile saved.");
         return "redirect:/admin/profile";
     }
 

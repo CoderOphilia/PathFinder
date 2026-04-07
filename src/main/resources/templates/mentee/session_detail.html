@@ -102,12 +102,6 @@
 				>
 					Proceed to payment
 				</a>
-				<a
-					class="btn btn--secondary"
-					th:href="@{|/mentee/sessions/${sessionRequest.id}/payment?preview=true|}"
-				>
-					View payment flow
-				</a>
 				<form
 					th:if="${canCancelAsMentee}"
 					method="post"

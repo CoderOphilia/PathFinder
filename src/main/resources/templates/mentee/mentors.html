@@ -1,12 +1,14 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full" style="--order: 1">
+		<section class="tile tile--full directoryIntro" style="--order: 1">
 			<p class="tile__kicker">Mentor directory</p>
 			<h1>Find mentors</h1>
 			<p class="p p--muted p--tight">
 				Browse mentor profiles by expertise, industry, and interview experience.
 			</p>
+		</section>
 
+		<section class="tile tile--full directoryFilters" style="--order: 2">
 			<form method="get" th:action="@{/mentee/mentors}" class="mentorFilters" aria-label="Mentor filters">
 				<div>
 					<label for="mentorSearch" class="label">Search mentors</label>
@@ -61,9 +63,9 @@
 			</p>
 		</section>
 
-		<section th:if="${#lists.isEmpty(filteredMentors)}" class="tile tile--full" style="--order: 2" aria-live="polite">
+		<section th:if="${#lists.isEmpty(filteredMentors)}" class="tile tile--full" style="--order: 3" aria-live="polite">
 			<div class="emptyState">
-				<div class="emptyState__icon">🔎</div>
+				<p class="tile__kicker">No matches yet</p>
 				<h2>Still looking for the right match?</h2>
 				<p class="p p--muted">
 					We couldn't find any mentors matching your current filters. Try a broader search term
@@ -75,7 +77,7 @@
 			</div>
 		</section>
 
-		<section th:each="mentor : ${filteredMentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 1)" aria-label="Mentor card">
+		<section th:each="mentor : ${filteredMentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 3)" aria-label="Mentor card">
 			<a class="mentorCard__link" th:href="@{/mentors/{mentorSlug}(mentorSlug=${mentor.slug})}">
 				<div class="mentorCard__top">
 					<h2 th:text="${mentor.name}">Mentor Name</h2>
@@ -107,10 +109,5 @@
 			</div>
 		</section>
 
-		<section class="tile tile--full" style="--order: 10">
-			<p class="p p--sm p--muted p--tight">
-				Note: booking flow and mentor search filters are placeholder UI in this frontend-only MVP.
-			</p>
-		</section>
 	</div>
 </section>

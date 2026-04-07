@@ -1,6 +1,6 @@
 <nav xmlns:th="http://www.thymeleaf.org" th:fragment="navbar" class="nav">
     <a th:href="@{/}" class="nav__brand" aria-label="PathFinder home">
-        <span>📍</span> PathFinder
+        PathFinder
     </a>
 
     <div class="nav__links" aria-label="Primary navigation">
@@ -12,7 +12,7 @@
            th:attr="aria-current=${#strings.startsWith(currentUrl, '/auth')} ? 'page' : null">Sign in</a>
         <a th:href="@{/auth/signup}" class="nav__link nav__cta"
            th:classappend="${currentUrl == '/auth/signup' ? 'active' : ''}"
-           th:attr="aria-current=${currentUrl == '/auth/signup'} ? 'page' : null">Create account</a>
+           th:attr="aria-current=${currentUrl == '/auth/signup'} ? 'page' : null">Choose role</a>
     </div>
 
     <!-- Mobile Nav (Fixed Bottom) -->
