@@ -1,63 +1,81 @@
 package com.pathfinder.admin.service;
 
-import com.pathfinder.session.web.DemoSessionStore;
-import org.junit.jupiter.api.BeforeEach;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.domain.SessionStatus;
+import com.pathfinder.session.repo.SessionRequestRepository;
+import com.pathfinder.session.service.SessionService;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class AdminSessionOversightServiceTest {
 
-    private DemoSessionStore demoSessionStore;
+    @Mock
+    private SessionRequestRepository sessionRequestRepository;
+
+    @Mock
+    private SessionService sessionService;
+
+    @InjectMocks
     private AdminSessionOversightService adminSessionOversightService;
 
-    @BeforeEach
-    void setUp() {
-        demoSessionStore = new DemoSessionStore();
-        adminSessionOversightService = new AdminSessionOversightService(demoSessionStore);
+    @Test
+    // Maps saved session requests into admin oversight rows.
+    void listRequests() {
+        when(sessionRequestRepository.findAll()).thenReturn(List.of(
+                sessionRequest(1L, SessionStatus.REQUESTED, false),
+                sessionRequest(2L, SessionStatus.PAID, true)
+        ));
+
+        List<AdminSessionOversightService.SessionOversightItemView> result = adminSessionOversightService.listRequests();
+
+        assertEquals(2, result.size());
+        assertEquals("Requested", result.get(1).statusLabel());
+        assertEquals("Paid", result.getFirst().paymentStatusLabel());
     }
 
     @Test
-    void listRequestsReturnsActionableRowsForActiveRequests() {
-        DemoSessionStore.SessionRequestView request = createRequest();
+    // Delegates session cancellation to the session service.
+    void cancelRequest() {
+        adminSessionOversightService.cancelRequest(1L);
 
-        AdminSessionOversightService.SessionOversightItemView item = adminSessionOversightService.listRequests().stream()
-                .filter(candidate -> candidate.requestId().equals(request.requestId()))
-                .findFirst()
-                .orElseThrow();
-
-        assertEquals("Requested", item.statusLabel());
-        assertTrue(item.canCancel());
+        verify(sessionService).cancelSession(1L);
     }
 
     @Test
-    void cancelRequestCancelsActiveRequestAndRejectsTerminalRequest() {
-        DemoSessionStore.SessionRequestView request = createRequest();
+    // Counts only rows that can still be cancelled.
+    void activeSessionCount() {
+        when(sessionRequestRepository.findAll()).thenReturn(List.of(
+                sessionRequest(1L, SessionStatus.REQUESTED, false),
+                sessionRequest(2L, SessionStatus.CANCELLED, false),
+                sessionRequest(3L, SessionStatus.APPROVED, false)
+        ));
 
-        adminSessionOversightService.cancelRequest(request.requestId());
+        long result = adminSessionOversightService.activeSessionCount();
 
-        AdminSessionOversightService.SessionOversightItemView cancelledItem = adminSessionOversightService.listRequests().stream()
-                .filter(candidate -> candidate.requestId().equals(request.requestId()))
-                .findFirst()
-                .orElseThrow();
-
-        assertEquals("Cancelled", cancelledItem.statusLabel());
-        assertFalse(cancelledItem.canCancel());
-        assertThrows(IllegalStateException.class, () -> adminSessionOversightService.cancelRequest(request.requestId()));
+        assertEquals(2L, result);
     }
 
-    private DemoSessionStore.SessionRequestView createRequest() {
-        DemoSessionStore.MentorDirectoryItemView mentor = demoSessionStore.getMentors().getFirst();
-        DemoSessionStore.AvailabilitySlotView slot = demoSessionStore.getAvailabilityForMentor(mentor.name()).getFirst();
-        return demoSessionStore.createRequest(
-                mentor.name(),
-                slot.slotId(),
-                "Mock interview",
-                "Practice behavioral answers",
-                "Focus on concise delivery"
-        );
+    private SessionRequest sessionRequest(Long id, SessionStatus status, boolean paid) {
+        SessionRequest request = new SessionRequest();
+        request.setId(id);
+        request.setMentorName("Mentor User");
+        request.setMenteeEmail("mentee@example.com");
+        request.setSlotTime("Monday • 6:00 PM - 6:45 PM (America/Vancouver)");
+        request.setSessionType("Mock interview");
+        request.setStatus(status);
+        request.setPaymentCompleted(paid);
+        request.setCreatedAt(LocalDateTime.of(2026, 4, 7, (int) (10 + id), 0));
+        return request;
     }
 }

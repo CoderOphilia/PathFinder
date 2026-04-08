@@ -3,48 +3,88 @@ package com.pathfinder.admin.service;
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.repo.UserRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.Import;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 
-@DataJpaTest
-@Import(AdminAccountService.class)
+@ExtendWith(MockitoExtension.class)
 class AdminAccountServiceTest {
 
-    @Autowired
-    private AdminAccountService adminAccountService;
-
-    @Autowired
+    @Mock
     private UserRepository userRepository;
 
+    @InjectMocks
+    private AdminAccountService adminAccountService;
+
     @Test
-    void suspendUserChangesAccountStatusToSuspended() {
-        User user = userRepository.save(createUser("seeker@example.com", "mentee", "ACTIVE"));
+    // Maps saved users into simple admin table rows.
+    void listUsers() {
+        when(userRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "role", "email")))
+                .thenReturn(List.of(
+                        createUser(1L, "mentee@example.com", "mentee", "ACTIVE"),
+                        createUser(2L, "mentor@example.com", "mentor", "SUSPENDED")
+                ));
 
-        adminAccountService.suspendUser(user.getId());
+        List<AdminAccountService.ManagedUserView> result = adminAccountService.listUsers();
 
-        assertEquals("SUSPENDED", userRepository.findById(user.getId()).orElseThrow().getAccountStatus());
+        assertEquals(2, result.size());
+        assertEquals("Mentee", result.getFirst().role());
+        assertTrue(result.getFirst().canSuspend());
+        assertTrue(result.get(1).canReactivate());
     }
 
     @Test
-    void reactivateUserChangesAccountStatusToActive() {
-        User user = userRepository.save(createUser("mentor@example.com", "mentor", "SUSPENDED"));
+    // Suspends an active non-admin account.
+    void suspendUser() {
+        User user = createUser(1L, "mentee@example.com", "mentee", "ACTIVE");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-        adminAccountService.reactivateUser(user.getId());
+        adminAccountService.suspendUser(1L);
 
-        assertEquals("ACTIVE", userRepository.findById(user.getId()).orElseThrow().getAccountStatus());
+        assertEquals("SUSPENDED", user.getAccountStatus());
     }
 
-    private User createUser(String email, String role, String accountStatus) {
+    @Test
+    // Reactivates a suspended non-admin account.
+    void reactivateUser() {
+        User user = createUser(1L, "mentor@example.com", "mentor", "SUSPENDED");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        adminAccountService.reactivateUser(1L);
+
+        assertEquals("ACTIVE", user.getAccountStatus());
+    }
+
+    @Test
+    // Blocks admin accounts from being suspended.
+    void blockAdminSuspension() {
+        User user = createUser(1L, "admin@example.com", "admin", "ACTIVE");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
+                adminAccountService.suspendUser(1L)
+        );
+
+        assertTrue(exception.getMessage().contains("Admin accounts"));
+    }
+
+    private User createUser(Long id, String email, String role, String status) {
         User user = new User();
-        user.setFirstName("Demo");
-        user.setLastName("User");
+        user.setId(id);
         user.setEmail(email);
-        user.setPassword("encoded-password");
         user.setRole(role);
-        user.setAccountStatus(accountStatus);
+        user.setAccountStatus(status);
+        user.setFirstName("Test");
+        user.setLastName("User");
         return user;
     }
 }
