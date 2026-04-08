@@ -1,103 +1,164 @@
 package com.pathfinder.admin.service;
 
-import com.pathfinder.mentor.web.DemoMentorCatalog;
+import com.pathfinder.auth.domain.User;
+import com.pathfinder.auth.repo.UserRepository;
+import com.pathfinder.mentor.domain.MentorInterviewCompany;
+import com.pathfinder.mentor.domain.MentorProfile;
+import com.pathfinder.mentor.domain.MentorSkill;
+import com.pathfinder.mentor.domain.VerificationStatus;
+import com.pathfinder.mentor.repo.MentorInterviewCompanyRepository;
+import com.pathfinder.mentor.repo.MentorProfileRepository;
+import com.pathfinder.mentor.repo.MentorSkillRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.Locale;
 
 @Service
+@Transactional
 public class AdminReviewService {
 
-    private final DemoMentorCatalog mentorCatalog;
-    private final Map<String, ReviewDecisionState> decisionsByMentorSlug = new HashMap<>();
+    private final MentorProfileRepository mentorProfileRepository;
+    private final MentorSkillRepository mentorSkillRepository;
+    private final MentorInterviewCompanyRepository mentorInterviewCompanyRepository;
+    private final UserRepository userRepository;
 
-    public AdminReviewService(DemoMentorCatalog mentorCatalog) {
-        this.mentorCatalog = mentorCatalog;
+    public AdminReviewService(
+            MentorProfileRepository mentorProfileRepository,
+            MentorSkillRepository mentorSkillRepository,
+            MentorInterviewCompanyRepository mentorInterviewCompanyRepository,
+            UserRepository userRepository
+    ) {
+        this.mentorProfileRepository = mentorProfileRepository;
+        this.mentorSkillRepository = mentorSkillRepository;
+        this.mentorInterviewCompanyRepository = mentorInterviewCompanyRepository;
+        this.userRepository = userRepository;
     }
 
-    public synchronized List<MentorReviewItemView> listReviewItems() {
-        return mentorCatalog.listMentors().stream()
-                .map(this::toView)
+    @Transactional(readOnly = true)
+    public List<MentorReviewItemView> listReviewItems() {
+        return userRepository.findAll().stream()
+                .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .map(this::toReviewItem)
+                .filter(item -> item != null)
                 .toList();
     }
 
-    public synchronized Optional<MentorReviewItemView> findReviewItem(String mentorSlug) {
-        if (isBlank(mentorSlug)) {
-            return Optional.empty();
+    @Transactional(readOnly = true)
+    public MentorReviewItemView findReviewItem(String mentorSlug) {
+        String normalizedSlug = normalizeSlug(mentorSlug);
+        if (normalizedSlug.isEmpty()) {
+            return null;
         }
+
         return listReviewItems().stream()
-                .filter(item -> item.mentor().slug().equalsIgnoreCase(mentorSlug.trim()))
-                .findFirst();
+                .filter(item -> item.slug().equals(normalizedSlug))
+                .findFirst()
+                .orElse(null);
     }
 
-    public synchronized void approveMentor(String mentorSlug, String adminNote) {
-        String normalizedSlug = requireSlug(mentorSlug);
-        decisionsByMentorSlug.put(
-                normalizedSlug,
-                new ReviewDecisionState(ReviewOutcome.APPROVED, normalizeText(adminNote))
-        );
+    public void approveMentor(String mentorSlug, String adminNote) {
+        MentorProfile profile = requireMentorProfile(mentorSlug);
+        profile.setVerificationStatus(VerificationStatus.APPROVED);
+        profile.setAdminNote(normalizeText(adminNote));
     }
 
-    public synchronized void requestUpdates(String mentorSlug, String adminNote) {
-        String normalizedSlug = requireSlug(mentorSlug);
-        decisionsByMentorSlug.put(
-                normalizedSlug,
-                new ReviewDecisionState(ReviewOutcome.CHANGES_REQUESTED, normalizeText(adminNote))
-        );
+    public void denyMentor(String mentorSlug, String adminNote) {
+        MentorProfile profile = requireMentorProfile(mentorSlug);
+        // The existing enum already has REJECTED, so we use it for the denied state.
+        profile.setVerificationStatus(VerificationStatus.REJECTED);
+        profile.setAdminNote(normalizeText(adminNote));
     }
 
-    public synchronized long pendingReviewCount() {
+    @Transactional(readOnly = true)
+    public long pendingReviewCount() {
         return listReviewItems().stream()
                 .filter(item -> "Pending review".equals(item.reviewStatus()))
                 .count();
     }
 
-    private MentorReviewItemView toView(DemoMentorCatalog.MentorCatalogItem mentor) {
-        ReviewDecisionState decisionState = decisionsByMentorSlug.get(normalizeSlug(mentor.slug()));
-        if (decisionState == null || decisionState.outcome() == ReviewOutcome.PENDING) {
-            return new MentorReviewItemView(
-                    mentor,
-                    "Pending review",
-                    "Pending review",
-                    "statusBadge statusBadge--requested",
-                    ""
-            );
+    private MentorReviewItemView toReviewItem(User mentorUser) {
+        MentorProfile profile = mentorProfileRepository.findById(mentorUser.getId()).orElse(null);
+        if (profile == null) {
+            return null;
         }
 
-        if (decisionState.outcome() == ReviewOutcome.APPROVED) {
-            return new MentorReviewItemView(
-                    mentor,
-                    "Approved",
-                    "Approved",
-                    "statusBadge statusBadge--approved",
-                    defaultIfBlank(decisionState.adminNote(), "Mentor verification approved.")
-            );
-        }
+        List<String> skills = mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(mentorUser.getId()).stream()
+                .map(MentorSkill::getSkillName)
+                .toList();
+        List<String> interviewCompanies = mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(mentorUser.getId()).stream()
+                .map(MentorInterviewCompany::getCompanyName)
+                .toList();
 
         return new MentorReviewItemView(
-                mentor,
-                "Changes requested",
-                "Changes requested",
-                "statusBadge statusBadge--declined",
-                defaultIfBlank(decisionState.adminNote(), "Please update your profile before approval.")
+                normalizeSlug(buildFullName(mentorUser)),
+                buildFullName(mentorUser),
+                buildRoleAtCompany(profile),
+                normalizeText(profile.getBio()),
+                skills,
+                interviewCompanies,
+                toStatusLabel(profile.getVerificationStatus()),
+                toStatusClass(profile.getVerificationStatus()),
+                normalizeText(profile.getAdminNote())
         );
     }
 
-    private String requireSlug(String mentorSlug) {
-        String normalizedSlug = normalizeSlug(mentorSlug);
-        boolean exists = mentorCatalog.listMentors().stream()
-                .anyMatch(item -> item.slug().equalsIgnoreCase(normalizedSlug));
-        if (!exists) {
+    private MentorProfile requireMentorProfile(String mentorSlug) {
+        MentorReviewItemView item = findReviewItem(mentorSlug);
+        if (item == null) {
             throw new IllegalArgumentException("Mentor review item not found.");
         }
-        return normalizedSlug;
+
+        return userRepository.findAll().stream()
+                .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .filter(user -> normalizeSlug(buildFullName(user)).equals(item.slug()))
+                .findFirst()
+                .flatMap(user -> mentorProfileRepository.findById(user.getId()))
+                .orElseThrow(() -> new IllegalArgumentException("Mentor review item not found."));
     }
 
-    private String normalizeSlug(String mentorSlug) {
-        return mentorSlug == null ? "" : mentorSlug.trim().toLowerCase();
+    private String toStatusLabel(VerificationStatus status) {
+        if (status == null || status == VerificationStatus.PENDING) {
+            return "Pending review";
+        }
+        if (status == VerificationStatus.APPROVED) {
+            return "Approved";
+        }
+        return "Denied";
+    }
+
+    private String toStatusClass(VerificationStatus status) {
+        if (status == null || status == VerificationStatus.PENDING) {
+            return "statusBadge statusBadge--requested";
+        }
+        if (status == VerificationStatus.APPROVED) {
+            return "statusBadge statusBadge--approved";
+        }
+        return "statusBadge statusBadge--declined";
+    }
+
+    private String buildFullName(User user) {
+        return (normalizeText(user.getFirstName()) + " " + normalizeText(user.getLastName())).trim();
+    }
+
+    private String buildRoleAtCompany(MentorProfile profile) {
+        String title = normalizeText(profile.getCurrentTitle());
+        String company = normalizeText(profile.getCurrentCompany());
+        if (title.isEmpty()) {
+            return company;
+        }
+        if (company.isEmpty()) {
+            return title;
+        }
+        return title + " @ " + company;
+    }
+
+    private String normalizeSlug(String value) {
+        return normalizeText(value)
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
     }
 
     private String normalizeText(String value) {
@@ -107,30 +168,14 @@ public class AdminReviewService {
         return value.trim().replaceAll("\\s+", " ");
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
-    }
-
-    private String defaultIfBlank(String value, String fallback) {
-        return isBlank(value) ? fallback : value;
-    }
-
-    private record ReviewDecisionState(
-            ReviewOutcome outcome,
-            String adminNote
-    ) {
-    }
-
-    private enum ReviewOutcome {
-        PENDING,
-        APPROVED,
-        CHANGES_REQUESTED
-    }
-
     public record MentorReviewItemView(
-            DemoMentorCatalog.MentorCatalogItem mentor,
+            String slug,
+            String name,
+            String roleAtCompany,
+            String bio,
+            List<String> skills,
+            List<String> interviewCompanies,
             String reviewStatus,
-            String statusLabel,
             String statusClass,
             String adminNote
     ) {

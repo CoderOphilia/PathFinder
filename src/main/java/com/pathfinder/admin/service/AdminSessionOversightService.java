@@ -1,115 +1,103 @@
 package com.pathfinder.admin.service;
 
-import com.pathfinder.session.web.DemoSessionStore;
+import com.pathfinder.session.domain.SessionRequest;
+import com.pathfinder.session.domain.SessionStatus;
+import com.pathfinder.session.repo.SessionRequestRepository;
+import com.pathfinder.session.service.SessionService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
 @Service
+@Transactional
 public class AdminSessionOversightService {
 
     private static final DateTimeFormatter SUBMITTED_AT_FORMATTER =
             DateTimeFormatter.ofPattern("EEE, MMM d • h:mm a", Locale.ENGLISH);
 
-    private final DemoSessionStore sessionStore;
+    private final SessionRequestRepository sessionRequestRepository;
+    private final SessionService sessionService;
 
-    public AdminSessionOversightService(DemoSessionStore sessionStore) {
-        this.sessionStore = sessionStore;
+    public AdminSessionOversightService(
+            SessionRequestRepository sessionRequestRepository,
+            SessionService sessionService
+    ) {
+        this.sessionRequestRepository = sessionRequestRepository;
+        this.sessionService = sessionService;
     }
 
+    @Transactional(readOnly = true)
     public List<SessionOversightItemView> listRequests() {
-        return sessionStore.listRequestsForMentorQueue().stream()
+        return sessionRequestRepository.findAll().stream()
+                .sorted((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()))
                 .map(this::toView)
                 .toList();
     }
 
-    public void cancelRequest(String requestId) {
-        if (requestId == null || requestId.trim().isEmpty()) {
+    public void cancelRequest(Long requestId) {
+        if (requestId == null) {
             throw new IllegalArgumentException("Session request not found.");
         }
-        sessionStore.cancelRequest(requestId, DemoSessionStore.CancellationActor.ADMIN)
-                .orElseThrow(() -> new IllegalStateException("Only active session requests can be cancelled."));
+        sessionService.cancelSession(requestId);
     }
 
+    @Transactional(readOnly = true)
     public long activeSessionCount() {
         return listRequests().stream()
                 .filter(SessionOversightItemView::canCancel)
                 .count();
     }
 
-    private SessionOversightItemView toView(DemoSessionStore.SessionRequestView request) {
+    private SessionOversightItemView toView(SessionRequest request) {
         return new SessionOversightItemView(
-                request.requestId(),
-                request.mentorName(),
-                request.slotLabel(),
-                request.sessionType(),
-                toStatusLabel(request.status()),
-                toStatusClass(request.status()),
-                toPaymentStatusLabel(request.paymentStatus()),
-                toPaymentStatusClass(request.paymentStatus()),
-                request.submittedAt().format(SUBMITTED_AT_FORMATTER),
-                !isTerminal(request.status())
+                request.getId(),
+                request.getMentorName(),
+                request.getMenteeEmail(),
+                request.getSlotTime(),
+                request.getSessionType(),
+                toStatusLabel(request.getStatus()),
+                toStatusClass(request.getStatus()),
+                request.isPaymentCompleted() ? "Paid" : "Not paid",
+                request.isPaymentCompleted() ? "statusBadge statusBadge--approved" : "statusBadge statusBadge--neutral",
+                request.getCreatedAt().format(SUBMITTED_AT_FORMATTER),
+                canCancel(request.getStatus())
         );
     }
 
-    private boolean isTerminal(DemoSessionStore.SessionStatus status) {
-        return status == DemoSessionStore.SessionStatus.DECLINED
-                || status == DemoSessionStore.SessionStatus.CANCELLED
-                || status == DemoSessionStore.SessionStatus.EXPIRED
-                || status == DemoSessionStore.SessionStatus.COMPLETED;
+    private boolean canCancel(SessionStatus status) {
+        return status != SessionStatus.CANCELLED
+                && status != SessionStatus.DECLINED
+                && status != SessionStatus.COMPLETED;
     }
 
-    private String toStatusLabel(DemoSessionStore.SessionStatus status) {
+    private String toStatusLabel(SessionStatus status) {
         return switch (status) {
             case REQUESTED -> "Requested";
-            case APPROVED_PENDING_PAYMENT -> "Approved - payment pending";
-            case APPROVED_PAID -> "Approved - paid";
+            case APPROVED -> "Approved";
             case DECLINED -> "Declined";
+            case PAID -> "Paid";
             case CANCELLED -> "Cancelled";
-            case EXPIRED -> "Expired";
             case COMPLETED -> "Completed";
         };
     }
 
-    private String toStatusClass(DemoSessionStore.SessionStatus status) {
+    private String toStatusClass(SessionStatus status) {
         return switch (status) {
             case REQUESTED -> "statusBadge statusBadge--requested";
-            case APPROVED_PENDING_PAYMENT -> "statusBadge statusBadge--pendingPayment";
-            case APPROVED_PAID -> "statusBadge statusBadge--approved";
+            case APPROVED, PAID -> "statusBadge statusBadge--approved";
             case DECLINED -> "statusBadge statusBadge--declined";
             case CANCELLED -> "statusBadge statusBadge--cancelled";
-            case EXPIRED -> "statusBadge statusBadge--expired";
             case COMPLETED -> "statusBadge statusBadge--completed";
         };
     }
 
-    private String toPaymentStatusLabel(DemoSessionStore.PaymentStatus status) {
-        return switch (status) {
-            case NOT_STARTED -> "Not started";
-            case PENDING -> "Pending";
-            case PAID -> "Paid";
-            case PARTIAL_REFUND -> "Partial refund";
-            case REFUNDED -> "Refunded";
-            case FAILED -> "Failed";
-        };
-    }
-
-    private String toPaymentStatusClass(DemoSessionStore.PaymentStatus status) {
-        return switch (status) {
-            case NOT_STARTED -> "statusBadge statusBadge--neutral";
-            case PENDING -> "statusBadge statusBadge--pendingPayment";
-            case PAID -> "statusBadge statusBadge--approved";
-            case PARTIAL_REFUND -> "statusBadge statusBadge--cancelled";
-            case REFUNDED -> "statusBadge statusBadge--expired";
-            case FAILED -> "statusBadge statusBadge--declined";
-        };
-    }
-
     public record SessionOversightItemView(
-            String requestId,
+            Long requestId,
             String mentorName,
+            String menteeEmail,
             String slotLabel,
             String sessionType,
             String statusLabel,

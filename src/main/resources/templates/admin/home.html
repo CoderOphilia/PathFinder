@@ -1,89 +1,32 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
-		<section class="tile tile--full tile--admin" style="--order: 1">
+		<section class="tile tile--full tile--admin">
 			<p class="tile__kicker">Admin workspace</p>
 			<h1>Admin home</h1>
 			<p class="p p--muted p--tight">
-				Monitor platform health, keep review queues moving, and maintain session quality.
+				Simple admin tools for mentor review, user moderation, and session oversight.
 			</p>
 			<div class="heroActions">
-				<a class="btn btn--default" th:href="@{/admin/profile}">Update admin profile</a>
-				<a class="btn btn--outline" th:href="@{/admin/mentors/review}">Open mentor review</a>
-				<a class="btn btn--outline" th:href="@{/admin/users}">Moderate accounts</a>
-				<a class="btn btn--outline" th:href="@{/admin/sessions}">Review sessions</a>
+				<a class="btn btn--default" th:href="@{/admin/mentors/review}">Mentor review</a>
+				<a class="btn btn--outline" th:href="@{/admin/users}">Users</a>
+				<a class="btn btn--outline" th:href="@{/admin/sessions}">Sessions</a>
 			</div>
 		</section>
 
-		<section class="tile tile--full" style="--order: 2">
+		<section class="tile tile--full">
 			<div class="dashboardStats" aria-label="Admin stats">
 				<article class="statCard">
 					<h2 th:text="${pendingMentorReviewCount}">0</h2>
-					<p class="p p--sm p--muted p--tight">Mentor reviews still pending</p>
+					<p class="p p--sm p--muted p--tight">Mentors pending review</p>
 				</article>
 				<article class="statCard">
 					<h2 th:text="${managedUserCount}">0</h2>
-					<p class="p p--sm p--muted p--tight">Users visible to moderation</p>
+					<p class="p p--sm p--muted p--tight">Users in the system</p>
 				</article>
 				<article class="statCard">
 					<h2 th:text="${activeSessionCount}">0</h2>
-					<p class="p p--sm p--muted p--tight">Open session requests</p>
+					<p class="p p--sm p--muted p--tight">Sessions that can still be cancelled</p>
 				</article>
-			</div>
-		</section>
-
-		<section class="tile tile--full" style="--order: 3">
-			<p class="tile__kicker">Queue snapshot</p>
-			<h2>Mentor review queue</h2>
-			<div class="tableWrap">
-				<table class="dataTable">
-					<caption class="srOnly">Admin mentor review queue preview</caption>
-					<thead>
-						<tr>
-							<th scope="col">Mentor</th>
-							<th scope="col">Role</th>
-							<th scope="col">Status</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='priya-k')}">Priya K.</a></td>
-							<td>Staff Engineer @ Meta</td>
-							<td><span class="statusBadge statusBadge--requested">Pending review</span></td>
-						</tr>
-						<tr>
-							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='marcus-l')}">Marcus L.</a></td>
-							<td>Principal Engineer @ Stripe</td>
-							<td><span class="statusBadge statusBadge--approved">Approved</span></td>
-						</tr>
-						<tr>
-							<td><a class="tableRowLink" th:href="@{/admin/mentors/review(mentor='sonia-v')}">Sonia V.</a></td>
-							<td>Engineering Manager @ Shopify</td>
-							<td><span class="statusBadge statusBadge--declined">Changes requested</span></td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
-		</section>
-
-		<section class="tile tile--span6" style="--order: 4">
-			<p class="tile__kicker">Operations</p>
-			<h2>User moderation</h2>
-			<p class="p p--muted p--tight">
-				Suspend or reactivate user accounts with explicit admin actions.
-			</p>
-			<div class="formActions">
-				<a class="btn btn--default" th:href="@{/admin/users}">Open user moderation</a>
-			</div>
-		</section>
-
-		<section class="tile tile--span6" style="--order: 5">
-			<p class="tile__kicker">Oversight</p>
-			<h2>Session controls</h2>
-			<p class="p p--muted p--tight">
-				Open current session requests and cancel active items when direct intervention is needed.
-			</p>
-			<div class="formActions">
-				<a class="btn btn--default" th:href="@{/admin/sessions}">Open session oversight</a>
 			</div>
 		</section>
 	</div>

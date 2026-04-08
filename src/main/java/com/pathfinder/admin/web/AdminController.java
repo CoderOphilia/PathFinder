@@ -1,8 +1,5 @@
 package com.pathfinder.admin.web;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.pathfinder.admin.service.AdminAccountService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
@@ -20,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AdminController {
 
     private static final String ADMIN_NAVBAR = "fragments/navbar_admin :: navbar";
+
     private final AdminReviewService adminReviewService;
     private final AdminAccountService adminAccountService;
     private final AdminSessionOversightService adminSessionOversightService;
@@ -47,33 +45,9 @@ public class AdminController {
             @RequestParam(defaultValue = "") String mentor,
             Model model
     ) {
-        List<AdminReviewService.MentorReviewItemView> reviewItems = adminReviewService.listReviewItems();
-        AdminReviewService.MentorReviewItemView selectedReviewItem = selectReviewItem(reviewItems, mentor);
-        String defaultMentorSlug = selectedReviewItem == null ? "" : selectedReviewItem.mentor().slug();
-        model.addAttribute("reviewItems", reviewItems);
-        model.addAttribute("selectedReviewItem", selectedReviewItem);
-        model.addAttribute("selectedMentor", selectedReviewItem == null ? null : selectedReviewItem.mentor());
-        model.addAttribute("defaultMentorSlug", defaultMentorSlug);
-        model.addAttribute(
-                "defaultMentorDetailPath",
-                isBlank(defaultMentorSlug) ? "" : "/admin/mentors/review/details/" + defaultMentorSlug
-        );
+        model.addAttribute("reviewItems", adminReviewService.listReviewItems());
+        model.addAttribute("selectedReviewItem", selectReviewItem(mentor));
         return renderPage(model, "Mentor review", "admin/mentor_review :: content");
-    }
-
-    @GetMapping("/mentors/review/details/{mentorSlug}")
-    public String mentorReviewDetails(
-            @PathVariable String mentorSlug,
-            Model model
-    ) {
-        Optional<AdminReviewService.MentorReviewItemView> selectedReviewItem = adminReviewService.findReviewItem(mentorSlug);
-        if (selectedReviewItem.isEmpty()) {
-            return "redirect:/admin/mentors/review";
-        }
-
-        model.addAttribute("selectedReviewItem", selectedReviewItem.get());
-        model.addAttribute("selectedMentor", selectedReviewItem.get().mentor());
-        return "admin/mentor_review_detail_frame";
     }
 
     @PostMapping("/mentors/review/{mentorSlug}/approve")
@@ -84,22 +58,22 @@ public class AdminController {
     ) {
         try {
             adminReviewService.approveMentor(mentorSlug, adminNote);
-            redirectAttributes.addFlashAttribute("flashMessage", "Mentor verification approved.");
+            redirectAttributes.addFlashAttribute("flashMessage", "Mentor approved.");
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
         return "redirect:/admin/mentors/review?mentor=" + mentorSlug;
     }
 
-    @PostMapping("/mentors/review/{mentorSlug}/request-updates")
-    public String requestMentorUpdates(
+    @PostMapping("/mentors/review/{mentorSlug}/deny")
+    public String denyMentor(
             @PathVariable String mentorSlug,
             @RequestParam(defaultValue = "") String adminNote,
             RedirectAttributes redirectAttributes
     ) {
         try {
-            adminReviewService.requestUpdates(mentorSlug, adminNote);
-            redirectAttributes.addFlashAttribute("flashMessage", "Profile updates requested from mentor.");
+            adminReviewService.denyMentor(mentorSlug, adminNote);
+            redirectAttributes.addFlashAttribute("flashMessage", "Mentor denied.");
         } catch (IllegalArgumentException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
@@ -119,7 +93,7 @@ public class AdminController {
     ) {
         try {
             adminAccountService.suspendUser(userId);
-            redirectAttributes.addFlashAttribute("flashMessage", "User account suspended.");
+            redirectAttributes.addFlashAttribute("flashMessage", "User suspended.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
@@ -133,7 +107,7 @@ public class AdminController {
     ) {
         try {
             adminAccountService.reactivateUser(userId);
-            redirectAttributes.addFlashAttribute("flashMessage", "User account reactivated.");
+            redirectAttributes.addFlashAttribute("flashMessage", "User reactivated.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
@@ -148,37 +122,16 @@ public class AdminController {
 
     @PostMapping("/sessions/{requestId}/cancel")
     public String cancelSession(
-            @PathVariable String requestId,
+            @PathVariable Long requestId,
             RedirectAttributes redirectAttributes
     ) {
         try {
             adminSessionOversightService.cancelRequest(requestId);
-            redirectAttributes.addFlashAttribute("flashMessage", "Session request cancelled from admin oversight.");
+            redirectAttributes.addFlashAttribute("flashMessage", "Session cancelled.");
         } catch (IllegalArgumentException | IllegalStateException exception) {
             redirectAttributes.addFlashAttribute("formError", exception.getMessage());
         }
         return "redirect:/admin/sessions";
-    }
-
-    @GetMapping("/profile")
-    public String profile(Model model) {
-        return renderPage(model, "Admin profile", "admin/profile :: content");
-    }
-
-    @PostMapping("/profile")
-    public String saveProfile(
-            @RequestParam(defaultValue = "") String fullName,
-            @RequestParam(defaultValue = "") String email,
-            @RequestParam(defaultValue = "") String team,
-            RedirectAttributes redirectAttributes
-    ) {
-        if (isBlank(fullName) || isBlank(email) || isBlank(team)) {
-            redirectAttributes.addFlashAttribute("formError", "Name, email, and team are required.");
-            return "redirect:/admin/profile";
-        }
-
-        redirectAttributes.addFlashAttribute("flashMessage", "Admin profile saved.");
-        return "redirect:/admin/profile";
     }
 
     private String renderPage(Model model, String title, String content) {
@@ -188,25 +141,16 @@ public class AdminController {
         return "layout";
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.trim().isEmpty();
+    // Keep selection logic in one place so the template stays simple.
+    private AdminReviewService.MentorReviewItemView selectReviewItem(String mentorSlug) {
+        if (isBlank(mentorSlug)) {
+            return adminReviewService.listReviewItems().stream().findFirst().orElse(null);
+        }
+        AdminReviewService.MentorReviewItemView selected = adminReviewService.findReviewItem(mentorSlug);
+        return selected != null ? selected : adminReviewService.listReviewItems().stream().findFirst().orElse(null);
     }
 
-    private AdminReviewService.MentorReviewItemView selectReviewItem(
-            List<AdminReviewService.MentorReviewItemView> reviewItems,
-            String selectedSlug
-    ) {
-        if (reviewItems.isEmpty()) {
-            return null;
-        }
-        if (isBlank(selectedSlug)) {
-            return reviewItems.getFirst();
-        }
-
-        String normalizedSlug = selectedSlug.trim();
-        return reviewItems.stream()
-                .filter(item -> item.mentor().slug().equalsIgnoreCase(normalizedSlug))
-                .findFirst()
-                .orElse(reviewItems.getFirst());
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

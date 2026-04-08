@@ -32,7 +32,7 @@ public class AdminAccountService {
     public void suspendUser(Long userId) {
         User user = requireUser(userId);
         if (isProtectedAccount(user)) {
-            throw new IllegalStateException("Admin accounts cannot be suspended from this screen.");
+            throw new IllegalStateException("Admin accounts cannot be suspended.");
         }
         if (!ACTIVE.equals(normalizeStatus(user.getAccountStatus()))) {
             throw new IllegalStateException("Only active accounts can be suspended.");
@@ -43,7 +43,7 @@ public class AdminAccountService {
     public void reactivateUser(Long userId) {
         User user = requireUser(userId);
         if (isProtectedAccount(user)) {
-            throw new IllegalStateException("Admin accounts cannot be changed from this screen.");
+            throw new IllegalStateException("Admin accounts cannot be changed here.");
         }
         if (!SUSPENDED.equals(normalizeStatus(user.getAccountStatus()))) {
             throw new IllegalStateException("Only suspended accounts can be reactivated.");
@@ -63,11 +63,10 @@ public class AdminAccountService {
                 user.getId(),
                 buildFullName(user),
                 user.getEmail(),
-                normalizeRole(user.getRole()),
+                toRoleLabel(user.getRole()),
                 normalizedStatus,
                 ACTIVE.equals(normalizedStatus) && !protectedAccount,
-                SUSPENDED.equals(normalizedStatus) && !protectedAccount,
-                protectedAccount
+                SUSPENDED.equals(normalizedStatus) && !protectedAccount
         );
     }
 
@@ -83,26 +82,31 @@ public class AdminAccountService {
         return "admin".equalsIgnoreCase(user.getRole());
     }
 
-    private String normalizeStatus(String status) {
-        return status == null ? ACTIVE : status.trim().toUpperCase(Locale.ROOT);
-    }
-
-    private String normalizeRole(String role) {
-        if (role == null || role.isBlank()) {
+    private String toRoleLabel(String role) {
+        String normalizedRole = normalizeText(role).toLowerCase(Locale.ROOT);
+        if (normalizedRole.isEmpty()) {
             return "Unknown";
         }
-        String normalized = role.trim().toLowerCase(Locale.ROOT);
-        if ("seeker".equals(normalized) || "mentee".equals(normalized)) {
+        if ("mentee".equals(normalizedRole) || "seeker".equals(normalizedRole)) {
             return "Mentee";
         }
-        return Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+        return Character.toUpperCase(normalizedRole.charAt(0)) + normalizedRole.substring(1);
     }
 
     private String buildFullName(User user) {
-        String firstName = user.getFirstName() == null ? "" : user.getFirstName().trim();
-        String lastName = user.getLastName() == null ? "" : user.getLastName().trim();
-        String fullName = (firstName + " " + lastName).trim();
+        String fullName = (normalizeText(user.getFirstName()) + " " + normalizeText(user.getLastName())).trim();
         return fullName.isEmpty() ? user.getEmail() : fullName;
+    }
+
+    private String normalizeStatus(String status) {
+        return normalizeText(status).isEmpty() ? ACTIVE : normalizeText(status).toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ");
     }
 
     public record ManagedUserView(
@@ -112,8 +116,7 @@ public class AdminAccountService {
             String role,
             String accountStatus,
             boolean canSuspend,
-            boolean canReactivate,
-            boolean protectedAccount
+            boolean canReactivate
     ) {
     }
 }

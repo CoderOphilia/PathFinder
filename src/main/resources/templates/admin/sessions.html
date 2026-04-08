@@ -1,55 +1,47 @@
 <section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
 	<div class="gridPage">
 		<section class="tile tile--full">
-			<p class="tile__kicker">Session oversight</p>
-			<h1>Active and historical session requests</h1>
+			<p class="tile__kicker">Admin oversight</p>
+			<h1>Sessions</h1>
 			<p class="p p--muted p--tight">
-				Review request status, payment state, and apply direct admin cancellation when intervention is needed.
+				View all saved session requests and cancel active ones if needed.
 			</p>
 
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 		</section>
 
-		<section th:if="${#lists.isEmpty(sessionItems)}" class="tile tile--full" aria-live="polite">
-			<h2>No session requests yet</h2>
-			<p class="p p--muted p--tight">New session requests will appear here as soon as they are created.</p>
-		</section>
-
-		<section th:if="${!#lists.isEmpty(sessionItems)}" class="tile tile--full" aria-label="Admin session oversight table">
+		<section class="tile tile--full">
 			<div class="tableWrap">
-				<table class="dataTable dataTable--wide">
-					<caption class="srOnly">Admin session oversight table</caption>
+				<table class="dataTable">
 					<thead>
 						<tr>
-							<th scope="col">Request</th>
+							<th scope="col">Id</th>
 							<th scope="col">Mentor</th>
+							<th scope="col">Mentee</th>
 							<th scope="col">Slot</th>
-							<th scope="col">Session type</th>
+							<th scope="col">Type</th>
 							<th scope="col">Status</th>
 							<th scope="col">Payment</th>
 							<th scope="col">Submitted</th>
-							<th scope="col">Actions</th>
+							<th scope="col">Action</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr th:each="item : ${sessionItems}">
-							<td th:text="${item.requestId}">REQ-1001</td>
-							<td th:text="${item.mentorName}">Priya K.</td>
-							<td th:text="${item.slotLabel}">Thursday • 6:00 PM - 6:45 PM</td>
+							<td th:text="${item.requestId}">1</td>
+							<td th:text="${item.mentorName}">Mentor</td>
+							<td th:text="${item.menteeEmail}">mentee@example.com</td>
+							<td th:text="${item.slotLabel}">Thu • 6:00 PM</td>
 							<td th:text="${item.sessionType}">Mock interview</td>
 							<td><span th:class="${item.statusClass}" th:text="${item.statusLabel}">Requested</span></td>
-							<td><span th:class="${item.paymentStatusClass}" th:text="${item.paymentStatusLabel}">Not started</span></td>
-							<td th:text="${item.submittedAtLabel}">Fri, Mar 14 • 1:00 PM</td>
+							<td><span th:class="${item.paymentStatusClass}" th:text="${item.paymentStatusLabel}">Not paid</span></td>
+							<td th:text="${item.submittedAtLabel}">Mon, Apr 7 • 2:00 PM</td>
 							<td>
-								<div class="tableActions">
-									<a class="btn btn--outline btn--sm" target="_blank" rel="noopener noreferrer" th:href="@{|/mentee/sessions/${item.requestId}|}">
-										Open detail
-									</a>
-									<form th:if="${item.canCancel}" method="post" th:action="@{|/admin/sessions/${item.requestId}/cancel|}">
-										<button type="submit" class="btn btn--destructive btn--sm">Cancel</button>
-									</form>
-								</div>
+								<form th:if="${item.canCancel}" method="post" th:action="@{|/admin/sessions/${item.requestId}/cancel|}">
+									<button type="submit" class="btn btn--outline">Cancel</button>
+								</form>
+								<span th:if="${!item.canCancel}" class="p p--sm p--muted">No action</span>
 							</td>
 						</tr>
 					</tbody>

@@ -4,120 +4,93 @@
 			<p class="tile__kicker">Admin review</p>
 			<h1>Mentor review</h1>
 			<p class="p p--muted p--tight">
-				Select a mentor, check the profile summary, and choose approve or request changes.
+				Pick a mentor, read the saved profile summary, and either approve or deny.
 			</p>
 
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 		</section>
 
-		<section class="tile tile--span7" aria-label="Mentor review queue table">
+		<section class="tile tile--span6">
 			<p class="tile__kicker">Queue</p>
-			<h2>Pending mentor items</h2>
-
+			<h2>Mentors</h2>
 			<div class="tableWrap">
 				<table class="dataTable">
-					<caption class="srOnly">Mentor review queue</caption>
 					<thead>
 						<tr>
 							<th scope="col">Mentor</th>
-							<th scope="col">Current role</th>
-							<th scope="col">Skills</th>
-							<th scope="col">Review</th>
+							<th scope="col">Role</th>
 							<th scope="col">Status</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr
-							th:each="item : ${reviewItems}"
-						>
+						<tr th:each="item : ${reviewItems}">
 							<td>
-								<a
-									class="tableRowLink"
-									th:href="@{/admin/mentors/review(mentor=${item.mentor.slug})}"
-									th:text="${item.mentor.name}"
-								>
+								<a class="tableRowLink" th:href="@{/admin/mentors/review(mentor=${item.slug})}" th:text="${item.name}">
 									Mentor Name
 								</a>
 							</td>
-							<td th:text="${item.mentor.roleAtCompany}">Title @ Company</td>
-							<td th:text="${#strings.listJoin(item.mentor.skills, ', ')}">System design, Resume review</td>
-							<td th:text="${item.reviewStatus}">Pending review</td>
-							<td>
-								<span th:class="${item.statusClass}" th:text="${item.statusLabel}">
-									Pending review
-								</span>
-							</td>
+							<td th:text="${item.roleAtCompany}">Title @ Company</td>
+							<td><span th:class="${item.statusClass}" th:text="${item.reviewStatus}">Pending review</span></td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
 		</section>
 
-		<section class="tile tile--span5 reviewDetailsPanel" aria-label="Selected mentor details">
+		<section class="tile tile--span6">
 			<p class="tile__kicker">Details</p>
-			<div th:if="${selectedReviewItem != null}" class="reviewFrameMain">
-				<section class="reviewFrameCard" aria-label="Selected mentor details">
-					<h2 th:text="${selectedMentor.name}">Mentor Name</h2>
-					<p class="p p--strong p--tight" th:text="${selectedMentor.roleAtCompany}">Title @ Company</p>
-					<p class="p p--sm p--muted p--tight" th:text="${'Industry: ' + selectedMentor.industry}">Industry: Technology</p>
-					<p class="p p--tight" th:text="${selectedMentor.tagline}">Profile summary</p>
+			<div th:if="${selectedReviewItem != null}">
+				<h2 th:text="${selectedReviewItem.name}">Mentor Name</h2>
+				<p class="p p--strong p--tight" th:text="${selectedReviewItem.roleAtCompany}">Title @ Company</p>
+				<p class="p p--tight" th:text="${selectedReviewItem.bio.isEmpty() ? 'No bio added yet.' : selectedReviewItem.bio}">
+					Mentor bio
+				</p>
 
-					<dl class="detailList">
-						<div>
-							<dt>Review status</dt>
-							<dd th:text="${selectedReviewItem.reviewStatus}">Pending review</dd>
-						</div>
-						<div>
-							<dt>Admin note</dt>
-							<dd th:text="${selectedReviewItem.adminNote != null and !selectedReviewItem.adminNote.isEmpty() ? selectedReviewItem.adminNote : 'No admin note yet.'}">
-								No admin note yet.
-							</dd>
-						</div>
-					</dl>
+				<dl class="detailList">
+					<div>
+						<dt>Status</dt>
+						<dd th:text="${selectedReviewItem.reviewStatus}">Pending review</dd>
+					</div>
+					<div>
+						<dt>Admin note</dt>
+						<dd th:text="${selectedReviewItem.adminNote.isEmpty() ? 'No admin note yet.' : selectedReviewItem.adminNote}">
+							No admin note yet.
+						</dd>
+					</div>
+				</dl>
 
-					<p class="tile__kicker">Skills</p>
-					<ul class="tags tags--compact">
-						<li class="tag" th:each="skill : ${selectedMentor.skills}" th:text="${skill}">Skill</li>
-					</ul>
+				<p class="tile__kicker">Skills</p>
+				<ul class="tags tags--compact">
+					<li class="tag" th:each="skill : ${selectedReviewItem.skills}" th:text="${skill}">Skill</li>
+				</ul>
 
-					<p class="tile__kicker">Interviewed at</p>
-					<ul class="tags tags--compact">
-						<li class="tag tag--soft" th:each="company : ${selectedMentor.interviewCompanies}" th:text="${company}">
-							Company
-						</li>
-					</ul>
+				<p class="tile__kicker">Interview companies</p>
+				<ul class="tags tags--compact">
+					<li class="tag tag--soft" th:each="company : ${selectedReviewItem.interviewCompanies}" th:text="${company}">Company</li>
+				</ul>
 
-					<form
-						method="post"
-						th:action="@{|/admin/mentors/review/${selectedMentor.slug}/approve|}"
-						class="queueDecisionForm"
-					>
-						<div>
-							<label for="adminNote" class="label">Admin note</label>
-							<textarea
-								id="adminNote"
-								name="adminNote"
-								class="textarea"
-								rows="4"
-								placeholder="Optional note for approval or requested changes."
-								th:text="${selectedReviewItem.adminNote}"
-							></textarea>
-						</div>
-						<div class="formActions">
-							<button type="submit" class="btn btn--default">Approve mentor</button>
-							<button
-								type="submit"
-								class="btn btn--outline"
-								th:formaction="@{|/admin/mentors/review/${selectedMentor.slug}/request-updates|}"
-							>
-								Request changes
-							</button>
-						</div>
-					</form>
-				</section>
+				<form method="post" th:action="@{|/admin/mentors/review/${selectedReviewItem.slug}/approve|}" class="queueDecisionForm">
+					<div>
+						<label for="adminNote" class="label">Admin note</label>
+						<textarea
+							id="adminNote"
+							name="adminNote"
+							class="textarea"
+							rows="4"
+							placeholder="Optional note for the mentor"
+							th:text="${selectedReviewItem.adminNote}"
+						></textarea>
+					</div>
+					<div class="formActions">
+						<button type="submit" class="btn btn--default">Approve</button>
+						<button type="submit" class="btn btn--outline" th:formaction="@{|/admin/mentors/review/${selectedReviewItem.slug}/deny|}">
+							Deny
+						</button>
+					</div>
+				</form>
 			</div>
-			<p th:if="${selectedReviewItem == null}" class="p p--muted p--tight">Select a mentor to review.</p>
+			<p th:if="${selectedReviewItem == null}" class="p p--muted p--tight">No mentor profiles are ready for review.</p>
 		</section>
 	</div>
 </section>
