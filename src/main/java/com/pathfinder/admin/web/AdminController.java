@@ -34,6 +34,7 @@ public class AdminController {
 
     @GetMapping("/home")
     public String home(Model model) {
+        // Home only shows summary counts and links to the admin tools.
         model.addAttribute("pendingMentorReviewCount", adminReviewService.pendingReviewCount());
         model.addAttribute("managedUserCount", adminAccountService.totalUserCount());
         model.addAttribute("activeSessionCount", adminSessionOversightService.activeSessionCount());
@@ -45,6 +46,7 @@ public class AdminController {
             @RequestParam(defaultValue = "") String mentor,
             Model model
     ) {
+        // The controller only loads the rows and the currently selected mentor.
         model.addAttribute("reviewItems", adminReviewService.listReviewItems());
         model.addAttribute("selectedReviewItem", selectReviewItem(mentor));
         return renderPage(model, "Mentor review", "admin/mentor_review :: content");
@@ -56,6 +58,7 @@ public class AdminController {
             @RequestParam(defaultValue = "") String adminNote,
             RedirectAttributes redirectAttributes
     ) {
+        // Save the admin decision, then redirect back to the same mentor row.
         try {
             adminReviewService.approveMentor(mentorSlug, adminNote);
             redirectAttributes.addFlashAttribute("flashMessage", "Mentor approved.");
@@ -71,6 +74,7 @@ public class AdminController {
             @RequestParam(defaultValue = "") String adminNote,
             RedirectAttributes redirectAttributes
     ) {
+        // Save the admin decision, then redirect back to the same mentor row.
         try {
             adminReviewService.denyMentor(mentorSlug, adminNote);
             redirectAttributes.addFlashAttribute("flashMessage", "Mentor denied.");
@@ -82,6 +86,7 @@ public class AdminController {
 
     @GetMapping("/users")
     public String users(Model model) {
+        // Users page only needs the rows prepared by the service.
         model.addAttribute("managedUsers", adminAccountService.listUsers());
         return renderPage(model, "User moderation", "admin/users :: content");
     }
@@ -116,6 +121,7 @@ public class AdminController {
 
     @GetMapping("/sessions")
     public String sessions(Model model) {
+        // Sessions page only needs the rows prepared by the service.
         model.addAttribute("sessionItems", adminSessionOversightService.listRequests());
         return renderPage(model, "Session oversight", "admin/sessions :: content");
     }

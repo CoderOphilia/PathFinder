@@ -31,6 +31,7 @@ public class AdminSessionOversightService {
 
     @Transactional(readOnly = true)
     public List<SessionOversightItemView> listRequests() {
+        // Load saved session requests and shape them for the admin table.
         return sessionRequestRepository.findAll().stream()
                 .sorted((left, right) -> right.getCreatedAt().compareTo(left.getCreatedAt()))
                 .map(this::toView)
@@ -38,6 +39,7 @@ public class AdminSessionOversightService {
     }
 
     public void cancelRequest(Long requestId) {
+        // Reuse the normal session service so admin cancellation follows the same rule path.
         if (requestId == null) {
             throw new IllegalArgumentException("Session request not found.");
         }
@@ -52,6 +54,7 @@ public class AdminSessionOversightService {
     }
 
     private SessionOversightItemView toView(SessionRequest request) {
+        // Keep the template simple by converting the entity into display-ready labels here.
         return new SessionOversightItemView(
                 request.getId(),
                 request.getMentorName(),

@@ -38,6 +38,7 @@ public class AdminReviewService {
 
     @Transactional(readOnly = true)
     public List<MentorReviewItemView> listReviewItems() {
+        // Admin reads every mentor user, then builds a simple row for the review page.
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
                 .map(this::toReviewItem)
@@ -59,12 +60,14 @@ public class AdminReviewService {
     }
 
     public void approveMentor(String mentorSlug, String adminNote) {
+        // Save the admin decision directly on the mentor profile.
         MentorProfile profile = requireMentorProfile(mentorSlug);
         profile.setVerificationStatus(VerificationStatus.APPROVED);
         profile.setAdminNote(normalizeText(adminNote));
     }
 
     public void denyMentor(String mentorSlug, String adminNote) {
+        // Save the admin decision directly on the mentor profile.
         MentorProfile profile = requireMentorProfile(mentorSlug);
         // The existing enum already has REJECTED, so we use it for the denied state.
         profile.setVerificationStatus(VerificationStatus.REJECTED);
@@ -79,6 +82,7 @@ public class AdminReviewService {
     }
 
     private MentorReviewItemView toReviewItem(User mentorUser) {
+        // Pull the saved mentor profile and turn it into a small view object for the template.
         MentorProfile profile = mentorProfileRepository.findById(mentorUser.getId()).orElse(null);
         if (profile == null) {
             return null;
@@ -105,6 +109,7 @@ public class AdminReviewService {
     }
 
     private MentorProfile requireMentorProfile(String mentorSlug) {
+        // Find the real mentor profile that matches the selected slug before updating it.
         MentorReviewItemView item = findReviewItem(mentorSlug);
         if (item == null) {
             throw new IllegalArgumentException("Mentor review item not found.");

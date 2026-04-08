@@ -191,6 +191,7 @@ public class MentorController {
             HttpSession session,
             Model model
     ) {
+        // Load the saved mentor profile and any admin status that should be shown with it.
         String normalizedEmail = resolveCurrentMentorEmail(session, email);
         if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
             model.addAttribute("email", normalizedEmail);
@@ -262,6 +263,7 @@ public class MentorController {
     }
 
     private void populateProfileForm(Model model, String email) {
+        // Fill the profile form with the current saved mentor values.
         User mentorUser = mentorProfileService.findMentorUserByEmail(email);
         if (mentorUser != null && !model.containsAttribute("fullName")) {
             model.addAttribute("fullName", buildFullName(mentorUser.getFirstName(), mentorUser.getLastName()));

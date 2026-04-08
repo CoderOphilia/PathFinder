@@ -24,12 +24,14 @@ public class AdminAccountService {
 
     @Transactional(readOnly = true)
     public List<ManagedUserView> listUsers() {
+        // Build simple rows for the admin users table.
         return userRepository.findAll(Sort.by(Sort.Direction.ASC, "role", "email")).stream()
                 .map(this::toView)
                 .toList();
     }
 
     public void suspendUser(Long userId) {
+        // Admin can only suspend active non-admin accounts.
         User user = requireUser(userId);
         if (isProtectedAccount(user)) {
             throw new IllegalStateException("Admin accounts cannot be suspended.");
@@ -41,6 +43,7 @@ public class AdminAccountService {
     }
 
     public void reactivateUser(Long userId) {
+        // Admin can only reactivate accounts that are already suspended.
         User user = requireUser(userId);
         if (isProtectedAccount(user)) {
             throw new IllegalStateException("Admin accounts cannot be changed here.");
