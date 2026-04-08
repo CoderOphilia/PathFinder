@@ -130,19 +130,33 @@ public class MenteeProfileService {
     // Getting session
 
     public Optional<SessionRequest> getNextSessionForMentee(String menteeEmail) {
+        // Only show future sessions that are actually approved to happen.
         return  sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(normalizeText(menteeEmail))
                 .stream()
-             //   .filter(s -> s.getStatus() == SessionStatus.APPROVED)
+                .filter(this::isUpcomingSession)
                 .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
                 .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
     }
 
     public Optional<SessionRequest> getNextSession(String menteeEmail) {
+        // Pick the soonest upcoming session for the dashboard card.
         List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
         return sessionRequests.stream()
+                .filter(this::isUpcomingSession)
                 .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
                 .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
 
+    }
+
+    public Optional<SessionRequest> getLatestCompletedSession(String menteeEmail) {
+        // Show the most recent completed session as quick progress feedback.
+        List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
+        return sessionRequests.stream()
+                .filter(request -> request.getStatus() == SessionStatus.COMPLETED)
+                .max(Comparator.comparing(
+                        SessionRequest::getCreatedAt,
+                        Comparator.nullsFirst(Comparator.naturalOrder())
+                ));
     }
 
     public List<SessionRequest> getMenteeSession(String menteeEmail) {
@@ -179,6 +193,7 @@ public class MenteeProfileService {
 //        return  calenderDays;
 //    }
     public List<CalenderDay> buildCalenderDays(List<SessionRequest> menteeSessions) {
+        // Build a small week view for the mentee home page.
         List<String> weekdays = List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
 
         return weekdays.stream()
@@ -248,6 +263,12 @@ public class MenteeProfileService {
     private boolean matchesWeekday(String slotTime, String weekdayLabel) {
         String normalizedSlot = normalizeText(slotTime).toLowerCase(Locale.ROOT);
         return normalizedSlot.contains(weekdayLabel.toLowerCase(Locale.ROOT));
+    }
+
+    private boolean isUpcomingSession(SessionRequest sessionRequest) {
+        // Requested and finished sessions should not show up as "next".
+        return sessionRequest.getStatus() == SessionStatus.APPROVED
+                || sessionRequest.getStatus() == SessionStatus.PAID;
     }
 
 

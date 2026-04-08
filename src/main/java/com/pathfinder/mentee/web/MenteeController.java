@@ -39,6 +39,7 @@ public class MenteeController {
 
     @GetMapping("/home")
     public String home(Model model, HttpSession session) {
+        // Home collects the few session facts the dashboard needs.
         String menteeEmail = resolveCurrentMenteeEmail(session, "");
 
 
@@ -46,12 +47,15 @@ public class MenteeController {
         if (!menteeEmail.isEmpty()){
             menteeProfileService.getNextSession(menteeEmail)
                     .ifPresent(s -> model.addAttribute("nextSession", s));
+            menteeProfileService.getLatestCompletedSession(menteeEmail)
+                    .ifPresent(s -> model.addAttribute("latestCompletedSession", s));
         }
         List<SessionRequest> menteeSessions = menteeProfileService.getMenteeSession(menteeEmail);
         long pendingRequest = menteeProfileService.getPendingCount(menteeEmail);
 
-       model.addAttribute("pendingRequest",pendingRequest);
-       model.addAttribute("calendarDays", menteeProfileService.buildCalenderDays(menteeSessions));
+        model.addAttribute("pendingRequest",pendingRequest);
+        model.addAttribute("menteeSessions", menteeSessions);
+        model.addAttribute("calendarDays", menteeProfileService.buildCalenderDays(menteeSessions));
 
         return renderPage(model, "Mentee home", "mentee/home :: content");
     }
@@ -182,6 +186,7 @@ public class MenteeController {
 
 
     private String resolveCurrentMenteeEmail(HttpSession session, String fallbackEmail) {
+        // Prefer the explicit request value, otherwise fall back to the signed-in mentee.
         String normalizedFallback = normalizeText(fallbackEmail);
         if (!normalizedFallback.isEmpty()) {
             return normalizedFallback;
