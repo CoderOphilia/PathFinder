@@ -80,6 +80,12 @@
 		<section th:each="mentor : ${filteredMentors}" class="tile tile--span4 mentorCard" th:style="'--order: ' + (${mentorStat.count} + 3)" aria-label="Mentor card">
 			<a class="mentorCard__link" th:href="@{/mentors/{mentorSlug}(mentorSlug=${mentor.slug})}">
 				<div class="mentorCard__top">
+					<img
+						th:if="${mentor.profileImageUrl != null and !mentor.profileImageUrl.isEmpty()}"
+						th:src="${mentor.profileImageUrl}"
+						alt="Mentor profile picture"
+						style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4; margin-bottom: 0.75rem;"
+					/>
 					<h2 th:text="${mentor.name}">Mentor Name</h2>
 					<p class="mentorCard__rate" th:text="${mentor.rate}">$00/hr</p>
 				</div>

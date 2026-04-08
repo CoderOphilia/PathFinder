@@ -23,6 +23,16 @@
 					<dt>Mentor</dt>
 					<dd th:text="${sessionRequest.mentorName}">Mentor</dd>
 				</div>
+				<div th:if="${mentorProfileImageUrl != null and !mentorProfileImageUrl.isEmpty()}">
+					<dt>Mentor photo</dt>
+					<dd>
+						<img
+							th:src="${mentorProfileImageUrl}"
+							alt="Mentor profile picture"
+							style="width: 88px; height: 88px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4;"
+						/>
+					</dd>
+				</div>
 				<div>
 					<dt>Slot</dt>
 					<dd th:text="${sessionRequest.slotTime}">Slot</dd>

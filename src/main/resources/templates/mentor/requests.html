@@ -16,44 +16,55 @@
 			<p class="p p--muted p--tight">New mentee requests will appear here for decision.</p>
 		</section>
 
-		<section th:each="request : ${pendingRequests}" class="tile tile--span6 queueCard" aria-label="Pending request">
+		<section th:each="requestItem : ${pendingRequests}" class="tile tile--span6 queueCard" aria-label="Pending request">
 			<div class="queueCard__header">
-				<p class="p p--strong p--tight" th:text="${request.id}">REQ-0000</p>
+				<p class="p p--strong p--tight" th:text="${requestItem.request.id}">REQ-0000</p>
 				<span class="statusBadge statusBadge--requested">Requested</span>
 			</div>
 
+			<div th:if="${requestItem.menteeProfileImageUrl != null and !requestItem.menteeProfileImageUrl.isEmpty()}">
+				<img
+					th:src="${requestItem.menteeProfileImageUrl}"
+					alt="Mentee profile picture"
+					style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4; margin-bottom: 0.75rem;"
+				/>
+			</div>
+			<p class="p p--sm p--tight">
+				<strong>Mentee:</strong>
+				<span th:text="${requestItem.menteeName}">Mentee Name</span>
+			</p>
 			<p class="p p--sm p--muted p--tight">
 				<strong>Mentee request for:</strong>
-				<span th:text="${request.sessionType}">Type</span>
+				<span th:text="${requestItem.request.sessionType}">Type</span>
 			</p>
 			<p class="p p--sm p--muted p--tight">
 				<strong>Mentor:</strong>
-				<span th:text="${request.mentorName}">Mentor</span>
+				<span th:text="${requestItem.request.mentorName}">Mentor</span>
 			</p>
 			<p class="p p--sm p--muted p--tight">
 				<strong>Slot:</strong>
-				<span th:text="${request.slotTime}">Slot</span>
+				<span th:text="${requestItem.request.slotTime}">Slot</span>
 			</p>
-			<p class="p p--tight" th:text="${request.objective}">Objective</p>
-			<p class="p p--sm p--muted p--tight" th:if="${request.bookingNotes != null and !request.bookingNotes.isEmpty()}">
+			<p class="p p--tight" th:text="${requestItem.request.objective}">Objective</p>
+			<p class="p p--sm p--muted p--tight" th:if="${requestItem.request.bookingNotes != null and !requestItem.request.bookingNotes.isEmpty()}">
 				<strong>Booking notes:</strong>
-				<span th:text="${request.bookingNotes}">Optional notes</span>
+				<span th:text="${requestItem.request.bookingNotes}">Optional notes</span>
 			</p>
-			<p class="p p--sm p--muted p--tight" th:if="${request.mentorNote != null and !request.mentorNote.isEmpty()}">
+			<p class="p p--sm p--muted p--tight" th:if="${requestItem.request.mentorNote != null and !requestItem.request.mentorNote.isEmpty()}">
 				<strong>Your note:</strong>
-				<span th:text="${request.mentorNote}">Mentor note</span>
+				<span th:text="${requestItem.request.mentorNote}">Mentor note</span>
 			</p>
 
 			<form
-				th:if="${request.status.name() == 'REQUESTED'}"
+				th:if="${requestItem.request.status.name() == 'REQUESTED'}"
 				method="post"
-				th:action="@{|/mentor/requests/${request.id}/decision|}"
+				th:action="@{|/mentor/requests/${requestItem.request.id}/decision|}"
 				class="queueDecisionForm"
 			>
 				<div>
-					<label th:for="${'mentorNote-' + request.id}" class="label">Mentor note (optional)</label>
+					<label th:for="${'mentorNote-' + requestItem.request.id}" class="label">Mentor note (optional)</label>
 					<input
-						th:id="${'mentorNote-' + request.id}"
+						th:id="${'mentorNote-' + requestItem.request.id}"
 						class="input"
 						type="text"
 						name="mentorNote"
@@ -93,55 +104,63 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr th:each="request : ${previousRequests}">
-							<td th:text="${request.id}">REQ-0000</td>
+						<tr th:each="requestItem : ${previousRequests}">
+							<td th:text="${requestItem.request.id}">REQ-0000</td>
 							<td>
-								<p class="p p--sm p--tight" th:text="${request.sessionType}">System design</p>
-								<p class="p p--sm p--muted p--tight" th:text="${request.objective}">Objective</p>
+								<div th:if="${requestItem.menteeProfileImageUrl != null and !requestItem.menteeProfileImageUrl.isEmpty()}">
+									<img
+										th:src="${requestItem.menteeProfileImageUrl}"
+										alt="Mentee profile picture"
+										style="width: 48px; height: 48px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4; margin-bottom: 0.5rem;"
+									/>
+								</div>
+								<p class="p p--sm p--tight" th:text="${requestItem.menteeName}">Mentee Name</p>
+								<p class="p p--sm p--tight" th:text="${requestItem.request.sessionType}">System design</p>
+								<p class="p p--sm p--muted p--tight" th:text="${requestItem.request.objective}">Objective</p>
 							</td>
-							<td th:text="${request.slotTime}">Wednesday • 5:00 PM - 5:45 PM</td>
+							<td th:text="${requestItem.request.slotTime}">Wednesday • 5:00 PM - 5:45 PM</td>
 							<td>
-								<span th:class="${request.status.name() == 'APPROVED' ? 'statusBadge statusBadge--pendingPayment'
-									: (request.status.name() == 'PAID' ? 'statusBadge statusBadge--approved'
-									: (request.status.name() == 'COMPLETED' ? 'statusBadge statusBadge--completed'
-									: (request.status.name() == 'CANCELLED' ? 'statusBadge statusBadge--cancelled'
+								<span th:class="${requestItem.request.status.name() == 'APPROVED' ? 'statusBadge statusBadge--pendingPayment'
+									: (requestItem.request.status.name() == 'PAID' ? 'statusBadge statusBadge--approved'
+									: (requestItem.request.status.name() == 'COMPLETED' ? 'statusBadge statusBadge--completed'
+									: (requestItem.request.status.name() == 'CANCELLED' ? 'statusBadge statusBadge--cancelled'
 									: 'statusBadge statusBadge--declined')))}"
-									th:text="${request.status.name() == 'APPROVED' ? 'Approved - payment pending'
-										: (request.status.name() == 'PAID' ? 'Approved - paid'
-										: (request.status.name() == 'COMPLETED' ? 'Completed'
-										: (request.status.name() == 'CANCELLED' ? 'Cancelled' : 'Declined')))}">
+									th:text="${requestItem.request.status.name() == 'APPROVED' ? 'Approved - payment pending'
+										: (requestItem.request.status.name() == 'PAID' ? 'Approved - paid'
+										: (requestItem.request.status.name() == 'COMPLETED' ? 'Completed'
+										: (requestItem.request.status.name() == 'CANCELLED' ? 'Cancelled' : 'Declined')))}">
 									Status
 								</span>
 							</td>
 							<td>
-								<span th:class="${request.freeSessionRequested ? 'statusBadge statusBadge--neutral'
-									: (request.paymentCompleted ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--neutral')}"
-									th:text="${request.freeSessionRequested ? 'Trial session'
-										: (request.paymentCompleted ? 'Paid' : 'Not started')}">
+								<span th:class="${requestItem.request.freeSessionRequested ? 'statusBadge statusBadge--neutral'
+									: (requestItem.request.paymentCompleted ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--neutral')}"
+									th:text="${requestItem.request.freeSessionRequested ? 'Trial session'
+										: (requestItem.request.paymentCompleted ? 'Paid' : 'Not started')}">
 									Payment
 								</span>
 							</td>
 							<td>
-								<span th:if="${request.mentorNote != null and !request.mentorNote.isEmpty()}" th:text="${request.mentorNote}">
+								<span th:if="${requestItem.request.mentorNote != null and !requestItem.request.mentorNote.isEmpty()}" th:text="${requestItem.request.mentorNote}">
 									Looks good.
 								</span>
-								<span th:if="${request.mentorNote == null or request.mentorNote.isEmpty()}" class="p p--sm p--muted p--tight">
+								<span th:if="${requestItem.request.mentorNote == null or requestItem.request.mentorNote.isEmpty()}" class="p p--sm p--muted p--tight">
 									No note
 								</span>
 							</td>
 							<td>
 								<div class="tableActions">
 									<form
-										th:if="${request.status.name() == 'APPROVED' or request.status.name() == 'PAID'}"
+										th:if="${requestItem.request.status.name() == 'APPROVED' or requestItem.request.status.name() == 'PAID'}"
 										method="post"
-										th:action="@{|/mentor/sessions/${request.id}/cancel|}"
+										th:action="@{|/mentor/sessions/${requestItem.request.id}/cancel|}"
 									>
 										<button type="submit" class="btn btn--destructive btn--sm">Cancel</button>
 									</form>
 									<form
-										th:if="${(request.freeSessionRequested and request.status.name() == 'APPROVED') or (!request.freeSessionRequested and request.status.name() == 'PAID')}"
+										th:if="${(requestItem.request.freeSessionRequested and requestItem.request.status.name() == 'APPROVED') or (!requestItem.request.freeSessionRequested and requestItem.request.status.name() == 'PAID')}"
 										method="post"
-										th:action="@{|/mentor/sessions/${request.id}/complete|}"
+										th:action="@{|/mentor/sessions/${requestItem.request.id}/complete|}"
 									>
 										<button type="submit" class="btn btn--secondary btn--sm">Mark done</button>
 									</form>

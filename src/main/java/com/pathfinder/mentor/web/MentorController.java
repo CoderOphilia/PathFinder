@@ -5,6 +5,7 @@ import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.mentor.domain.MentorProfile;
+import com.pathfinder.profile.service.ProfileImageStorageService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.domain.SessionStatus;
 import com.pathfinder.session.service.SessionService;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -47,10 +49,16 @@ public class MentorController {
     );
     private final MentorProfileService mentorProfileService;
     private final SessionService sessionService;
+    private final ProfileImageStorageService profileImageStorageService;
 
-    public MentorController(MentorProfileService mentorProfileService, SessionService sessionService) {
+    public MentorController(
+            MentorProfileService mentorProfileService,
+            SessionService sessionService,
+            ProfileImageStorageService profileImageStorageService
+    ) {
         this.mentorProfileService = mentorProfileService;
         this.sessionService = sessionService;
+        this.profileImageStorageService = profileImageStorageService;
     }
 
     @GetMapping("/home")
@@ -224,6 +232,7 @@ public class MentorController {
     public String saveProfile(
             @RequestParam(defaultValue = "") String fullName,
             @RequestParam(defaultValue = "") String email,
+            @RequestParam(name = "profileImageFile", required = false) MultipartFile profileImageFile,
             @RequestParam(defaultValue = "") String expertise,
             @RequestParam(defaultValue = "") String hourlyRate,
             @RequestParam(defaultValue = "false") boolean offersFreeSession,
@@ -262,9 +271,19 @@ public class MentorController {
         List<String> interviewCompanyBadges = parseInterviewCompanyBadges(interviewCompanies);
 
         try {
+            String profileImageUrl = "";
+            User mentorUser = mentorProfileService.findMentorUserByEmail(accountEmail);
+            if (mentorUser != null) {
+                profileImageUrl = mentorUser.getProfileImageUrl();
+            }
+            if (profileImageFile != null && !profileImageFile.isEmpty()) {
+                profileImageUrl = profileImageStorageService.storeProfileImage(profileImageFile, accountEmail);
+            }
+            redirectAttributes.addFlashAttribute("profileImageUrl", profileImageUrl);
             mentorProfileService.saveProfile(
                     accountEmail,
                     fullName,
+                    profileImageUrl,
                     expertise,
                     hourlyRate,
                     offersFreeSession,
@@ -294,6 +313,9 @@ public class MentorController {
         User mentorUser = mentorProfileService.findMentorUserByEmail(email);
         if (mentorUser != null && !model.containsAttribute("fullName")) {
             model.addAttribute("fullName", buildFullName(mentorUser.getFirstName(), mentorUser.getLastName()));
+        }
+        if (mentorUser != null && !model.containsAttribute("profileImageUrl")) {
+            model.addAttribute("profileImageUrl", mentorUser.getProfileImageUrl());
         }
         MentorProfile profile = mentorProfileService.findProfileByEmail(email);
         if (!model.containsAttribute("offersFreeSession")) {

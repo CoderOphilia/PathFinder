@@ -8,14 +8,15 @@
 		<a th:href="@{/admin/mentors/review}" class="nav__link" th:classappend="${#strings.startsWith(currentUrl, '/admin/mentors/review') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/admin/mentors/review')} ? 'page' : null">Mentor review</a>
 		<a th:href="@{/admin/users}" class="nav__link" th:classappend="${currentUrl == '/admin/users' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/users'} ? 'page' : null">Users</a>
 		<a th:href="@{/admin/sessions}" class="nav__link" th:classappend="${currentUrl == '/admin/sessions' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/sessions'} ? 'page' : null">Sessions</a>
-		<a th:href="@{/auth/login}" class="nav__link">Sign out</a>
+		<a th:href="@{/admin/profile}" class="nav__link" th:classappend="${currentUrl == '/admin/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/profile'} ? 'page' : null">Profile</a>
+		<a th:href="@{/auth/logout}" class="nav__link">Sign out</a>
 	</div>
 
-	<!-- Mobile Nav (Fixed Bottom) -->
 	<div class="nav__links--mobile" aria-label="Admin mobile navigation">
-		<a th:href="@{/admin/home}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/home'} ? 'page' : null" aria-label="Home">🏠</a>
-		<a th:href="@{/admin/mentors/review}" class="nav__link nav__link--icon" th:classappend="${#strings.startsWith(currentUrl, '/admin/mentors/review') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/admin/mentors/review')} ? 'page' : null" aria-label="Mentor review">⚖️</a>
-		<a th:href="@{/admin/users}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/users' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/users'} ? 'page' : null" aria-label="Users">👥</a>
-		<a th:href="@{/admin/sessions}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/sessions' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/sessions'} ? 'page' : null" aria-label="Sessions">🗂️</a>
+		<a th:href="@{/admin/home}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/home' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/home'} ? 'page' : null" aria-label="Home">H</a>
+		<a th:href="@{/admin/mentors/review}" class="nav__link nav__link--icon" th:classappend="${#strings.startsWith(currentUrl, '/admin/mentors/review') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/admin/mentors/review')} ? 'page' : null" aria-label="Mentor review">R</a>
+		<a th:href="@{/admin/users}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/users' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/users'} ? 'page' : null" aria-label="Users">U</a>
+		<a th:href="@{/admin/sessions}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/sessions' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/sessions'} ? 'page' : null" aria-label="Sessions">S</a>
+		<a th:href="@{/admin/profile}" class="nav__link nav__link--icon" th:classappend="${currentUrl == '/admin/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/admin/profile'} ? 'page' : null" aria-label="Profile">P</a>
 	</div>
 </nav>

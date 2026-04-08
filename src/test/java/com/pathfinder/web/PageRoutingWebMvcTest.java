@@ -1,8 +1,12 @@
 package com.pathfinder.web;
 
 import com.pathfinder.admin.service.AdminAccountService;
+import com.pathfinder.admin.service.AdminProfileService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
+import com.pathfinder.auth.config.SecurityConfig;
+import com.pathfinder.auth.config.SessionRoleAuthenticationFilter;
+import com.pathfinder.auth.config.UploadResourceConfig;
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.service.UserService;
 import com.pathfinder.auth.web.AuthController;
@@ -16,6 +20,7 @@ import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.mentor.web.MentorController;
 import com.pathfinder.mentor.web.MentorPublicController;
 import com.pathfinder.mentee.web.MenteeController;
+import com.pathfinder.profile.service.ProfileImageStorageService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.domain.SessionStatus;
 import com.pathfinder.session.service.SessionService;
@@ -24,7 +29,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +43,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -51,6 +60,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         com.pathfinder.admin.web.AdminController.class,
         com.pathfinder.session.web.SessionController.class
 })
+@Import({SecurityConfig.class, SessionRoleAuthenticationFilter.class, UploadResourceConfig.class})
 class PageRoutingWebMvcTest {
 
     @Autowired
@@ -77,8 +87,18 @@ class PageRoutingWebMvcTest {
     @MockBean
     private AdminSessionOversightService adminSessionOversightService;
 
+    @MockBean
+    private AdminProfileService adminProfileService;
+
+    @MockBean
+    private ProfileImageStorageService profileImageStorageService;
+
     @BeforeEach
     void setUp() {
+        when(userService.findUserByEmail("mentee@example.com")).thenReturn(createUser("mentee@example.com", "mentee"));
+        when(userService.findUserByEmail("mentor@example.com")).thenReturn(createUser("mentor@example.com", "mentor"));
+        when(userService.findUserByEmail("admin@example.com")).thenReturn(createUser("admin@example.com", "admin"));
+        when(userService.isAccountActive(any(User.class))).thenReturn(true);
         when(menteeProfileService.getNextSession(anyString())).thenReturn(Optional.empty());
         when(menteeProfileService.getLatestCompletedSession(anyString())).thenReturn(Optional.empty());
         when(menteeProfileService.getMenteeSession(anyString())).thenReturn(List.of());
@@ -108,15 +128,16 @@ class PageRoutingWebMvcTest {
         assertLayoutPage("/auth/login", "auth/login :: content", "fragments/navbar :: navbar");
         assertLayoutPage("/auth/signup", "auth/signup :: content", "fragments/navbar :: navbar");
         assertLayoutPage("/auth/forgot", "auth/forgot :: content", "fragments/navbar :: navbar");
-        assertLayoutPage("/mentee/home", "mentee/home :: content", "fragments/navbar_mentee :: navbar");
-        assertLayoutPage("/mentee/mentors", "mentee/mentors :: content", "fragments/navbar_mentee :: navbar");
-        assertLayoutPage("/mentee/sessions/new", "mentee/session_new :: content", "fragments/navbar_mentee :: navbar");
-        assertLayoutPage("/mentor/home", "mentor/home :: content", "fragments/navbar_mentor :: navbar");
-        assertLayoutPage("/mentor/profile", "mentor/profile :: content", "fragments/navbar_mentor :: navbar");
-        assertLayoutPage("/mentor/availability", "mentor/availability :: content", "fragments/navbar_mentor :: navbar");
         assertLayoutPage("/mentors/priya-k", "mentor/public_profile :: content", "fragments/navbar :: navbar");
-        assertLayoutPage("/mentor/requests", "mentor/requests :: content", "fragments/navbar_mentor :: navbar");
-        assertLayoutPage("/admin/home", "admin/home :: content", "fragments/navbar_admin :: navbar");
+        assertAuthenticatedLayoutPage("/mentee/home", "mentee/home :: content", "fragments/navbar_mentee :: navbar", "mentee@example.com", "mentee");
+        assertAuthenticatedLayoutPage("/mentee/mentors", "mentee/mentors :: content", "fragments/navbar_mentee :: navbar", "mentee@example.com", "mentee");
+        assertAuthenticatedLayoutPage("/mentee/sessions/new", "mentee/session_new :: content", "fragments/navbar_mentee :: navbar", "mentee@example.com", "mentee");
+        assertAuthenticatedLayoutPage("/mentor/home", "mentor/home :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
+        assertAuthenticatedLayoutPage("/mentor/profile", "mentor/profile :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
+        assertAuthenticatedLayoutPage("/mentor/availability", "mentor/availability :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
+        assertAuthenticatedLayoutPage("/mentor/requests", "mentor/requests :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
+        assertAuthenticatedLayoutPage("/admin/home", "admin/home :: content", "fragments/navbar_admin :: navbar", "admin@example.com", "admin");
+        assertAuthenticatedLayoutPage("/admin/profile", "admin/profile :: content", "fragments/navbar_admin :: navbar", "admin@example.com", "admin");
     }
 
     @Test
@@ -140,7 +161,8 @@ class PageRoutingWebMvcTest {
         when(userService.emailExists("demo@example.com")).thenReturn(false);
         when(userService.createUser(any(User.class))).thenReturn(created);
 
-        mockMvc.perform(post("/auth/signup")
+        mockMvc.perform(multipart("/auth/signup")
+                        .file(new MockMultipartFile("profileImageFile", new byte[0]))
                         .param("firstName", "Demo")
                         .param("lastName", "User")
                         .param("email", "demo@example.com")
@@ -159,7 +181,8 @@ class PageRoutingWebMvcTest {
         when(menteeProfileService.saveMenteeProfile(anyLong(), anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(new MenteeProfile());
 
-        mockMvc.perform(post("/mentee/profile")
+        mockMvc.perform(multipart("/mentee/profile")
+                        .file(new MockMultipartFile("profileImageFile", new byte[0]))
                         .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
                         .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee")
                         .param("email", "mentee@example.com")
@@ -203,7 +226,9 @@ class PageRoutingWebMvcTest {
         request.setCreatedAt(LocalDateTime.now());
         when(sessionService.getSessionById(1L)).thenReturn(request);
 
-        mockMvc.perform(get("/mentee/sessions/1/payment"))
+        mockMvc.perform(get("/mentee/sessions/1/payment")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "mentee/session_payment :: content"))
@@ -215,14 +240,61 @@ class PageRoutingWebMvcTest {
     void unknownSessionRequestRedirectsToMentorList() throws Exception {
         when(sessionService.getSessionById(9999L)).thenReturn(null);
 
-        mockMvc.perform(get("/mentee/sessions/9999"))
+        mockMvc.perform(get("/mentee/sessions/9999")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/mentee/mentors"))
                 .andExpect(flash().attributeExists("formError"));
     }
 
+    @Test
+    void protectedPageRedirectsToLoginWhenSignedOut() throws Exception {
+        mockMvc.perform(get("/mentor/home"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login"));
+    }
+
+    @Test
+    void crossRoleAttemptRedirectsToSignedInUsersHome() throws Exception {
+        mockMvc.perform(get("/mentor/home")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentee/home"));
+    }
+
+    @Test
+    void logoutClearsSessionAndRedirectsToLogin() throws Exception {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(AuthController.SESSION_USER_EMAIL, "mentor@example.com");
+        session.setAttribute(AuthController.SESSION_USER_ROLE, "mentor");
+
+        mockMvc.perform(get("/auth/logout").session(session))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/login"))
+                .andExpect(flash().attributeExists("flashMessage"));
+    }
+
     private void assertLayoutPage(String path, String content, String navbarType) throws Exception {
         mockMvc.perform(get(path))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", content))
+                .andExpect(model().attribute("navbarType", navbarType))
+                .andExpect(model().attributeExists("currentUrl"));
+    }
+
+    private void assertAuthenticatedLayoutPage(
+            String path,
+            String content,
+            String navbarType,
+            String email,
+            String role
+    ) throws Exception {
+        mockMvc.perform(get(path)
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, email)
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, role))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", content))
@@ -237,6 +309,7 @@ class PageRoutingWebMvcTest {
         user.setRole(role);
         user.setFirstName("Test");
         user.setLastName("User");
+        user.setAccountStatus("ACTIVE");
         return user;
     }
 
@@ -244,6 +317,7 @@ class PageRoutingWebMvcTest {
         return new MentorProfileService.PublicMentorProfile(
                 "priya-k",
                 "Priya K",
+                "",
                 "Senior Engineer @ Example",
                 "$80/hr",
                 false,

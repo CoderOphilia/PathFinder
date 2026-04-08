@@ -1,12 +1,18 @@
 package com.pathfinder.admin.web;
 
 import com.pathfinder.admin.service.AdminAccountService;
+import com.pathfinder.admin.service.AdminProfileService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
+import com.pathfinder.auth.config.SecurityConfig;
+import com.pathfinder.auth.config.SessionRoleAuthenticationFilter;
+import com.pathfinder.auth.domain.User;
+import com.pathfinder.auth.web.AuthController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -22,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(AdminController.class)
+@Import({SecurityConfig.class, SessionRoleAuthenticationFilter.class})
 class AdminControllerWebMvcTest {
 
     @Autowired
@@ -36,6 +43,9 @@ class AdminControllerWebMvcTest {
     @MockBean
     private AdminSessionOversightService adminSessionOversightService;
 
+    @MockBean
+    private AdminProfileService adminProfileService;
+
     @Test
     // Renders the admin home page with top-level counts.
     void home() throws Exception {
@@ -43,13 +53,32 @@ class AdminControllerWebMvcTest {
         when(adminAccountService.totalUserCount()).thenReturn(10L);
         when(adminSessionOversightService.activeSessionCount()).thenReturn(3L);
 
-        mockMvc.perform(get("/admin/home"))
+        mockMvc.perform(get("/admin/home")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "admin/home :: content"))
                 .andExpect(model().attribute("pendingMentorReviewCount", 2L))
                 .andExpect(model().attribute("managedUserCount", 10L))
                 .andExpect(model().attribute("activeSessionCount", 3L));
+    }
+
+    @Test
+    void profile() throws Exception {
+        User admin = new User();
+        admin.setEmail("admin@example.com");
+        admin.setFirstName("Admin");
+        admin.setLastName("User");
+        when(adminProfileService.findAdminUserByEmail("admin@example.com")).thenReturn(admin);
+
+        mockMvc.perform(get("/admin/profile")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", "admin/profile :: content"))
+                .andExpect(model().attribute("email", "admin@example.com"));
     }
 
     @Test
@@ -69,7 +98,10 @@ class AdminControllerWebMvcTest {
         when(adminReviewService.listReviewItems()).thenReturn(List.of(item));
         when(adminReviewService.findReviewItem("mentor-user")).thenReturn(item);
 
-        mockMvc.perform(get("/admin/mentors/review").param("mentor", "mentor-user"))
+        mockMvc.perform(get("/admin/mentors/review")
+                        .param("mentor", "mentor-user")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "admin/mentor_review :: content"))
@@ -84,7 +116,9 @@ class AdminControllerWebMvcTest {
                 new AdminAccountService.ManagedUserView(1L, "Test User", "user@example.com", "Mentee", "ACTIVE", true, false)
         ));
 
-        mockMvc.perform(get("/admin/users"))
+        mockMvc.perform(get("/admin/users")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "admin/users :: content"))
@@ -110,7 +144,9 @@ class AdminControllerWebMvcTest {
                 )
         ));
 
-        mockMvc.perform(get("/admin/sessions"))
+        mockMvc.perform(get("/admin/sessions")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "admin/sessions :: content"))
@@ -120,11 +156,29 @@ class AdminControllerWebMvcTest {
     @Test
     // Posts an approve action and redirects back to the selected mentor.
     void approveMentor() throws Exception {
-        mockMvc.perform(post("/admin/mentors/review/mentor-user/approve").param("adminNote", "Looks good."))
+        mockMvc.perform(post("/admin/mentors/review/mentor-user/approve")
+                        .param("adminNote", "Looks good.")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/admin/mentors/review?mentor=mentor-user"))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         verify(adminReviewService).approveMentor("mentor-user", "Looks good.");
+    }
+
+    @Test
+    void saveProfileRedirectsAfterSuccess() throws Exception {
+        mockMvc.perform(post("/admin/profile")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin")
+                        .param("team", "Operations")
+                        .param("supportChannel", "#ops")
+                        .param("notes", "Daily moderation handoff"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/profile"))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        verify(adminProfileService).saveProfile("admin@example.com", "Operations", "#ops", "Daily moderation handoff");
     }
 }

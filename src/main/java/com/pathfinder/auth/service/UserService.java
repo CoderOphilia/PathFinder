@@ -6,6 +6,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
+
 @Service
 public class UserService {
     private final UserRepository userRepo;
@@ -22,6 +24,7 @@ public class UserService {
 
         user.setEmail(user.getEmail().trim().toLowerCase());
         user.setRole(normalizeRole(user.getRole()));
+        user.setProfileImageUrl(normalizeProfileImageUrl(user.getProfileImageUrl()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setAccountStatus("ACTIVE");
         return userRepo.save(user);
@@ -47,6 +50,13 @@ public class UserService {
                 && passwordEncoder.matches(rawPassword, encodedPassword);
     }
 
+    public boolean isAccountActive(User user) {
+        if (user == null) {
+            return false;
+        }
+        return "ACTIVE".equals(normalizeStatus(user.getAccountStatus()));
+    }
+
     private String normalizeRole(String role) {
         if (role == null) {
             return "mentee";
@@ -57,5 +67,23 @@ public class UserService {
             case "mentor", "admin" -> normalizedRole;
             default -> "mentee";
         };
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return "ACTIVE";
+        }
+        String normalized = status.trim();
+        if (normalized.isEmpty()) {
+            return "ACTIVE";
+        }
+        return normalized.toUpperCase(Locale.ROOT);
+    }
+
+    public String normalizeProfileImageUrl(String profileImageUrl) {
+        if (profileImageUrl == null) {
+            return "";
+        }
+        return profileImageUrl.trim();
     }
 }

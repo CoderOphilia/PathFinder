@@ -9,7 +9,7 @@
 		<a th:href="@{/mentor/pay}" class="nav__link" th:classappend="${currentUrl == '/mentor/pay' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/pay'} ? 'page' : null">My pay</a>
 		<a th:href="@{/mentor/availability}" class="nav__link" th:classappend="${currentUrl == '/mentor/availability' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/availability'} ? 'page' : null">Availability</a>
 		<a th:href="@{/mentor/profile}" class="nav__link" th:classappend="${currentUrl == '/mentor/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentor/profile'} ? 'page' : null">Profile</a>
-		<a th:href="@{/auth/login}" class="nav__link">Sign out</a>
+		<a th:href="@{/auth/logout}" class="nav__link">Sign out</a>
 	</div>
 
 	<!-- Mobile Nav (Fixed Bottom) -->

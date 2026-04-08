@@ -36,8 +36,21 @@
 				</p>
 			</section>
 
-			<form method="post" th:action="@{/mentor/profile}" class="profileForm">
+			<form method="post" th:action="@{/mentor/profile}" class="profileForm" enctype="multipart/form-data">
 				<input type="hidden" name="email" th:value="${email}" />
+
+				<section class="badgePreview" aria-label="Profile image preview">
+					<p class="tile__kicker">Profile picture</p>
+					<p th:if="${profileImageUrl == null or profileImageUrl.isEmpty()}" class="p p--sm p--muted p--tight">
+						Choose an image from your computer to show your profile picture.
+					</p>
+					<img
+						id="mentorProfilePreview"
+						th:src="${profileImageUrl}"
+						alt="Mentor profile picture"
+						th:style="${(profileImageUrl == null or profileImageUrl.isEmpty()) ? 'display:none; width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4;' : 'width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4;'}"
+					/>
+				</section>
 
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
@@ -47,6 +60,12 @@
 				<p class="p p--sm p--muted p--tight" th:if="${email != null and !email.isEmpty()}">
 					Signed in as <strong th:text="${email}">mentor@example.com</strong>
 				</p>
+
+				<div>
+					<label for="profileImageFile" class="label">Profile picture</label>
+					<input id="profileImageFile" name="profileImageFile" type="file" class="input" accept="image/*" />
+					<p class="label__hint">Choose a new image from your computer to replace the current photo.</p>
+				</div>
 
 				<div>
 					<label for="expertise" class="label label--required">Core expertise</label>
@@ -235,6 +254,8 @@
 		(function () {
 			const freeSessionToggle = document.getElementById('offersFreeSession');
 			const trialSessionFields = document.getElementById('trialSessionFields');
+			const profileImageFile = document.getElementById('profileImageFile');
+			const profilePreview = document.getElementById('mentorProfilePreview');
 
 			if (!freeSessionToggle || !trialSessionFields) {
 				return;
@@ -246,6 +267,17 @@
 
 			freeSessionToggle.addEventListener('change', syncTrialFields);
 			syncTrialFields();
+
+			if (profileImageFile && profilePreview) {
+				profileImageFile.addEventListener('change', function () {
+					const file = profileImageFile.files && profileImageFile.files[0];
+					if (!file) {
+						return;
+					}
+					profilePreview.src = URL.createObjectURL(file);
+					profilePreview.style.display = 'block';
+				});
+			}
 		})();
 	</script>
 </section>

@@ -2,11 +2,15 @@ package com.pathfinder.auth.web;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.service.UserService;
+import com.pathfinder.profile.service.ProfileImageStorageService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,6 +27,7 @@ public class AuthController {
     public static final String SESSION_USER_ROLE = "sessionUserRole";
 
     private final UserService service;
+    private final ProfileImageStorageService profileImageStorageService;
 
     private static final String PUBLIC_NAVBAR = "fragments/navbar :: navbar";
 
@@ -55,6 +60,11 @@ public class AuthController {
             return "redirect:/auth/login";
         }
 
+        if (!service.isAccountActive(dbUser)) {
+            redirectAttributes.addFlashAttribute("formError", "Your account is currently suspended.");
+            return "redirect:/auth/login";
+        }
+
         session.setAttribute(SESSION_USER_EMAIL, dbUser.getEmail());
         session.setAttribute(SESSION_USER_ROLE, dbUser.getRole());
         redirectAttributes.addFlashAttribute("flashMessage", "Signed in successfully.");
@@ -68,7 +78,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public String signupSubmit(@ModelAttribute("user") User user, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String signupSubmit(
+            @ModelAttribute("user") User user,
+            @RequestParam(name = "profileImageFile", required = false) MultipartFile profileImageFile,
+            HttpSession session,
+            RedirectAttributes redirectAttributes
+    ) {
         if (isBlank(user.getFirstName()) || isBlank(user.getLastName())
                 || isBlank(user.getEmail())
                 || isBlank(user.getPassword())
@@ -85,6 +100,15 @@ public class AuthController {
 
         if (!user.getPassword().equals(user.getConfirmPassword())) {
             redirectAttributes.addFlashAttribute("formError", "Password and confirmation do not match.");
+            return "redirect:/auth/signup";
+        }
+
+        try {
+            if (profileImageFile != null && !profileImageFile.isEmpty()) {
+                user.setProfileImageUrl(profileImageStorageService.storeProfileImage(profileImageFile, user.getEmail()));
+            }
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
             return "redirect:/auth/signup";
         }
 
@@ -112,6 +136,17 @@ public class AuthController {
         }
 
         redirectAttributes.addFlashAttribute("flashMessage", "If your email exists, a reset link has been sent.");
+        return "redirect:/auth/login";
+    }
+
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }
+        SecurityContextHolder.clearContext();
+        redirectAttributes.addFlashAttribute("flashMessage", "Signed out successfully.");
         return "redirect:/auth/login";
     }
 

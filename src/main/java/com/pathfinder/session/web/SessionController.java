@@ -1,5 +1,7 @@
 package com.pathfinder.session.web;
 
+import com.pathfinder.auth.domain.User;
+import com.pathfinder.auth.service.UserService;
 import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.service.MentorProfileService;
@@ -43,10 +45,16 @@ public class SessionController {
 
     private final MentorProfileService mentorProfileService;
     private final SessionService sessionService;
+    private final UserService userService;
 
-    public SessionController(MentorProfileService mentorProfileService, SessionService sessionService) {
+    public SessionController(
+            MentorProfileService mentorProfileService,
+            SessionService sessionService,
+            UserService userService
+    ) {
         this.mentorProfileService = mentorProfileService;
         this.sessionService = sessionService;
+        this.userService = userService;
     }
 
     @GetMapping({"/seeker/sessions/new", "/mentee/sessions/new"})
@@ -58,6 +66,7 @@ public class SessionController {
         List<MentorDirectoryItemView> mentors = mentorProfileService.listPublicMentors().stream()
                 .map(profile -> new MentorDirectoryItemView(
                         profile.name(),
+                        profile.profileImageUrl(),
                         profile.rate(),
                         profile.offersFreeSession(),
                         profile.trialSessionLabel(),
@@ -177,6 +186,8 @@ public class SessionController {
         }
 
         model.addAttribute("sessionRequest", request);
+        User mentorUser = mentorProfileService.findMentorUserByEmail(request.getMentorEmail());
+        model.addAttribute("mentorProfileImageUrl", mentorUser == null ? "" : mentorUser.getProfileImageUrl());
         model.addAttribute("submittedAtLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
         model.addAttribute("statusLabel", toStatusLabel(request.getStatus()));
         model.addAttribute("statusClass", toStatusClass(request.getStatus()));
@@ -354,11 +365,13 @@ public class SessionController {
         List<SessionRequest> requests = (isBlank(mentorEmail)
                 ? List.<SessionRequest>of()
                 : sessionService.getSessionsForMentor(mentorEmail));
-        List<SessionRequest> pendingRequests = requests.stream()
+        List<RequestQueueItemView> pendingRequests = requests.stream()
                 .filter(request -> request.getStatus() == SessionStatus.REQUESTED)
+                .map(this::toRequestQueueItem)
                 .toList();
-        List<SessionRequest> previousRequests = requests.stream()
+        List<RequestQueueItemView> previousRequests = requests.stream()
                 .filter(request -> request.getStatus() != SessionStatus.REQUESTED)
+                .map(this::toRequestQueueItem)
                 .toList();
 
         if (isBlank(mentorEmail)) {
@@ -644,8 +657,23 @@ public class SessionController {
         return value == null || value.trim().isEmpty();
     }
 
+    private RequestQueueItemView toRequestQueueItem(SessionRequest request) {
+        User menteeUser = userService.findUserByEmail(request.getMenteeEmail());
+        String menteeName = menteeUser == null
+                ? request.getMenteeEmail()
+                : buildFullName(menteeUser.getFirstName(), menteeUser.getLastName(), request.getMenteeEmail());
+        String profileImageUrl = menteeUser == null ? "" : menteeUser.getProfileImageUrl();
+        return new RequestQueueItemView(request, menteeName, profileImageUrl);
+    }
+
+    private String buildFullName(String firstName, String lastName, String fallbackEmail) {
+        String combined = ((firstName == null ? "" : firstName.trim()) + " " + (lastName == null ? "" : lastName.trim())).trim();
+        return combined.isEmpty() ? fallbackEmail : combined;
+    }
+
     private record MentorDirectoryItemView(
             String name,
+            String profileImageUrl,
             String rate,
             boolean offersFreeSession,
             String trialSessionLabel,
@@ -662,5 +690,12 @@ public class SessionController {
         private String displayLabel() {
             return weekday + " • " + timeRange + " (" + timezone + ")";
         }
+    }
+
+    private record RequestQueueItemView(
+            SessionRequest request,
+            String menteeName,
+            String menteeProfileImageUrl
+    ) {
     }
 }
