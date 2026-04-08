@@ -59,6 +59,10 @@ public class MentorProfileService {
             String fullName,
             String expertise,
             String hourlyRateCad,
+            boolean offersFreeSession,
+            String trialSessionWeekday,
+            String trialSessionStartTime,
+            String trialSessionEndTime,
             String currentTitle,
             String currentCompany,
             String interviewCompanies,
@@ -82,7 +86,18 @@ public class MentorProfileService {
             newProfile.setUser(managedUser);
             newProfile.setVerificationStatus(VerificationStatus.PENDING);
             newProfile.setAdminNote("");
-            applyProfileValues(newProfile, expertise, hourlyRateCad, currentTitle, currentCompany, bio);
+            applyProfileValues(
+                    newProfile,
+                    expertise,
+                    hourlyRateCad,
+                    offersFreeSession,
+                    trialSessionWeekday,
+                    trialSessionStartTime,
+                    trialSessionEndTime,
+                    currentTitle,
+                    currentCompany,
+                    bio
+            );
             entityManager.persist(newProfile);
             replaceSkills(newProfile, expertise);
             replaceInterviewCompanies(newProfile, interviewCompanies);
@@ -91,7 +106,18 @@ public class MentorProfileService {
 
         profile.setUserId(managedUser.getId());
         profile.setUser(managedUser);
-        applyProfileValues(profile, expertise, hourlyRateCad, currentTitle, currentCompany, bio);
+        applyProfileValues(
+                profile,
+                expertise,
+                hourlyRateCad,
+                offersFreeSession,
+                trialSessionWeekday,
+                trialSessionStartTime,
+                trialSessionEndTime,
+                currentTitle,
+                currentCompany,
+                bio
+        );
         replaceSkills(profile, expertise);
         replaceInterviewCompanies(profile, interviewCompanies);
         return profile;
@@ -232,6 +258,16 @@ public class MentorProfileService {
         return findAvailabilityByEmail(mentorEmail);
     }
 
+    @Transactional(readOnly = true)
+    public TrialSessionAvailability findTrialAvailabilityByMentorName(String mentorName) {
+        String mentorEmail = findMentorEmailByName(mentorName);
+        if (mentorEmail.isEmpty()) {
+            return null;
+        }
+        MentorProfile profile = findProfileByEmail(mentorEmail);
+        return toTrialAvailability(profile);
+    }
+
     private PublicMentorProfile toPublicMentorProfile(User user, MentorProfile profile) {
         if (user == null || profile == null) {
             return null;
@@ -253,6 +289,8 @@ public class MentorProfileService {
                 name,
                 roleAtCompany,
                 formatCad(profile.getHourlyRateCents()),
+                profile.isOffersFreeSession(),
+                formatTrialSessionLabel(toTrialAvailability(profile)),
                 normalizeText(profile.getBio()),
                 skills,
                 interviewCompanies,
@@ -264,15 +302,54 @@ public class MentorProfileService {
             MentorProfile profile,
             String expertise,
             String hourlyRateCad,
+            boolean offersFreeSession,
+            String trialSessionWeekday,
+            String trialSessionStartTime,
+            String trialSessionEndTime,
             String currentTitle,
             String currentCompany,
             String bio
     ) {
         profile.setExpertise(normalizeText(expertise));
         profile.setHourlyRateCents(parseCadToCents(hourlyRateCad));
+        profile.setOffersFreeSession(offersFreeSession);
+        applyTrialSessionValues(profile, offersFreeSession, trialSessionWeekday, trialSessionStartTime, trialSessionEndTime);
         profile.setCurrentTitle(normalizeText(currentTitle));
         profile.setCurrentCompany(normalizeText(currentCompany));
         profile.setBio(normalizeText(bio));
+    }
+
+    private void applyTrialSessionValues(
+            MentorProfile profile,
+            boolean offersFreeSession,
+            String trialSessionWeekday,
+            String trialSessionStartTime,
+            String trialSessionEndTime
+    ) {
+        if (!offersFreeSession) {
+            profile.setTrialSessionWeekday(null);
+            profile.setTrialSessionStartTime(null);
+            profile.setTrialSessionEndTime(null);
+            return;
+        }
+
+        String normalizedWeekday = normalizeText(trialSessionWeekday);
+        String normalizedStart = normalizeText(trialSessionStartTime);
+        String normalizedEnd = normalizeText(trialSessionEndTime);
+        if (normalizedWeekday.isEmpty() || normalizedStart.isEmpty() || normalizedEnd.isEmpty()) {
+            throw new IllegalArgumentException("Choose a weekday, start time, and end time for trial sessions.");
+        }
+
+        int weekday = parseWeekdayKey(normalizedWeekday);
+        LocalTime startTime = parseTime(normalizedStart, "Trial session start time is invalid.");
+        LocalTime endTime = parseTime(normalizedEnd, "Trial session end time is invalid.");
+        if (!startTime.isBefore(endTime)) {
+            throw new IllegalArgumentException("Trial session end time must be after the start time.");
+        }
+
+        profile.setTrialSessionWeekday(weekday);
+        profile.setTrialSessionStartTime(startTime);
+        profile.setTrialSessionEndTime(endTime);
     }
 
     private void applyUserName(User user, String fullName) {
@@ -382,6 +459,73 @@ public class MentorProfileService {
         }
     }
 
+    private LocalTime parseTime(String value, String errorMessage) {
+        try {
+            return LocalTime.parse(value);
+        } catch (Exception exception) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    private int parseWeekdayKey(String value) {
+        return switch (value.toLowerCase(Locale.ROOT)) {
+            case "sun" -> 1;
+            case "mon" -> 2;
+            case "tue" -> 3;
+            case "wed" -> 4;
+            case "thu" -> 5;
+            case "fri" -> 6;
+            case "sat" -> 7;
+            default -> throw new IllegalArgumentException("Choose a valid weekday for trial sessions.");
+        };
+    }
+
+    private TrialSessionAvailability toTrialAvailability(MentorProfile profile) {
+        if (profile == null
+                || !profile.isOffersFreeSession()
+                || profile.getTrialSessionWeekday() == null
+                || profile.getTrialSessionStartTime() == null
+                || profile.getTrialSessionEndTime() == null) {
+            return null;
+        }
+        return new TrialSessionAvailability(
+                profile.getTrialSessionWeekday(),
+                profile.getTrialSessionStartTime().toString(),
+                profile.getTrialSessionEndTime().toString()
+        );
+    }
+
+    private String formatTrialSessionLabel(TrialSessionAvailability availability) {
+        if (availability == null) {
+            return "";
+        }
+        return weekdayLabel(availability.weekday()) + " • "
+                + formatTime(availability.startTime()) + " - " + formatTime(availability.endTime());
+    }
+
+    private String weekdayLabel(int weekday) {
+        return switch (weekday) {
+            case 1 -> "Sunday";
+            case 2 -> "Monday";
+            case 3 -> "Tuesday";
+            case 4 -> "Wednesday";
+            case 5 -> "Thursday";
+            case 6 -> "Friday";
+            case 7 -> "Saturday";
+            default -> "Day";
+        };
+    }
+
+    private String formatTime(String value) {
+        LocalTime time = LocalTime.parse(value);
+        int hour = time.getHour();
+        int convertedHour = hour % 12;
+        if (convertedHour == 0) {
+            convertedHour = 12;
+        }
+        return String.format(Locale.ROOT, "%d:%02d %s", convertedHour, time.getMinute(), hour >= 12 ? "PM" : "AM");
+    }
+
     private String formatCad(Integer amountCents) {
         if (amountCents == null) {
             return "";
@@ -418,10 +562,19 @@ public class MentorProfileService {
             String name,
             String roleAtCompany,
             String rate,
+            boolean offersFreeSession,
+            String trialSessionLabel,
             String tagline,
             List<String> skills,
             List<String> interviewCompanies,
             int sessionsCompleted
+    ) {
+    }
+
+    public record TrialSessionAvailability(
+            int weekday,
+            String startTime,
+            String endTime
     ) {
     }
 

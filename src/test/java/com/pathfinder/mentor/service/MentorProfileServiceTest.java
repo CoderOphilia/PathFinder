@@ -69,6 +69,10 @@ class MentorProfileServiceTest {
                 "Mentor User",
                 "Java, Spring",
                 "80",
+                true,
+                "tue",
+                "18:00",
+                "19:00",
                 "Senior Engineer",
                 "Example Corp",
                 "Google, Amazon",
@@ -78,6 +82,8 @@ class MentorProfileServiceTest {
         assertEquals(1L, result.getUserId());
         assertEquals("Senior Engineer", result.getCurrentTitle());
         assertEquals("Example Corp", result.getCurrentCompany());
+        assertEquals(true, result.isOffersFreeSession());
+        assertEquals(3, result.getTrialSessionWeekday());
         verify(entityManager).persist(any(MentorProfile.class));
     }
 
@@ -97,6 +103,10 @@ class MentorProfileServiceTest {
                         "Normal User",
                         "Java",
                         "80",
+                        false,
+                        "",
+                        "",
+                        "",
                         "Engineer",
                         "Example Corp",
                         "",

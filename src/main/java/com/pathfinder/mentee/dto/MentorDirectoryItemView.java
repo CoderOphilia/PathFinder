@@ -6,6 +6,8 @@ public record MentorDirectoryItemView(
         String slug,
         String name,
         String rate,
+        boolean offersFreeSession,
+        String trialSessionLabel,
         String roleAtCompany,
         String tagline,
         List<String> skills,

@@ -37,10 +37,16 @@
 			</section>
 
 			<form method="post" th:action="@{/mentor/profile}" class="profileForm">
+				<input type="hidden" name="email" th:value="${email}" />
+
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
 					<input id="fullName" name="fullName" class="input" th:value="${fullName}" required />
 				</div>
+
+				<p class="p p--sm p--muted p--tight" th:if="${email != null and !email.isEmpty()}">
+					Signed in as <strong th:text="${email}">mentor@example.com</strong>
+				</p>
 
 				<div>
 					<label for="expertise" class="label label--required">Core expertise</label>
@@ -58,6 +64,59 @@
 					<label for="hourlyRate" class="label label--required">Hourly rate (CAD)</label>
 					<input id="hourlyRate" name="hourlyRate" type="number" min="0" step="5" class="input" th:value="${hourlyRate}" required />
 				</div>
+
+				<div>
+					<label class="checkboxLabel" for="offersFreeSession">
+						<input
+							id="offersFreeSession"
+							name="offersFreeSession"
+							type="checkbox"
+							value="true"
+							th:checked="${offersFreeSession}"
+						/>
+						<span>Offer one free introductory session to each mentee</span>
+					</label>
+					<p class="label__hint">If enabled, each mentee can request one free session with you before paid sessions.</p>
+				</div>
+
+				<section id="trialSessionFields" th:hidden="${offersFreeSession == null or !offersFreeSession}">
+					<div>
+						<label for="trialSessionWeekday" class="label label--required">Trial session weekday</label>
+						<select id="trialSessionWeekday" name="trialSessionWeekday" class="select">
+							<option value="">Select weekday</option>
+							<option value="mon" th:selected="${trialSessionWeekday == 'mon'}">Monday</option>
+							<option value="tue" th:selected="${trialSessionWeekday == 'tue'}">Tuesday</option>
+							<option value="wed" th:selected="${trialSessionWeekday == 'wed'}">Wednesday</option>
+							<option value="thu" th:selected="${trialSessionWeekday == 'thu'}">Thursday</option>
+							<option value="fri" th:selected="${trialSessionWeekday == 'fri'}">Friday</option>
+							<option value="sat" th:selected="${trialSessionWeekday == 'sat'}">Saturday</option>
+							<option value="sun" th:selected="${trialSessionWeekday == 'sun'}">Sunday</option>
+						</select>
+					</div>
+
+					<div>
+						<label for="trialSessionStartTime" class="label label--required">Trial session start time</label>
+						<input
+							id="trialSessionStartTime"
+							name="trialSessionStartTime"
+							type="time"
+							class="input"
+							th:value="${trialSessionStartTime}"
+						/>
+					</div>
+
+					<div>
+						<label for="trialSessionEndTime" class="label label--required">Trial session end time</label>
+						<input
+							id="trialSessionEndTime"
+							name="trialSessionEndTime"
+							type="time"
+							class="input"
+							th:value="${trialSessionEndTime}"
+						/>
+						<p class="label__hint">This slot is what mentees see when they still have platform trial sessions left.</p>
+					</div>
+				</section>
 
 				<div>
 					<label for="currentTitle" class="label">Current title</label>
@@ -101,11 +160,6 @@
 				</div>
 
 				<div>
-					<label for="timezone" class="label">Timezone</label>
-					<input id="timezone" name="timezone" class="input" placeholder="America/Vancouver" th:value="${timezone}" />
-				</div>
-
-				<div>
 					<label for="bio" class="label">Mentor bio</label>
 					<textarea id="bio" name="bio" class="textarea" rows="4" th:text="${bio}"></textarea>
 				</div>
@@ -130,6 +184,45 @@
 					</p>
 				</section>
 
+				<section class="badgePreview" aria-label="Session completion">
+					<p class="tile__kicker">Session completion</p>
+					<h3>Mark sessions as completed</h3>
+					<p class="p p--sm p--muted p--tight">
+						Trial sessions can be marked complete after approval. Paid sessions only appear here after the mentee has paid, and then their earnings are added to My pay when you mark them complete.
+					</p>
+					<div th:if="${#lists.isEmpty(completableSessions)}">
+						<p class="p p--sm p--muted p--tight">No approved or paid sessions are waiting to be marked complete.</p>
+					</div>
+					<div th:if="${!#lists.isEmpty(completableSessions)}" class="tableWrap">
+						<table class="dataTable">
+							<thead>
+								<tr>
+									<th scope="col">Mentee</th>
+									<th scope="col">Session</th>
+									<th scope="col">Slot</th>
+									<th scope="col">Type</th>
+									<th scope="col">Payout</th>
+									<th scope="col">Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr th:each="completionRow : ${completableSessions}">
+									<td th:text="${completionRow.menteeEmail}">mentee@example.com</td>
+									<td th:text="${completionRow.sessionType}">Mock interview</td>
+									<td th:text="${completionRow.slotTime}">Monday • 6:00 PM - 7:00 PM</td>
+									<td th:text="${completionRow.sessionCategory}">Paid session</td>
+									<td th:text="${completionRow.payoutLabel}">$80.00</td>
+									<td>
+										<form method="post" th:action="@{|/mentor/sessions/${completionRow.requestId}/complete|}">
+											<button type="submit" class="btn btn--secondary btn--sm">Mark completed</button>
+										</form>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</section>
+
 				<div class="formActions">
 					<button type="submit" class="btn btn--default">Save profile</button>
 					<a class="btn btn--outline" th:href="@{/mentor/home}">Back to home</a>
@@ -137,4 +230,22 @@
 			</form>
 		</section>
 	</div>
+
+	<script>
+		(function () {
+			const freeSessionToggle = document.getElementById('offersFreeSession');
+			const trialSessionFields = document.getElementById('trialSessionFields');
+
+			if (!freeSessionToggle || !trialSessionFields) {
+				return;
+			}
+
+			const syncTrialFields = function () {
+				trialSessionFields.hidden = !freeSessionToggle.checked;
+			};
+
+			freeSessionToggle.addEventListener('change', syncTrialFields);
+			syncTrialFields();
+		})();
+	</script>
 </section>

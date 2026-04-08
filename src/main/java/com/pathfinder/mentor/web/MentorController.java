@@ -11,6 +11,7 @@ import com.pathfinder.session.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,6 +33,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class MentorController {
 
     private static final String MENTOR_NAVBAR = "fragments/navbar_mentor :: navbar";
+    private static final double PLATFORM_FEE_RATE = 0.15;
+    private static final double PLATFORM_FEE_TAX_RATE = 0.12;
     private static final Pattern TIME_24H_PATTERN = Pattern.compile("^([01]\\d|2[0-3]):[0-5]\\d$");
     private static final List<WeekdayOption> WEEKDAYS = List.of(
             new WeekdayOption("mon", "Monday"),
@@ -80,7 +83,13 @@ public class MentorController {
     }
 
     @GetMapping("/pay")
-    public String pay(Model model) {
+    public String pay(HttpSession session, Model model) {
+        String mentorEmail = resolveCurrentMentorEmail(session, "");
+        if (mentorEmail.isEmpty()) {
+            model.addAttribute("formError", "Sign in as a mentor to view your pay.");
+            return renderPage(model, "My pay", "mentor/pay :: content");
+        }
+        model.addAttribute("mentorPay", buildMentorPaySummary(mentorEmail));
         return renderPage(model, "My pay", "mentor/pay :: content");
     }
 
@@ -193,11 +202,17 @@ public class MentorController {
     ) {
         // Load the saved mentor profile and any admin status that should be shown with it.
         String normalizedEmail = resolveCurrentMentorEmail(session, email);
+        if (normalizedEmail.isEmpty() && !model.containsAttribute("formError")) {
+            model.addAttribute("formError", "Sign in as a mentor to edit your profile.");
+        }
         if (!normalizedEmail.isEmpty() && !model.containsAttribute("email")) {
             model.addAttribute("email", normalizedEmail);
         }
         if (!normalizedEmail.isEmpty()) {
             populateProfileForm(model, normalizedEmail);
+        }
+        if (!normalizedEmail.isEmpty() && !model.containsAttribute("completableSessions")) {
+            model.addAttribute("completableSessions", buildCompletableSessions(normalizedEmail));
         }
         if (!model.containsAttribute("interviewCompanyBadges")) {
             model.addAttribute("interviewCompanyBadges", List.of());
@@ -211,6 +226,10 @@ public class MentorController {
             @RequestParam(defaultValue = "") String email,
             @RequestParam(defaultValue = "") String expertise,
             @RequestParam(defaultValue = "") String hourlyRate,
+            @RequestParam(defaultValue = "false") boolean offersFreeSession,
+            @RequestParam(defaultValue = "") String trialSessionWeekday,
+            @RequestParam(defaultValue = "") String trialSessionStartTime,
+            @RequestParam(defaultValue = "") String trialSessionEndTime,
             @RequestParam(defaultValue = "") String currentTitle,
             @RequestParam(defaultValue = "") String currentCompany,
             @RequestParam(defaultValue = "") String interviewCompanies,
@@ -223,6 +242,10 @@ public class MentorController {
         redirectAttributes.addFlashAttribute("email", accountEmail);
         redirectAttributes.addFlashAttribute("expertise", expertise);
         redirectAttributes.addFlashAttribute("hourlyRate", hourlyRate);
+        redirectAttributes.addFlashAttribute("offersFreeSession", offersFreeSession);
+        redirectAttributes.addFlashAttribute("trialSessionWeekday", trialSessionWeekday);
+        redirectAttributes.addFlashAttribute("trialSessionStartTime", trialSessionStartTime);
+        redirectAttributes.addFlashAttribute("trialSessionEndTime", trialSessionEndTime);
         redirectAttributes.addFlashAttribute("currentTitle", currentTitle);
         redirectAttributes.addFlashAttribute("currentCompany", currentCompany);
         redirectAttributes.addFlashAttribute("interviewCompanies", interviewCompanies);
@@ -244,6 +267,10 @@ public class MentorController {
                     fullName,
                     expertise,
                     hourlyRate,
+                    offersFreeSession,
+                    trialSessionWeekday,
+                    trialSessionStartTime,
+                    trialSessionEndTime,
                     currentTitle,
                     currentCompany,
                     interviewCompanies,
@@ -269,8 +296,20 @@ public class MentorController {
             model.addAttribute("fullName", buildFullName(mentorUser.getFirstName(), mentorUser.getLastName()));
         }
         MentorProfile profile = mentorProfileService.findProfileByEmail(email);
+        if (!model.containsAttribute("offersFreeSession")) {
+            model.addAttribute("offersFreeSession", profile != null && profile.isOffersFreeSession());
+        }
         if (profile == null) {
             return;
+        }
+        if (!model.containsAttribute("trialSessionWeekday")) {
+            model.addAttribute("trialSessionWeekday", weekdayKey(profile.getTrialSessionWeekday()));
+        }
+        if (!model.containsAttribute("trialSessionStartTime")) {
+            model.addAttribute("trialSessionStartTime", profile.getTrialSessionStartTime() == null ? "" : profile.getTrialSessionStartTime().toString());
+        }
+        if (!model.containsAttribute("trialSessionEndTime")) {
+            model.addAttribute("trialSessionEndTime", profile.getTrialSessionEndTime() == null ? "" : profile.getTrialSessionEndTime().toString());
         }
         List<String> skillBadges = mentorProfileService.findSkillsByEmail(email);
         List<String> interviewCompanyBadges = mentorProfileService.findInterviewCompaniesByEmail(email);
@@ -406,6 +445,85 @@ public class MentorController {
         return "Your profile was not approved.";
     }
 
+    private List<CompletableSessionView> buildCompletableSessions(String mentorEmail) {
+        return sessionService.getSessionsForMentor(mentorEmail).stream()
+                .filter(request -> (request.isFreeSessionRequested() && request.getStatus() == SessionStatus.APPROVED)
+                        || (!request.isFreeSessionRequested() && request.getStatus() == SessionStatus.PAID))
+                .map(request -> new CompletableSessionView(
+                        request.getId(),
+                        request.getMenteeEmail(),
+                        request.getSessionType(),
+                        request.getSlotTime(),
+                        request.isFreeSessionRequested() ? "Trial session" : "Paid session",
+                        request.isFreeSessionRequested() ? "No payout" : formatCurrency(request.getQuotedAmountCents())
+                ))
+                .toList();
+    }
+
+    private MentorPaySummaryView buildMentorPaySummary(String mentorEmail) {
+        List<SessionRequest> mentorSessions = sessionService.getSessionsForMentor(mentorEmail);
+        List<SessionRequest> completedPaidSessions = mentorSessions.stream()
+                .filter(this::isCompletedPaidSession)
+                .toList();
+        List<SessionRequest> completedTrialSessions = mentorSessions.stream()
+                .filter(request -> request.getStatus() == SessionStatus.COMPLETED)
+                .filter(SessionRequest::isFreeSessionRequested)
+                .toList();
+
+        double completedHours = completedPaidSessions.stream()
+                .mapToDouble(request -> durationHours(request.getSlotTime()))
+                .sum();
+        int grossPayoutCents = completedPaidSessions.stream()
+                .mapToInt(request -> request.getQuotedAmountCents() == null ? 0 : request.getQuotedAmountCents())
+                .sum();
+        int platformFeeCents = (int) Math.round(grossPayoutCents * PLATFORM_FEE_RATE);
+        int feeTaxCents = (int) Math.round(platformFeeCents * PLATFORM_FEE_TAX_RATE);
+        int expectedPayoutCents = Math.max(0, grossPayoutCents - platformFeeCents - feeTaxCents);
+        long distinctClients = completedPaidSessions.stream()
+                .map(SessionRequest::getMenteeEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .distinct()
+                .count();
+
+        List<PayLineItemView> lineItems = List.of(
+                new PayLineItemView("Completed paid sessions", completedPaidSessions.size() + " sessions", "-", formatCurrency(grossPayoutCents)),
+                new PayLineItemView("PathFinder platform fee", "15%", "-", "-" + formatCurrency(platformFeeCents)),
+                new PayLineItemView("Taxes on platform fee", "12%", "-", "-" + formatCurrency(feeTaxCents)),
+                new PayLineItemView("Expected payout", "", "", formatCurrency(expectedPayoutCents))
+        );
+
+        List<CompletedSessionPayView> sessionRows = completedPaidSessions.stream()
+                .map(request -> new CompletedSessionPayView(
+                        request.getId(),
+                        request.getMenteeEmail(),
+                        request.getSessionType(),
+                        request.getSlotTime(),
+                        formatCurrency(request.getQuotedAmountCents())
+                ))
+                .toList();
+
+        return new MentorPaySummaryView(
+                roundHours(completedHours),
+                completedPaidSessions.size(),
+                distinctClients,
+                completedTrialSessions.size(),
+                formatCurrency(grossPayoutCents),
+                formatCurrency(expectedPayoutCents),
+                lineItems,
+                sessionRows
+        );
+    }
+
+    private boolean isCompletedPaidSession(SessionRequest request) {
+        if (request.getStatus() != SessionStatus.COMPLETED || request.isFreeSessionRequested()) {
+            return false;
+        }
+        if (request.isPaymentCompleted()) {
+            return true;
+        }
+        return request.getQuotedAmountCents() != null && request.getQuotedAmountCents() > 0;
+    }
+
     private List<CalendarDay> buildCalendarDays(List<SessionRequest> mentorSessions) {
         List<CalendarDay> calendarDays = new ArrayList<>();
         for (WeekdayOption weekday : WEEKDAYS.stream().filter(day -> !"sun".equals(day.key())).toList()) {
@@ -468,6 +586,55 @@ public class MentorController {
             return Integer.toString(amountCents / 100);
         }
         return String.format(Locale.ROOT, "%.2f", amountCents / 100.0);
+    }
+
+    private String formatCurrency(Integer amountCents) {
+        int safeAmount = amountCents == null ? 0 : amountCents;
+        return String.format(Locale.ROOT, "$%.2f", safeAmount / 100.0);
+    }
+
+    private double durationHours(String slotTime) {
+        try {
+            String normalized = normalizeText(slotTime);
+            int bulletIndex = normalized.indexOf("•");
+            if (bulletIndex < 0) {
+                bulletIndex = normalized.indexOf("â€¢");
+            }
+            String timeRange = bulletIndex >= 0 ? normalizeText(normalized.substring(bulletIndex + 1)) : normalized;
+            int tzIndex = timeRange.indexOf(" (");
+            if (tzIndex >= 0) {
+                timeRange = timeRange.substring(0, tzIndex).trim();
+            }
+            String[] parts = timeRange.split("-");
+            if (parts.length != 2) {
+                return 1.0;
+            }
+            LocalTime start = LocalTime.parse(parts[0].trim(), java.time.format.DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH));
+            LocalTime end = LocalTime.parse(parts[1].trim(), java.time.format.DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH));
+            return java.time.Duration.between(start, end).toMinutes() / 60.0;
+        } catch (Exception exception) {
+            return 1.0;
+        }
+    }
+
+    private String roundHours(double hours) {
+        return String.format(Locale.ROOT, "%.1f", hours);
+    }
+
+    private String weekdayKey(Integer weekday) {
+        if (weekday == null) {
+            return "";
+        }
+        return switch (weekday) {
+            case 1 -> "sun";
+            case 2 -> "mon";
+            case 3 -> "tue";
+            case 4 -> "wed";
+            case 5 -> "thu";
+            case 6 -> "fri";
+            case 7 -> "sat";
+            default -> "";
+        };
     }
 
     private String renderPage(Model model, String title, String content) {
@@ -597,6 +764,45 @@ public class MentorController {
     private record CalendarEvent(
             String label,
             String cssClass
+    ) {
+    }
+
+    private record CompletableSessionView(
+            Long requestId,
+            String menteeEmail,
+            String sessionType,
+            String slotTime,
+            String sessionCategory,
+            String payoutLabel
+    ) {
+    }
+
+    private record MentorPaySummaryView(
+            String completedHours,
+            int completedPaidSessions,
+            long distinctClients,
+            int completedTrialSessions,
+            String grossPayoutLabel,
+            String expectedPayoutLabel,
+            List<PayLineItemView> lineItems,
+            List<CompletedSessionPayView> completedSessions
+    ) {
+    }
+
+    private record PayLineItemView(
+            String item,
+            String quantity,
+            String rate,
+            String amount
+    ) {
+    }
+
+    private record CompletedSessionPayView(
+            Long requestId,
+            String menteeEmail,
+            String sessionType,
+            String slotTime,
+            String amount
     ) {
     }
 }

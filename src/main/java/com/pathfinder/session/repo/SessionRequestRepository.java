@@ -18,4 +18,15 @@ public interface SessionRequestRepository extends JpaRepository<SessionRequest, 
             String slotTime,
             Collection<SessionStatus> statuses
     );
+
+    boolean existsByMenteeEmailAndMentorEmailAndFreeSessionRequestedTrueAndStatusIn(
+            String menteeEmail,
+            String mentorEmail,
+            Collection<SessionStatus> statuses
+    );
+
+    long countByMenteeEmailAndFreeSessionRequestedTrueAndStatusIn(
+            String menteeEmail,
+            Collection<SessionStatus> statuses
+    );
 }

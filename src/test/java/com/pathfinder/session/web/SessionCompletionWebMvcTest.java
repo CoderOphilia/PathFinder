@@ -43,9 +43,10 @@ class SessionCompletionWebMvcTest {
     private SessionService sessionService;
 
     @Test
-    // Mentors can now finish approved sessions without waiting for payment first.
-    void mentorCanMarkApprovedSessionDone() throws Exception {
+    // Mentors can finish a free approved session from their dashboard.
+    void mentorCanMarkApprovedFreeSessionDone() throws Exception {
         SessionRequest completedRequest = sessionRequest(1L, SessionStatus.COMPLETED);
+        completedRequest.setFreeSessionRequested(true);
         when(sessionService.completeSession(1L)).thenReturn(completedRequest);
 
         mockMvc.perform(post("/mentor/sessions/1/complete"))
@@ -67,6 +68,21 @@ class SessionCompletionWebMvcTest {
                 .andExpect(model().attribute("content", "mentee/session_detail :: content"))
                 .andExpect(model().attribute("statusLabel", "Completed"))
                 .andExpect(model().attribute("statusClass", "statusBadge statusBadge--completed"));
+    }
+
+    @Test
+    // Approved paid sessions should send the mentee straight to payment.
+    void approvedPaidSessionRedirectsToPayment() throws Exception {
+        SessionRequest approvedPaidRequest = sessionRequest(1L, SessionStatus.APPROVED);
+        approvedPaidRequest.setFreeSessionRequested(false);
+        approvedPaidRequest.setPaymentCompleted(false);
+
+        when(sessionService.getSessionById(1L)).thenReturn(approvedPaidRequest);
+
+        mockMvc.perform(get("/mentee/sessions/1"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentee/sessions/1/payment"))
+                .andExpect(flash().attributeExists("flashMessage"));
     }
 
     @Test
@@ -105,6 +121,7 @@ class SessionCompletionWebMvcTest {
         request.setMentorNote("");
         request.setStatus(status);
         request.setPaymentCompleted(status == SessionStatus.PAID || status == SessionStatus.COMPLETED);
+        request.setFreeSessionRequested(false);
         request.setCreatedAt(LocalDateTime.now());
         return request;
     }

@@ -16,6 +16,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalTime;
+
 @Entity
 @Table(name = "mentor_profiles")
 @Getter
@@ -56,6 +58,18 @@ public class MentorProfile {
 
     @Column(name = "sessions_completed", nullable = false)
     private Integer sessionsCompleted;
+
+    @Column(name = "offers_free_session", nullable = false)
+    private boolean offersFreeSession;
+
+    @Column(name = "trial_session_weekday")
+    private Integer trialSessionWeekday;
+
+    @Column(name = "trial_session_start_time")
+    private LocalTime trialSessionStartTime;
+
+    @Column(name = "trial_session_end_time")
+    private LocalTime trialSessionEndTime;
 
     @PrePersist
     void onCreate() {

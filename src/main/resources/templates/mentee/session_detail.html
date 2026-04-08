@@ -35,7 +35,7 @@
 					<dt>Pricing</dt>
 					<dd>
 						<span th:text="${pricingModelLabel}">Hourly</span>
-						•
+						-
 						<span th:text="${quotedAmountLabel}">$60.00</span>
 					</dd>
 				</div>
@@ -46,8 +46,8 @@
 					</dd>
 				</div>
 				<div th:if="${paymentDueLabel != null and !paymentDueLabel.isEmpty()}">
-					<dt>Payment due</dt>
-					<dd th:text="${paymentDueLabel}">Fri, Mar 14 • 1:00 PM</dd>
+					<dt>Payment note</dt>
+					<dd th:text="${paymentDueLabel}">Payment note</dd>
 				</div>
 				<div>
 					<dt>Submitted</dt>
@@ -64,16 +64,18 @@
 					<span>Your slot is held for 24 hours while mentor decision is pending.</span>
 				</li>
 				<li>
-					<strong>Approved</strong>
-					<span>Complete payment before session to confirm attendance.</span>
+					<strong th:text="${sessionRequest.freeSessionRequested ? 'Approved' : 'Approved and payment'}">Approved</strong>
+					<span th:text="${sessionRequest.freeSessionRequested ? 'If approved, this free intro session is ready without payment.' : 'If approved, complete payment before the session to confirm attendance.'}">
+						Next step
+					</span>
 				</li>
 				<li>
-					<strong>Declined / Cancelled / Expired</strong>
+					<strong>Declined / Cancelled</strong>
 					<span>Slot is released and available to other mentees.</span>
 				</li>
 				<li>
 					<strong>After completion</strong>
-					<span>Mentor can mark session complete and payout becomes ready.</span>
+					<span>Mentor can mark the session complete in their dashboard.</span>
 				</li>
 			</ul>
 		</section>
@@ -89,9 +91,13 @@
 				<strong>Mentor note:</strong>
 				<span th:text="${sessionRequest.mentorNote}">Mentor note</span>
 			</p>
+			<p class="p p--sm p--muted p--tight" th:if="${bookingPolicySummary != null and !bookingPolicySummary.isEmpty()}">
+				<strong>Booking policy:</strong>
+				<span th:text="${bookingPolicySummary}">Booking summary</span>
+			</p>
 			<p class="p p--sm p--muted p--tight" th:if="${cancellationLabel != null and !cancellationLabel.isEmpty()}">
 				<strong>Cancellation policy:</strong>
-				<span th:text="${cancellationLabel}">Cancelled within 24 hours. 50% cancellation fee applied.</span>
+				<span th:text="${cancellationLabel}">Cancellation policy</span>
 			</p>
 
 			<div class="formActions">

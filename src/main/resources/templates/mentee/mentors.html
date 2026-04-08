@@ -83,6 +83,13 @@
 					<h2 th:text="${mentor.name}">Mentor Name</h2>
 					<p class="mentorCard__rate" th:text="${mentor.rate}">$00/hr</p>
 				</div>
+				<p class="p p--sm p--tight" th:if="${mentor.offersFreeSession}">
+					<strong>Free intro available</strong>
+				</p>
+				<p class="p p--sm p--muted p--tight" th:if="${mentor.trialSessionLabel != null and !mentor.trialSessionLabel.isEmpty()}">
+					<strong>Trial slot:</strong>
+					<span th:text="${mentor.trialSessionLabel}">Tuesday • 6:00 PM - 6:45 PM</span>
+				</p>
 				<p class="p p--sm p--tight mentorCard__role" th:text="${mentor.roleAtCompany}">Title @ Company</p>
 <!--				<p class="p p&#45;&#45;sm p&#45;&#45;muted p&#45;&#45;tight">-->
 <!--					<strong>Industry:</strong>-->
