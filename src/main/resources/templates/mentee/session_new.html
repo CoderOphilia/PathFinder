@@ -16,6 +16,14 @@
 				<p class="tile__kicker">Selected mentor</p>
 				<h2 th:text="${selectedMentorInfo.name}">Mentor name</h2>
 				<p class="p p--sm p--muted p--tight" th:text="${selectedMentorInfo.rate}">$00/hr</p>
+				<p class="p p--sm p--tight" th:if="${selectedMentorInfo.offersFreeSession}">
+					<strong>Free intro:</strong>
+					<span>Available while you still have platform trial sessions left</span>
+				</p>
+				<p class="p p--sm p--muted p--tight" th:if="${trialSessionLabel != null and !trialSessionLabel.isEmpty()}">
+					<strong>Trial slot:</strong>
+					<span th:text="${trialSessionLabel}">Tuesday • 6:00 PM - 6:45 PM</span>
+				</p>
 				<p class="p p--muted p--tight" th:text="${selectedMentorInfo.tagline}">Mentor summary</p>
 				<p class="p p--sm p--muted p--tight">
 					<strong>Pricing:</strong>
@@ -24,6 +32,9 @@
 				<p class="p p--sm p--muted p--tight" th:if="${selectedQuoteLabel != null and !selectedQuoteLabel.isEmpty()}">
 					<strong>Quote preview:</strong>
 					<span th:text="${selectedQuoteLabel}">$60.00 estimated for this slot</span>
+				</p>
+				<p class="p p--sm p--muted p--tight" th:if="${bookingPolicyMessage != null and !bookingPolicyMessage.isEmpty()}">
+					<span th:text="${bookingPolicyMessage}">Booking policy</span>
 				</p>
 			</section>
 		</section>
@@ -39,7 +50,7 @@
 						<option
 							th:each="mentorOption : ${mentors}"
 							th:value="${mentorOption.name}"
-							th:text="${mentorOption.name + ' • ' + mentorOption.rate}"
+							th:text="${mentorOption.name + ' • ' + mentorOption.rate + (mentorOption.offersFreeSession ? ' • Free intro' : '')}"
 							th:selected="${mentorOption.name == selectedMentor}"
 						>
 							Mentor
@@ -54,6 +65,9 @@
 
 				<div>
 					<p class="label label--required">Availability slot</p>
+					<p class="p p--sm p--muted p--tight" th:if="${showTrialOnlySlots}">
+						Your free-trial limit has not been used yet, so only the mentor's trial slot is available here.
+					</p>
 					<div class="slotGrid" th:if="${!#lists.isEmpty(availableSlots)}">
 						<label class="slotCard" th:each="slot : ${availableSlots}" th:for="${'slot-' + slot.slotId}">
 							<input
@@ -119,6 +133,7 @@
 						class="btn btn--default"
 						th:disabled="${#lists.isEmpty(availableSlots)}"
 						th:attr="aria-disabled=${#lists.isEmpty(availableSlots)}"
+						th:text="${submitButtonLabel}"
 					>
 						Submit request
 					</button>

@@ -114,8 +114,10 @@
 								</span>
 							</td>
 							<td>
-								<span th:class="${request.paymentCompleted ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--neutral'}"
-									th:text="${request.paymentCompleted ? 'Paid' : 'Not started'}">
+								<span th:class="${request.freeSessionRequested ? 'statusBadge statusBadge--neutral'
+									: (request.paymentCompleted ? 'statusBadge statusBadge--approved' : 'statusBadge statusBadge--neutral')}"
+									th:text="${request.freeSessionRequested ? 'Trial session'
+										: (request.paymentCompleted ? 'Paid' : 'Not started')}">
 									Payment
 								</span>
 							</td>
@@ -137,7 +139,7 @@
 										<button type="submit" class="btn btn--destructive btn--sm">Cancel</button>
 									</form>
 									<form
-										th:if="${request.status.name() == 'APPROVED' or request.status.name() == 'PAID'}"
+										th:if="${(request.freeSessionRequested and request.status.name() == 'APPROVED') or (!request.freeSessionRequested and request.status.name() == 'PAID')}"
 										method="post"
 										th:action="@{|/mentor/sessions/${request.id}/complete|}"
 									>

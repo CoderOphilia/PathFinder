@@ -5,6 +5,13 @@
 			<h1 th:text="${mentor.name}">Mentor Name</h1>
 			<p class="p p--strong p--tight" th:text="${mentor.roleAtCompany}">Title @ Company</p>
 			<p class="p p--sm p--muted p--tight" th:text="${'Rate: ' + mentor.rate}">Rate: $75/hr</p>
+			<p class="p p--sm p--tight" th:if="${mentor.offersFreeSession}">
+				<strong>Free intro session available for first-time mentees.</strong>
+			</p>
+			<p class="p p--sm p--muted p--tight" th:if="${mentor.trialSessionLabel != null and !mentor.trialSessionLabel.isEmpty()}">
+				<strong>Trial slot:</strong>
+				<span th:text="${mentor.trialSessionLabel}">Tuesday • 6:00 PM - 6:45 PM</span>
+			</p>
 			<p class="p p--muted p--tight" th:text="${mentor.tagline}">Mentor summary</p>
 			<div class="heroActions">
 				<a class="btn btn--default" th:href="@{/mentee/sessions/new(mentor=${mentor.name})}">Request session</a>

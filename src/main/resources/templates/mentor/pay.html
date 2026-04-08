@@ -2,34 +2,41 @@
 	<div class="gridPage">
 		<section class="tile tile--full tile--mentor" aria-label="Mentor pay summary">
 			<p class="tile__kicker">My pay</p>
-			<h1>Current pay period</h1>
+			<h1>Current pay summary</h1>
 			<p class="p p--muted p--tight">
-				A simple 14-day summary of completed sessions.
+				Completed paid sessions accumulate here after you mark them as completed.
 			</p>
-			<p class="p p--sm p--muted p--tight">Stub data for the current pay period.</p>
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
 		</section>
 
-		<section class="tile tile--full" aria-label="Pay period stats">
+		<section class="tile tile--full" aria-label="Pay period stats" th:if="${mentorPay != null}">
 			<div class="dashboardStats">
 				<article class="statCard">
-					<h2>4.5</h2>
-					<p class="p p--sm p--muted p--tight">Hours</p>
+					<h2 th:text="${mentorPay.completedHours}">0.0</h2>
+					<p class="p p--sm p--muted p--tight">Paid hours</p>
 				</article>
 				<article class="statCard">
-					<h2>6</h2>
-					<p class="p p--sm p--muted p--tight">Sessions</p>
+					<h2 th:text="${mentorPay.completedPaidSessions}">0</h2>
+					<p class="p p--sm p--muted p--tight">Paid sessions</p>
 				</article>
 				<article class="statCard">
-					<h2>4</h2>
+					<h2 th:text="${mentorPay.distinctClients}">0</h2>
 					<p class="p p--sm p--muted p--tight">Clients</p>
+				</article>
+				<article class="statCard">
+					<h2 th:text="${mentorPay.completedTrialSessions}">0</h2>
+					<p class="p p--sm p--muted p--tight">Completed trial sessions</p>
 				</article>
 			</div>
 		</section>
 
-		<section class="tile tile--full tile--panel" aria-label="Expected pay invoice">
+		<section class="tile tile--full tile--panel" aria-label="Expected pay invoice" th:if="${mentorPay != null}">
 			<p class="tile__kicker">Expected pay</p>
-			<h2>Pay period invoice</h2>
-			<p class="p p--sm p--muted p--tight">Stub payout estimate before final review. BC taxes are estimated for display.</p>
+			<h2 th:text="${mentorPay.expectedPayoutLabel}">$0.00</h2>
+			<p class="p p--sm p--muted p--tight">
+				Gross completed-session earnings:
+				<strong th:text="${mentorPay.grossPayoutLabel}">$0.00</strong>
+			</p>
 
 			<div class="tableWrap">
 				<table class="dataTable">
@@ -43,29 +50,41 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr>
-							<td>Completed mentor sessions</td>
-							<td>4.5 hrs</td>
-							<td>$100/hr</td>
-							<td>$450.00</td>
+						<tr th:each="lineItem : ${mentorPay.lineItems}">
+							<td th:text="${lineItem.item}">Item</td>
+							<td th:text="${lineItem.quantity}">Qty</td>
+							<td th:text="${lineItem.rate}">Rate</td>
+							<td th:text="${lineItem.amount}">Amount</td>
 						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<section class="tile tile--full tile--panel" aria-label="Completed session payouts" th:if="${mentorPay != null}">
+			<p class="tile__kicker">Completed paid sessions</p>
+			<h2>Session payout list</h2>
+			<p class="p p--sm p--muted p--tight" th:if="${#lists.isEmpty(mentorPay.completedSessions)}">
+				No paid sessions have been completed yet.
+			</p>
+			<div class="tableWrap" th:if="${!#lists.isEmpty(mentorPay.completedSessions)}">
+				<table class="dataTable dataTable--wide">
+					<thead>
 						<tr>
-							<td>PathFinder platform fee</td>
-							<td>15%</td>
-							<td>-</td>
-							<td>-$67.50</td>
+							<th scope="col">Request</th>
+							<th scope="col">Mentee</th>
+							<th scope="col">Session</th>
+							<th scope="col">Slot</th>
+							<th scope="col">Amount</th>
 						</tr>
-						<tr>
-							<td>GST + BC PST on platform fee</td>
-							<td>12%</td>
-							<td>5% + 7%</td>
-							<td>-$8.10</td>
-						</tr>
-						<tr>
-							<td><strong>Expected payout</strong></td>
-							<td></td>
-							<td></td>
-							<td><strong>$374.40</strong></td>
+					</thead>
+					<tbody>
+						<tr th:each="payRow : ${mentorPay.completedSessions}">
+							<td th:text="${payRow.requestId}">1</td>
+							<td th:text="${payRow.menteeEmail}">mentee@example.com</td>
+							<td th:text="${payRow.sessionType}">Mock interview</td>
+							<td th:text="${payRow.slotTime}">Monday • 6:00 PM - 7:00 PM</td>
+							<td th:text="${payRow.amount}">$80.00</td>
 						</tr>
 					</tbody>
 				</table>

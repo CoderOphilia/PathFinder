@@ -85,6 +85,8 @@ public class MenteeProfileService {
                             profile.slug(),
                             profile.name(),
                             profile.rate(),
+                            profile.offersFreeSession(),
+                            profile.trialSessionLabel(),
                             profile.roleAtCompany(),
                             profile.tagline(),
                             profile.skills(),

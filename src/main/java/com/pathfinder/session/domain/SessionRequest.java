@@ -27,8 +27,14 @@ public class SessionRequest {
     @Column(nullable = false)
     private String menteeEmail;
 
+    @Column(name = "mentee_user_id")
+    private Long menteeUserId;
+
     @Column(nullable = false)
     private String mentorEmail;
+
+    @Column(name = "mentor_user_id")
+    private Long mentorUserId;
 
     @Column(nullable = false)
     private String mentorName;
@@ -55,6 +61,12 @@ public class SessionRequest {
     @Column(nullable = false)
     private boolean paymentCompleted;
 
+    @Column(name = "free_session_requested", nullable = false)
+    private boolean freeSessionRequested;
+
+    @Column(name = "quoted_amount_cents")
+    private Integer quotedAmountCents;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -62,6 +74,9 @@ public class SessionRequest {
     void onCreate() {
         if (status == null) {
             status = SessionStatus.REQUESTED;
+        }
+        if (quotedAmountCents == null) {
+            quotedAmountCents = 0;
         }
         createdAt = LocalDateTime.now();
     }

@@ -98,7 +98,9 @@
 							<td th:text="${request.slotTime}">Wednesday • 12:00 PM</td>
 							<td>
 								<span class="statusBadge statusBadge--neutral"
-									th:text="${request.paymentCompleted ? 'Paid session' : 'Free session'}">
+									th:text="${request.freeSessionRequested
+										? 'Free session'
+										: ('$' + #numbers.formatDecimal((request.quotedAmountCents == null ? 0 : request.quotedAmountCents) / 100.0, 1, 2))}">
 									Free session
 								</span>
 							</td>
@@ -110,7 +112,8 @@
 									: (request.status.name() == 'CANCELLED' ? 'statusBadge statusBadge--cancelled'
 									: 'statusBadge statusBadge--declined'))))}"
 									th:text="${request.status.name() == 'REQUESTED' ? 'Requested'
-										: (request.status.name() == 'APPROVED' ? 'Approved'
+										: (request.status.name() == 'APPROVED'
+											? (request.freeSessionRequested ? 'Approved' : 'Approved - pay now')
 										: (request.status.name() == 'PAID' ? 'Paid'
 										: (request.status.name() == 'COMPLETED' ? 'Completed'
 										: (request.status.name() == 'CANCELLED' ? 'Cancelled' : 'Declined'))))}">
@@ -118,8 +121,17 @@
 								</span>
 							</td>
 							<td>
+								<a
+									th:if="${request.status.name() == 'APPROVED' and !request.freeSessionRequested and !request.paymentCompleted}"
+									class="btn btn--default btn--sm"
+									th:href="@{|/mentee/sessions/${request.id}/payment|}"
+								>
+									Pay now
+								</a>
 								<form
-									th:if="${request.status.name() == 'REQUESTED' or request.status.name() == 'APPROVED' or request.status.name() == 'PAID'}"
+									th:if="${request.status.name() == 'REQUESTED'
+										or (request.status.name() == 'APPROVED' and request.freeSessionRequested)
+										or request.status.name() == 'PAID'}"
 									method="post"
 									th:action="@{|/mentee/sessions/${request.id}/cancel|}"
 								>
@@ -127,7 +139,10 @@
 								</form>
 								<span
 									class="p p--sm p--muted p--tight"
-									th:if="${request.status.name() != 'REQUESTED' and request.status.name() != 'APPROVED' and request.status.name() != 'PAID'}"
+									th:if="${request.status.name() != 'REQUESTED'
+										and !(request.status.name() == 'APPROVED' and request.freeSessionRequested)
+										and !(request.status.name() == 'APPROVED' and !request.freeSessionRequested and !request.paymentCompleted)
+										and request.status.name() != 'PAID'}"
 								>
 									No action
 								</span>

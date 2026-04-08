@@ -6,6 +6,7 @@ import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.domain.SessionStatus;
 import com.pathfinder.session.service.SessionService;
+import com.pathfinder.session.service.SessionService.BookingPolicy;
 import com.stripe.Stripe;
 import com.stripe.param.checkout.SessionCreateParams;
 import jakarta.servlet.http.HttpSession;
@@ -51,10 +52,17 @@ public class SessionController {
     @GetMapping({"/seeker/sessions/new", "/mentee/sessions/new"})
     public String newSessionRequest(
             @RequestParam(defaultValue = "") String mentor,
+            HttpSession session,
             Model model
     ) {
         List<MentorDirectoryItemView> mentors = mentorProfileService.listPublicMentors().stream()
-                .map(profile -> new MentorDirectoryItemView(profile.name(), profile.rate(), profile.tagline()))
+                .map(profile -> new MentorDirectoryItemView(
+                        profile.name(),
+                        profile.rate(),
+                        profile.offersFreeSession(),
+                        profile.trialSessionLabel(),
+                        profile.tagline()
+                ))
                 .sorted(Comparator.comparing(MentorDirectoryItemView::name))
                 .toList();
         String selectedMentor = resolveMentorName(mentor, mentors);
@@ -62,7 +70,9 @@ public class SessionController {
                 .filter(item -> item.name().equalsIgnoreCase(selectedMentor))
                 .findFirst()
                 .orElse(null);
-        List<AvailabilitySlotView> availableSlots = buildAvailabilitySlots(selectedMentor);
+        String mentorEmail = selectedMentorInfo == null ? "" : mentorProfileService.findMentorEmailByName(selectedMentorInfo.name());
+        BookingPolicy bookingPolicy = resolveBookingPolicy(currentSessionEmail(session), mentorEmail);
+        List<AvailabilitySlotView> availableSlots = buildAvailabilitySlots(selectedMentor, bookingPolicy);
 
         model.addAttribute("mentors", mentors);
         model.addAttribute("selectedMentor", selectedMentor);
@@ -81,8 +91,12 @@ public class SessionController {
             model.addAttribute("bookingNotes", "");
         }
 
-        model.addAttribute("selectedQuoteLabel", "");
-        model.addAttribute("selectedPricingLabel", selectedMentorInfo == null ? "" : "Mentor profile pricing");
+        model.addAttribute("selectedQuoteLabel", buildSelectedQuoteLabel(selectedMentorInfo, bookingPolicy));
+        model.addAttribute("selectedPricingLabel", buildSelectedPricingLabel(selectedMentorInfo, bookingPolicy));
+        model.addAttribute("bookingPolicyMessage", buildBookingPolicyMessage(bookingPolicy));
+        model.addAttribute("submitButtonLabel", bookingPolicy.freeSessionAvailable() ? "Request free session" : "Submit request");
+        model.addAttribute("trialSessionLabel", selectedMentorInfo == null ? "" : selectedMentorInfo.trialSessionLabel());
+        model.addAttribute("showTrialOnlySlots", bookingPolicy.freeSessionAvailable());
         return renderMenteePage(model, "Request session", "mentee/session_new :: content");
     }
 
@@ -104,19 +118,19 @@ public class SessionController {
             );
         }
 
-        AvailabilitySlotView slot = buildAvailabilitySlots(mentorName).stream()
-                .filter(item -> item.slotId().equalsIgnoreCase(slotId))
-                .findFirst()
-                .orElse(null);
-        if (slot == null) {
-            return redirectToSessionFormWithError(
-                    redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
-                    "Select a valid mentor slot."
-            );
-        }
-
         try {
             String mentorEmail = mentorProfileService.findMentorEmailByName(mentorName);
+            BookingPolicy bookingPolicy = resolveBookingPolicy(menteeEmail, mentorEmail);
+            AvailabilitySlotView slot = buildAvailabilitySlots(mentorName, bookingPolicy).stream()
+                    .filter(item -> item.slotId().equalsIgnoreCase(slotId))
+                    .findFirst()
+                    .orElse(null);
+            if (slot == null) {
+                return redirectToSessionFormWithError(
+                        redirectAttributes, mentorName, slotId, sessionType, objective, bookingNotes,
+                        "Select a valid mentor slot."
+                );
+            }
             SessionRequest request = sessionService.createSession(
                     menteeEmail,
                     mentorEmail,
@@ -124,9 +138,15 @@ public class SessionController {
                     slot.displayLabel(),
                     sessionType,
                     objective,
-                    bookingNotes
+                    bookingNotes,
+                    bookingPolicy.freeSessionAvailable()
             );
-            redirectAttributes.addFlashAttribute("flashMessage", "Session request submitted successfully.");
+            redirectAttributes.addFlashAttribute(
+                    "flashMessage",
+                    request.isFreeSessionRequested()
+                            ? "Free session request submitted successfully."
+                            : "Paid session request submitted successfully."
+            );
             return "redirect:/mentee/sessions/" + request.getId();
         } catch (IllegalArgumentException exception) {
             return redirectToSessionFormWithError(
@@ -139,6 +159,7 @@ public class SessionController {
     @GetMapping({"/seeker/sessions/{requestId}", "/mentee/sessions/{requestId}"})
     public String sessionRequestDetail(
             @PathVariable Long requestId,
+            @RequestParam(defaultValue = "false") boolean showDetails,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
@@ -147,19 +168,35 @@ public class SessionController {
             redirectAttributes.addFlashAttribute("formError", "Session request not found.");
             return "redirect:/mentee/mentors";
         }
+        if (request.getStatus() == SessionStatus.APPROVED
+                && !request.isFreeSessionRequested()
+                && !request.isPaymentCompleted()
+                && !showDetails) {
+            redirectAttributes.addFlashAttribute("flashMessage", "Your session was approved. Complete payment to confirm it.");
+            return "redirect:/mentee/sessions/" + requestId + "/payment";
+        }
 
         model.addAttribute("sessionRequest", request);
         model.addAttribute("submittedAtLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
         model.addAttribute("statusLabel", toStatusLabel(request.getStatus()));
         model.addAttribute("statusClass", toStatusClass(request.getStatus()));
-        model.addAttribute("paymentStatusLabel", toPaymentStatusLabel(request.isPaymentCompleted()));
-        model.addAttribute("paymentStatusClass", toPaymentStatusClass(request.isPaymentCompleted()));
-        model.addAttribute("quotedAmountLabel", "Estimated payment");
-        model.addAttribute("pricingModelLabel", "Mentor pricing");
-        model.addAttribute("paymentDueLabel", "");
-        model.addAttribute("canPay", request.getStatus() == SessionStatus.APPROVED);
+        model.addAttribute("paymentStatusLabel", toPaymentStatusLabel(request));
+        model.addAttribute("paymentStatusClass", toPaymentStatusClass(request));
+        model.addAttribute("quotedAmountLabel", request.isFreeSessionRequested()
+                ? "Free"
+                : formatCad(request.getQuotedAmountCents()));
+        model.addAttribute("pricingModelLabel", request.isFreeSessionRequested()
+                ? "One-time free intro session"
+                : "Paid mentor session");
+        model.addAttribute("paymentDueLabel", request.getStatus() == SessionStatus.APPROVED && !request.isFreeSessionRequested()
+                ? "Complete Stripe checkout to confirm attendance."
+                : "");
+        model.addAttribute("canPay", request.getStatus() == SessionStatus.APPROVED && !request.isFreeSessionRequested());
         model.addAttribute("canCancelAsMentee", canCancelAsMentee(request.getStatus()));
         model.addAttribute("cancellationLabel", "");
+        model.addAttribute("bookingPolicySummary", request.isFreeSessionRequested()
+                ? "This booking used the mentor's free introductory session."
+                : "This booking requires payment after mentor approval.");
         return renderMenteePage(model, "Session request details", "mentee/session_detail :: content");
     }
 
@@ -180,13 +217,17 @@ public class SessionController {
             redirectAttributes.addFlashAttribute("formError", "Payment is available only after mentor approval.");
             return "redirect:/mentee/sessions/" + requestId;
         }
+        if (request.isFreeSessionRequested()) {
+            redirectAttributes.addFlashAttribute("formError", "This is a free session and does not require payment.");
+            return "redirect:/mentee/sessions/" + requestId;
+        }
 
         if (!model.containsAttribute("paymentMethod")) {
             model.addAttribute("paymentMethod", "");
         }
         model.addAttribute("previewMode", preview);
         model.addAttribute("sessionRequest", request);
-        model.addAttribute("quotedAmountLabel", "Estimated payment");
+        model.addAttribute("quotedAmountLabel", formatCad(request.getQuotedAmountCents()));
         model.addAttribute("paymentDueLabel", request.getCreatedAt().format(CREATED_AT_FORMATTER));
         return renderMenteePage(model, "Session payment", "mentee/session_payment :: content");
     }
@@ -202,8 +243,12 @@ public class SessionController {
             return "redirect:/mentee/mentors";
         }
 
-        String mentorEmail = mentorProfileService.findMentorEmailByName(request.getMentorName());
-        MentorProfile mentorProfile = mentorProfileService.findProfileByEmail(mentorEmail);
+        if (request.isFreeSessionRequested()) {
+            redirectAttributes.addFlashAttribute("formError", "This session is free and does not need checkout.");
+            return "redirect:/mentee/sessions/" + requestId;
+        }
+
+        MentorProfile mentorProfile = mentorProfileService.findProfileByEmail(request.getMentorEmail());
 
         if (mentorProfile == null || mentorProfile.getHourlyRateCents() == null) {
             redirectAttributes.addFlashAttribute("formError", "Could not process payment: Mentor pricing is unavailable.");
@@ -273,7 +318,7 @@ public class SessionController {
             RedirectAttributes redirectAttributes
     ) {
         redirectAttributes.addFlashAttribute("formError", "Checkout cancelled. You can pay whenever you are ready.");
-        return "redirect:/mentee/sessions/" + requestId;
+        return "redirect:/mentee/sessions/" + requestId + "?showDetails=true";
     }
 
     @PostMapping({"/seeker/sessions/{requestId}/payment/preview-complete", "/mentee/sessions/{requestId}/payment/preview-complete"})
@@ -411,8 +456,21 @@ public class SessionController {
                 .orElse(mentors.getFirst().name());
     }
 
-    private List<AvailabilitySlotView> buildAvailabilitySlots(String mentorName) {
+    private List<AvailabilitySlotView> buildAvailabilitySlots(String mentorName, BookingPolicy bookingPolicy) {
         String timezone = "America/Vancouver";
+        if (bookingPolicy.freeSessionAvailable()) {
+            MentorProfileService.TrialSessionAvailability trialAvailability =
+                    mentorProfileService.findTrialAvailabilityByMentorName(mentorName);
+            if (trialAvailability == null) {
+                return List.of();
+            }
+            return List.of(new AvailabilitySlotView(
+                    "trial-slot-" + trialAvailability.weekday() + "-" + trialAvailability.startTime().replace(":", ""),
+                    weekdayLabel(trialAvailability.weekday()),
+                    timeRange(trialAvailability.startTime(), trialAvailability.endTime()),
+                    timezone
+            ));
+        }
         return mentorProfileService.findAvailabilityByMentorName(mentorName).stream()
                 .map(item -> new AvailabilitySlotView(
                         slotIdFor(item),
@@ -486,12 +544,81 @@ public class SessionController {
         };
     }
 
-    private String toPaymentStatusLabel(boolean paymentCompleted) {
-        return paymentCompleted ? "Paid" : "Not started";
+    private String toPaymentStatusLabel(SessionRequest request) {
+        if (request.isFreeSessionRequested()) {
+            return "Not required";
+        }
+        if (request.isPaymentCompleted()) {
+            return "Paid";
+        }
+        if (request.getStatus() == SessionStatus.APPROVED) {
+            return "Ready to pay";
+        }
+        return "Not started";
     }
 
-    private String toPaymentStatusClass(boolean paymentCompleted) {
-        return paymentCompleted ? "statusBadge statusBadge--approved" : "statusBadge statusBadge--neutral";
+    private String toPaymentStatusClass(SessionRequest request) {
+        if (request.isFreeSessionRequested()) {
+            return "statusBadge statusBadge--neutral";
+        }
+        return request.isPaymentCompleted() ? "statusBadge statusBadge--approved" : "statusBadge statusBadge--neutral";
+    }
+
+    private String buildSelectedPricingLabel(MentorDirectoryItemView mentor, BookingPolicy bookingPolicy) {
+        if (mentor == null) {
+            return "";
+        }
+        if (bookingPolicy.freeSessionAvailable()) {
+            return "Use one of your remaining platform trial sessions with this mentor";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && !bookingPolicy.mentorTrialSlotConfigured()) {
+            return "Trial enabled, but the mentor has not published a trial slot yet";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && bookingPolicy.remainingPlatformTrialSessions() == 0) {
+            return "Your 2 free platform trial sessions are used up; paid mentor pricing applies";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && bookingPolicy.menteeAlreadyUsedFreeSessionWithMentor()) {
+            return "You already used this mentor's trial session; standard mentor pricing applies";
+        }
+        return "Mentor profile pricing";
+    }
+
+    private String buildSelectedQuoteLabel(MentorDirectoryItemView mentor, BookingPolicy bookingPolicy) {
+        if (mentor == null) {
+            return "";
+        }
+        return bookingPolicy.freeSessionAvailable() ? "Free introductory session" : mentor.rate();
+    }
+
+    private String buildBookingPolicyMessage(BookingPolicy bookingPolicy) {
+        if (bookingPolicy.freeSessionAvailable()) {
+            return "You have " + bookingPolicy.remainingPlatformTrialSessions()
+                    + " platform trial session(s) left, so this mentor's trial slot can be requested for free.";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && !bookingPolicy.mentorTrialSlotConfigured()) {
+            return "This mentor offers trial sessions, but they still need to set a trial slot on their mentor profile.";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && bookingPolicy.remainingPlatformTrialSessions() == 0) {
+            return "You have already used your 2 free platform trial sessions. New bookings now require payment after approval.";
+        }
+        if (bookingPolicy.mentorOffersFreeSession() && bookingPolicy.menteeAlreadyUsedFreeSessionWithMentor()) {
+            return "You have already used this mentor's free trial session. New bookings with them require payment after approval.";
+        }
+        return "This mentor does not offer a free introductory session. Payment is required after approval.";
+    }
+
+    private BookingPolicy resolveBookingPolicy(String menteeEmail, String mentorEmail) {
+        if (isBlank(mentorEmail)) {
+            return new BookingPolicy(false, false, false, false, 0, 2);
+        }
+        return sessionService.getBookingPolicy(menteeEmail, mentorEmail);
+    }
+
+    private String formatCad(Integer amountCents) {
+        if (amountCents == null) {
+            return "$0.00";
+        }
+        return String.format(Locale.ROOT, "$%.2f", amountCents / 100.0);
     }
 
     private String renderMenteePage(Model model, String title, String content) {
@@ -520,6 +647,8 @@ public class SessionController {
     private record MentorDirectoryItemView(
             String name,
             String rate,
+            boolean offersFreeSession,
+            String trialSessionLabel,
             String tagline
     ) {
     }
