@@ -2,6 +2,7 @@ package com.pathfinder.mentor.web;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.web.AuthController;
+import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.session.domain.SessionRequest;
@@ -305,6 +306,19 @@ public class MentorController {
                 model.addAttribute("currentRoleBadge", currentRoleBadge);
             }
         }
+        // Show mentors the latest admin decision directly on their profile page.
+        if (!model.containsAttribute("verificationStatusLabel")) {
+            model.addAttribute("verificationStatusLabel", verificationStatusLabel(profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("verificationStatusClass")) {
+            model.addAttribute("verificationStatusClass", verificationStatusClass(profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("verificationStatusMessage")) {
+            model.addAttribute("verificationStatusMessage", verificationStatusMessage(profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("adminNote")) {
+            model.addAttribute("adminNote", normalizeText(profile.getAdminNote()));
+        }
     }
 
     private String resolveCurrentMentorEmail(HttpSession session, String fallbackEmail) {
@@ -358,6 +372,36 @@ public class MentorController {
             return title;
         }
         return title + " @ " + company;
+    }
+
+    private String verificationStatusLabel(VerificationStatus status) {
+        if (status == null || status == VerificationStatus.PENDING) {
+            return "Pending review";
+        }
+        if (status == VerificationStatus.APPROVED) {
+            return "Approved";
+        }
+        return "Denied";
+    }
+
+    private String verificationStatusClass(VerificationStatus status) {
+        if (status == null || status == VerificationStatus.PENDING) {
+            return "statusBadge statusBadge--requested";
+        }
+        if (status == VerificationStatus.APPROVED) {
+            return "statusBadge statusBadge--approved";
+        }
+        return "statusBadge statusBadge--declined";
+    }
+
+    private String verificationStatusMessage(VerificationStatus status) {
+        if (status == null || status == VerificationStatus.PENDING) {
+            return "Your profile is under review.";
+        }
+        if (status == VerificationStatus.APPROVED) {
+            return "Your profile has been approved.";
+        }
+        return "Your profile was not approved.";
     }
 
     private List<CalendarDay> buildCalendarDays(List<SessionRequest> mentorSessions) {

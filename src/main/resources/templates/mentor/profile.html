@@ -19,6 +19,23 @@
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
+			<section th:if="${verificationStatusLabel != null}" class="badgePreview" aria-label="Verification status">
+				<p class="tile__kicker">Verification</p>
+				<p>
+					<span th:class="${verificationStatusClass}" th:text="${verificationStatusLabel}">Pending review</span>
+				</p>
+				<p class="p p--muted p--tight" th:text="${verificationStatusMessage}">
+					Your profile is under review.
+				</p>
+				<p
+					th:if="${adminNote != null and !adminNote.isEmpty()}"
+					class="p p--sm p--tight"
+					th:text="${'Admin note: ' + adminNote}"
+				>
+					Admin note
+				</p>
+			</section>
+
 			<form method="post" th:action="@{/mentor/profile}" class="profileForm">
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
