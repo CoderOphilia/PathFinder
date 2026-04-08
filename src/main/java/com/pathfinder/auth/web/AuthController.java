@@ -68,16 +68,12 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public String signupSubmit(
-            @ModelAttribute("user") User user,
-            HttpSession session,
-            RedirectAttributes redirectAttributes
-    ) {
+    public String signupSubmit(@ModelAttribute("user") User user, HttpSession session, RedirectAttributes redirectAttributes) {
         if (isBlank(user.getFirstName()) || isBlank(user.getLastName())
-              || isBlank(user.getEmail())
-              || isBlank(user.getPassword())
-              || isBlank(user.getConfirmPassword())
-              || isBlank(user.getRole())) {
+                || isBlank(user.getEmail())
+                || isBlank(user.getPassword())
+                || isBlank(user.getConfirmPassword())
+                || isBlank(user.getRole())) {
             redirectAttributes.addFlashAttribute("formError", "Complete all required fields.");
             return "redirect:/auth/signup";
         }

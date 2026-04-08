@@ -385,7 +385,7 @@ main {
 .input:disabled, .select:disabled, .textarea:disabled, .input[readonly] { background: var(--surface-soft); color: var(--muted); }
 
 .label { display: inline-block; margin-bottom: 6px; font-size: 0.9375rem; font-weight: 600; }
-.label--required::after { content: " *"; color: var(--danger); }
+.label--required::after { content: " *"; color: var(--danger); white-space: nowrap; }
 .select-wrapper { display: grid; gap: 4px; }
 .consentRow { display: flex; align-items: flex-start; gap: 8px; }
 .consentRow input { margin-top: 3px; }
@@ -527,9 +527,21 @@ a.link--muted { color: var(--muted); }
 .calendarPill--muted { background: var(--surface-soft); color: var(--muted); }
 
 .weekCalendar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.weekCalendar__day { padding: 10px; }
+.weekCalendar__day { min-width: 0; padding: 10px; overflow: hidden; }
 .weekCalendar__dayName { margin: 0 0 8px; font-size: var(--text-label); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .weekCalendar__events { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.weekCalendar__events li { min-width: 0; }
+.weekCalendar .calendarPill {
+	display: block;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow: hidden;
+	overflow-wrap: normal;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
 
 .tableWrap { overflow-x: auto; }
 
@@ -545,9 +557,12 @@ a.link--muted { color: var(--muted); }
 
 .availabilityToggle { display: inline-flex; align-items: center; gap: 6px; }
 .availabilityToggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.formSection { display: grid; gap: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.formSection:first-child { padding-top: 0; border-top: 0; }
 .availabilityTable { min-width: 0; }
 .availabilityTable .input { min-width: 96px; }
 .badgePreview { margin-top: 18px; }
+.badgePreview--soft { background: transparent; box-shadow: none; }
 .reviewDetailsPanel .reviewFrameCard { padding: 0; }
 
 .reviewDetailFrame { width: 100%; min-height: 760px; border: 1px solid var(--border); background: var(--surface); }
@@ -584,6 +599,7 @@ a.link--muted { color: var(--muted); }
 	.mentorFilters { grid-template-columns: 2fr 1fr auto; align-items: end; }
 	.mentorPickerForm { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
 	.availabilitySettings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+	.availabilitySettings--rules { grid-template-columns: 1fr; }
 	.availabilitySettings__wide { grid-column: 1 / -1; }
 	.slotGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 	.weekCalendar { grid-template-columns: repeat(6, minmax(0, 1fr)); }

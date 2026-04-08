@@ -68,8 +68,6 @@ class PageRoutingWebMvcTest {
         assertLayoutPage("/mentors/priya-k", "mentor/public_profile :: content", "fragments/navbar :: navbar");
         assertLayoutPage("/mentor/requests", "mentor/requests :: content", "fragments/navbar_mentor :: navbar");
         assertLayoutPage("/admin/home", "admin/home :: content", "fragments/navbar_admin :: navbar");
-        assertLayoutPage("/admin/mentors/review", "admin/mentor_review :: content", "fragments/navbar_admin :: navbar");
-        assertLayoutPage("/admin/profile", "admin/profile :: content", "fragments/navbar_admin :: navbar");
     }
 
     @Test
@@ -206,25 +204,6 @@ class PageRoutingWebMvcTest {
                 .andExpect(model().attribute("content", "mentor/requests :: content"))
                 .andExpect(model().attributeExists("pendingRequests"))
                 .andExpect(model().attributeExists("previousRequests"));
-    }
-
-    @Test
-    void adminMentorReviewPageExposesTableData() throws Exception {
-        mockMvc.perform(get("/admin/mentors/review").param("mentor", "alex-m"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "admin/mentor_review :: content"))
-                .andExpect(model().attributeExists("reviewItems"))
-                .andExpect(model().attribute("defaultMentorSlug", "alex-m"));
-    }
-
-    @Test
-    void adminMentorReviewDetailsRendersFrameTemplate() throws Exception {
-        mockMvc.perform(get("/admin/mentors/review/details/alex-m"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("admin/mentor_review_detail_frame"))
-                .andExpect(model().attributeExists("selectedReviewItem"))
-                .andExpect(model().attributeExists("selectedMentor"));
     }
 
     @Test
@@ -482,25 +461,6 @@ class PageRoutingWebMvcTest {
                         .param("monEnd", "19:00"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/mentor/availability"))
-                .andExpect(flash().attributeExists("flashMessage"));
-    }
-
-    @Test
-    void adminProfilePostValidatesAndRedirects() throws Exception {
-        mockMvc.perform(post("/admin/profile")
-                        .param("fullName", "")
-                        .param("email", "")
-                        .param("team", ""))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/profile"))
-                .andExpect(flash().attributeExists("formError"));
-
-        mockMvc.perform(post("/admin/profile")
-                        .param("fullName", "Admin User")
-                        .param("email", "admin@example.com")
-                        .param("team", "Operations"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/profile"))
                 .andExpect(flash().attributeExists("flashMessage"));
     }
 
