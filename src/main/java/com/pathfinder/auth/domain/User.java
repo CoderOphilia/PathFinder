@@ -28,6 +28,9 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column(name = "profile_image_url", length = 1000, nullable = false)
+    private String profileImageUrl;
+
     @Column(nullable = false)
     private String password;
 
@@ -51,6 +54,9 @@ public class User {
         LocalDate today = LocalDate.now();
         if (accountStatus == null || accountStatus.isBlank()) {
             accountStatus = "ACTIVE";
+        }
+        if (profileImageUrl == null) {
+            profileImageUrl = "";
         }
         if (createdAt == null) {
             createdAt = today;

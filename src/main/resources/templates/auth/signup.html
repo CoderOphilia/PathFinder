@@ -12,7 +12,7 @@
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
-			<form method="post" th:action="@{/auth/signup}">
+			<form method="post" th:action="@{/auth/signup}" enctype="multipart/form-data">
 				<div>
 					<label for="firstName" class="label label--required">First name</label>
 					<input class="input" id="firstName" name="firstName" autocomplete="given-name" required />
@@ -26,6 +26,18 @@
 				<div>
 					<label for="email" class="label label--required">Email</label>
 					<input id="email" name="email" class="input" type="email" autocomplete="email" required />
+				</div>
+
+				<div>
+					<label for="profileImageFile" class="label">Profile picture</label>
+					<input
+						id="profileImageFile"
+						name="profileImageFile"
+						class="input"
+						type="file"
+						accept="image/*"
+					/>
+					<p class="label__hint">Choose a photo from your computer. JPG, PNG, GIF, and WEBP are supported.</p>
 				</div>
 
 				<div>

@@ -19,7 +19,20 @@
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 
-			<form method="post" th:action="@{/mentee/profile}" class="profileForm">
+			<form method="post" th:action="@{/mentee/profile}" class="profileForm" enctype="multipart/form-data">
+				<section class="badgePreview" aria-label="Profile image preview">
+					<p class="tile__kicker">Profile picture</p>
+					<p th:if="${profileImageUrl == null or profileImageUrl.isEmpty()}" class="p p--sm p--muted p--tight">
+						Choose an image from your computer to show your profile picture.
+					</p>
+					<img
+						id="menteeProfilePreview"
+						th:src="${profileImageUrl}"
+						alt="Mentee profile picture"
+						th:style="${(profileImageUrl == null or profileImageUrl.isEmpty()) ? 'display:none; width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4;' : 'width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4;'}"
+					/>
+				</section>
+
 				<div>
 					<label for="fullName" class="label label--required">Full name</label>
 					<input id="fullName" name="fullName" class="input" th:value="${fullName}" required />
@@ -28,6 +41,12 @@
 				<div>
 					<label for="email" class="label label--required">Email</label>
 					<input id="email" name="email" type="email" th:value="${email}" class="input" required />
+				</div>
+
+				<div>
+					<label for="profileImageFile" class="label">Profile picture</label>
+					<input id="profileImageFile" name="profileImageFile" type="file" class="input" accept="image/*" />
+					<p class="label__hint">Choose a new image from your computer to replace the current photo.</p>
 				</div>
 
 				<div>
@@ -52,8 +71,8 @@
 				</div>
 
 				<div>
-					<label for="goals" class="label">Current goals</label>
-					<textarea id="goals" name="goals" th:value="${profile.currentGoals}" class="textarea" rows="4"></textarea>
+					<label for="currentGoals" class="label">Current goals</label>
+					<textarea id="currentGoals" name="currentGoals" th:text="${profile.currentGoals}" class="textarea" rows="4"></textarea>
 				</div>
 
 
@@ -64,4 +83,22 @@
 			</form>
 		</section>
 	</div>
+
+	<script>
+		(function () {
+			const fileInput = document.getElementById('profileImageFile');
+			const preview = document.getElementById('menteeProfilePreview');
+			if (!fileInput || !preview) {
+				return;
+			}
+			fileInput.addEventListener('change', function () {
+				const file = fileInput.files && fileInput.files[0];
+				if (!file) {
+					return;
+				}
+				preview.src = URL.createObjectURL(file);
+				preview.style.display = 'block';
+			});
+		})();
+	</script>
 </section>

@@ -1,0 +1,55 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--span5 tile--admin" aria-label="Admin profile guidance">
+			<p class="tile__kicker">Admin profile</p>
+			<h1>Keep your operating details handy</h1>
+			<p class="p p--muted p--tight">
+				This profile keeps your moderation team details in one place for daily admin work.
+			</p>
+			<ul class="checklist">
+				<li>Capture the team name that owns moderation.</li>
+				<li>Save the support or escalation channel you actively monitor.</li>
+				<li>Keep notes with recurring moderation context or handoff details.</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span7 tile--form" aria-label="Admin profile form">
+			<h2>Profile details</h2>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Form error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<form method="post" th:action="@{/admin/profile}" class="profileForm">
+				<div>
+					<label for="fullName" class="label">Admin name</label>
+					<input id="fullName" name="fullName" class="input" th:value="${fullName}" readonly />
+				</div>
+
+				<div>
+					<label for="email" class="label">Email</label>
+					<input id="email" name="email" type="email" class="input" th:value="${email}" readonly />
+				</div>
+
+				<div>
+					<label for="team" class="label">Team</label>
+					<input id="team" name="team" class="input" th:value="${team}" placeholder="Trust and Safety" />
+				</div>
+
+				<div>
+					<label for="supportChannel" class="label">Support channel</label>
+					<input id="supportChannel" name="supportChannel" class="input" th:value="${supportChannel}" placeholder="#mentor-ops" />
+				</div>
+
+				<div>
+					<label for="notes" class="label">Notes</label>
+					<textarea id="notes" name="notes" class="textarea" rows="6" th:text="${notes}" placeholder="Escalation notes, moderation reminders, handoff context..."></textarea>
+				</div>
+
+				<div class="formActions">
+					<button type="submit" class="btn btn--default">Save profile</button>
+					<a class="btn btn--outline" th:href="@{/admin/home}">Back to home</a>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>

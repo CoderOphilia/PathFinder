@@ -1,16 +1,22 @@
 package com.pathfinder.session.web;
 
+import com.pathfinder.auth.config.SecurityConfig;
+import com.pathfinder.auth.config.SessionRoleAuthenticationFilter;
+import com.pathfinder.auth.service.UserService;
 import com.pathfinder.auth.web.AuthController;
 import com.pathfinder.mentee.service.MenteeProfileService;
 import com.pathfinder.mentee.web.MenteeController;
 import com.pathfinder.mentor.service.MentorProfileService;
+import com.pathfinder.profile.service.ProfileImageStorageService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.domain.SessionStatus;
 import com.pathfinder.session.service.SessionService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -28,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest({SessionController.class, MenteeController.class})
+@Import({SecurityConfig.class, SessionRoleAuthenticationFilter.class})
 class SessionCompletionWebMvcTest {
 
     @Autowired
@@ -42,6 +49,22 @@ class SessionCompletionWebMvcTest {
     @MockBean
     private SessionService sessionService;
 
+    @MockBean
+    private UserService userService;
+
+    @MockBean
+    private ProfileImageStorageService profileImageStorageService;
+
+    @BeforeEach
+    void setUpUsers() {
+        com.pathfinder.auth.domain.User mentor = user("mentor@example.com", "mentor");
+        com.pathfinder.auth.domain.User mentee = user("mentee@example.com", "mentee");
+        when(userService.findUserByEmail("mentor@example.com")).thenReturn(mentor);
+        when(userService.findUserByEmail("mentee@example.com")).thenReturn(mentee);
+        when(userService.isAccountActive(mentor)).thenReturn(true);
+        when(userService.isAccountActive(mentee)).thenReturn(true);
+    }
+
     @Test
     // Mentors can finish a free approved session from their dashboard.
     void mentorCanMarkApprovedFreeSessionDone() throws Exception {
@@ -49,7 +72,9 @@ class SessionCompletionWebMvcTest {
         completedRequest.setFreeSessionRequested(true);
         when(sessionService.completeSession(1L)).thenReturn(completedRequest);
 
-        mockMvc.perform(post("/mentor/sessions/1/complete"))
+        mockMvc.perform(post("/mentor/sessions/1/complete")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentor@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentor"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/mentor/requests"))
                 .andExpect(flash().attributeExists("flashMessage"));
@@ -62,7 +87,9 @@ class SessionCompletionWebMvcTest {
     void menteeSessionDetailReflectsCompletedStatus() throws Exception {
         when(sessionService.getSessionById(1L)).thenReturn(sessionRequest(1L, SessionStatus.COMPLETED));
 
-        mockMvc.perform(get("/mentee/sessions/1"))
+        mockMvc.perform(get("/mentee/sessions/1")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "mentee/session_detail :: content"))
@@ -79,7 +106,9 @@ class SessionCompletionWebMvcTest {
 
         when(sessionService.getSessionById(1L)).thenReturn(approvedPaidRequest);
 
-        mockMvc.perform(get("/mentee/sessions/1"))
+        mockMvc.perform(get("/mentee/sessions/1")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentee@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentee"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/mentee/sessions/1/payment"))
                 .andExpect(flash().attributeExists("flashMessage"));
@@ -124,5 +153,15 @@ class SessionCompletionWebMvcTest {
         request.setFreeSessionRequested(false);
         request.setCreatedAt(LocalDateTime.now());
         return request;
+    }
+
+    private com.pathfinder.auth.domain.User user(String email, String role) {
+        com.pathfinder.auth.domain.User user = new com.pathfinder.auth.domain.User();
+        user.setEmail(email);
+        user.setRole(role);
+        user.setFirstName("Test");
+        user.setLastName("User");
+        user.setAccountStatus("ACTIVE");
+        return user;
     }
 }

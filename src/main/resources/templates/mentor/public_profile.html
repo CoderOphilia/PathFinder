@@ -2,6 +2,12 @@
 	<div class="gridPage">
 		<section class="tile tile--full tile--primary" aria-label="Mentor hero">
 			<p class="tile__kicker">Public mentor profile</p>
+			<img
+				th:if="${mentor.profileImageUrl != null and !mentor.profileImageUrl.isEmpty()}"
+				th:src="${mentor.profileImageUrl}"
+				alt="Mentor profile picture"
+				style="width: 112px; height: 112px; object-fit: cover; border-radius: 50%; border: 2px solid rgba(255,255,255,0.45); margin-bottom: 1rem;"
+			/>
 			<h1 th:text="${mentor.name}">Mentor Name</h1>
 			<p class="p p--strong p--tight" th:text="${mentor.roleAtCompany}">Title @ Company</p>
 			<p class="p p--sm p--muted p--tight" th:text="${'Rate: ' + mentor.rate}">Rate: $75/hr</p>

@@ -1,8 +1,13 @@
 package com.pathfinder.admin.web;
 
+import com.pathfinder.admin.domain.AdminProfile;
 import com.pathfinder.admin.service.AdminAccountService;
+import com.pathfinder.admin.service.AdminProfileService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
+import com.pathfinder.auth.domain.User;
+import com.pathfinder.auth.web.AuthController;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,15 +26,18 @@ public class AdminController {
     private final AdminReviewService adminReviewService;
     private final AdminAccountService adminAccountService;
     private final AdminSessionOversightService adminSessionOversightService;
+    private final AdminProfileService adminProfileService;
 
     public AdminController(
             AdminReviewService adminReviewService,
             AdminAccountService adminAccountService,
-            AdminSessionOversightService adminSessionOversightService
+            AdminSessionOversightService adminSessionOversightService,
+            AdminProfileService adminProfileService
     ) {
         this.adminReviewService = adminReviewService;
         this.adminAccountService = adminAccountService;
         this.adminSessionOversightService = adminSessionOversightService;
+        this.adminProfileService = adminProfileService;
     }
 
     @GetMapping("/home")
@@ -39,6 +47,44 @@ public class AdminController {
         model.addAttribute("managedUserCount", adminAccountService.totalUserCount());
         model.addAttribute("activeSessionCount", adminSessionOversightService.activeSessionCount());
         return renderPage(model, "Admin home", "admin/home :: content");
+    }
+
+    @GetMapping("/profile")
+    public String profile(HttpSession session, Model model) {
+        String adminEmail = resolveCurrentAdminEmail(session);
+        if (adminEmail.isEmpty()) {
+            model.addAttribute("formError", "Sign in as an admin to edit your profile.");
+            return renderPage(model, "Admin profile", "admin/profile :: content");
+        }
+        populateProfileForm(model, adminEmail);
+        return renderPage(model, "Admin profile", "admin/profile :: content");
+    }
+
+    @PostMapping("/profile")
+    public String saveProfile(
+            @RequestParam(defaultValue = "") String team,
+            @RequestParam(defaultValue = "") String supportChannel,
+            @RequestParam(defaultValue = "") String notes,
+            HttpSession session,
+            RedirectAttributes redirectAttributes
+    ) {
+        String adminEmail = resolveCurrentAdminEmail(session);
+        redirectAttributes.addFlashAttribute("team", team);
+        redirectAttributes.addFlashAttribute("supportChannel", supportChannel);
+        redirectAttributes.addFlashAttribute("notes", notes);
+
+        if (adminEmail.isEmpty()) {
+            redirectAttributes.addFlashAttribute("formError", "Sign in as an admin to save your profile.");
+            return "redirect:/admin/profile";
+        }
+
+        try {
+            adminProfileService.saveProfile(adminEmail, team, supportChannel, notes);
+            redirectAttributes.addFlashAttribute("flashMessage", "Admin profile saved.");
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+        }
+        return "redirect:/admin/profile";
     }
 
     @GetMapping("/mentors/review")
@@ -147,6 +193,28 @@ public class AdminController {
         return "layout";
     }
 
+    private void populateProfileForm(Model model, String adminEmail) {
+        User adminUser = adminProfileService.findAdminUserByEmail(adminEmail);
+        AdminProfile profile = adminProfileService.findProfileByEmail(adminEmail);
+        if (adminUser != null) {
+            if (!model.containsAttribute("fullName")) {
+                model.addAttribute("fullName", buildFullName(adminUser.getFirstName(), adminUser.getLastName(), adminUser.getEmail()));
+            }
+            if (!model.containsAttribute("email")) {
+                model.addAttribute("email", adminUser.getEmail());
+            }
+        }
+        if (!model.containsAttribute("team")) {
+            model.addAttribute("team", profile == null ? "" : profile.getTeam());
+        }
+        if (!model.containsAttribute("supportChannel")) {
+            model.addAttribute("supportChannel", profile == null ? "" : profile.getSupportChannel());
+        }
+        if (!model.containsAttribute("notes")) {
+            model.addAttribute("notes", profile == null ? "" : profile.getNotes());
+        }
+    }
+
     // Keep selection logic in one place so the template stays simple.
     private AdminReviewService.MentorReviewItemView selectReviewItem(String mentorSlug) {
         if (isBlank(mentorSlug)) {
@@ -158,5 +226,29 @@ public class AdminController {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String resolveCurrentAdminEmail(HttpSession session) {
+        Object sessionEmail = session.getAttribute(AuthController.SESSION_USER_EMAIL);
+        Object sessionRole = session.getAttribute(AuthController.SESSION_USER_ROLE);
+        if (sessionEmail == null || sessionRole == null) {
+            return "";
+        }
+        if (!"admin".equalsIgnoreCase(sessionRole.toString())) {
+            return "";
+        }
+        return normalizeText(sessionEmail.toString());
+    }
+
+    private String buildFullName(String firstName, String lastName, String fallbackEmail) {
+        String combined = (normalizeText(firstName) + " " + normalizeText(lastName)).trim();
+        return combined.isEmpty() ? fallbackEmail : combined;
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().replaceAll("\\s+", " ");
     }
 }

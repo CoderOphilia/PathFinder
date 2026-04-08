@@ -57,6 +57,7 @@ public class MentorProfileService {
     public MentorProfile saveProfile(
             String accountEmail,
             String fullName,
+            String profileImageUrl,
             String expertise,
             String hourlyRateCad,
             boolean offersFreeSession,
@@ -77,7 +78,7 @@ public class MentorProfileService {
         }
 
         User managedUser = userRepository.getReferenceById(user.getId());
-        applyUserName(managedUser, fullName);
+        applyUserDetails(managedUser, fullName, profileImageUrl);
         MentorProfile profile = mentorProfileRepository.findById(user.getId()).orElse(null);
 
         if (profile == null) {
@@ -121,6 +122,38 @@ public class MentorProfileService {
         replaceSkills(profile, expertise);
         replaceInterviewCompanies(profile, interviewCompanies);
         return profile;
+    }
+
+    @Transactional
+    public MentorProfile saveProfile(
+            String accountEmail,
+            String fullName,
+            String expertise,
+            String hourlyRateCad,
+            boolean offersFreeSession,
+            String trialSessionWeekday,
+            String trialSessionStartTime,
+            String trialSessionEndTime,
+            String currentTitle,
+            String currentCompany,
+            String interviewCompanies,
+            String bio
+    ) {
+        return saveProfile(
+                accountEmail,
+                fullName,
+                "",
+                expertise,
+                hourlyRateCad,
+                offersFreeSession,
+                trialSessionWeekday,
+                trialSessionStartTime,
+                trialSessionEndTime,
+                currentTitle,
+                currentCompany,
+                interviewCompanies,
+                bio
+        );
     }
 
     @Transactional(readOnly = true)
@@ -287,6 +320,7 @@ public class MentorProfileService {
         return new PublicMentorProfile(
                 normalizeSlug(name),
                 name,
+                user.getProfileImageUrl(),
                 roleAtCompany,
                 formatCad(profile.getHourlyRateCents()),
                 profile.isOffersFreeSession(),
@@ -352,7 +386,7 @@ public class MentorProfileService {
         profile.setTrialSessionEndTime(endTime);
     }
 
-    private void applyUserName(User user, String fullName) {
+    private void applyUserDetails(User user, String fullName, String profileImageUrl) {
         String normalized = normalizeText(fullName);
         if (normalized.isEmpty()) {
             throw new IllegalArgumentException("Name is required.");
@@ -362,11 +396,11 @@ public class MentorProfileService {
         if (firstSpace < 0) {
             user.setFirstName(normalized);
             user.setLastName("");
-            return;
+        } else {
+            user.setFirstName(normalized.substring(0, firstSpace));
+            user.setLastName(normalized.substring(firstSpace + 1).trim());
         }
-
-        user.setFirstName(normalized.substring(0, firstSpace));
-        user.setLastName(normalized.substring(firstSpace + 1).trim());
+        user.setProfileImageUrl(userService.normalizeProfileImageUrl(profileImageUrl));
     }
 
     private String buildFullName(String firstName, String lastName) {
@@ -560,6 +594,7 @@ public class MentorProfileService {
     public record PublicMentorProfile(
             String slug,
             String name,
+            String profileImageUrl,
             String roleAtCompany,
             String rate,
             boolean offersFreeSession,

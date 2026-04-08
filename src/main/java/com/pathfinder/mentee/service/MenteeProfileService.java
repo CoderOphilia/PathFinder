@@ -60,14 +60,24 @@ public class MenteeProfileService {
                                            String experienceLevel,
                                            String timeZone,
                                            String currentGoals) {
+        return saveMenteeProfile(userId, "", "", targetRole, experienceLevel, timeZone, currentGoals);
+    }
+
+    public MenteeProfile saveMenteeProfile(Long userId,
+                                           String fullName,
+                                           String profileImageUrl,
+                                           String targetRole,
+                                           String experienceLevel,
+                                           String timeZone,
+                                           String currentGoals) {
         ;
-
-
+        User user = userRepository.getReferenceById(userId);
+        applyUserDetails(user, fullName, profileImageUrl);
 
         MenteeProfile profile = menteeRepository.findById(userId)
                 .orElseGet(() -> {
                     MenteeProfile p = new MenteeProfile();
-                    p.setUser(userRepository.getReferenceById(userId));
+                    p.setUser(user);
                     return p;
                 });
 
@@ -84,6 +94,7 @@ public class MenteeProfileService {
                     .map(profile -> new MentorDirectoryItemView(
                             profile.slug(),
                             profile.name(),
+                            profile.profileImageUrl(),
                             profile.rate(),
                             profile.offersFreeSession(),
                             profile.trialSessionLabel(),
@@ -301,6 +312,21 @@ public class MenteeProfileService {
             return "";
         }
         return value.trim().replaceAll("\\s+", " ");
+    }
+
+    private void applyUserDetails(User user, String fullName, String profileImageUrl) {
+        String normalizedFullName = normalizeText(fullName);
+        if (!normalizedFullName.isEmpty()) {
+            int firstSpace = normalizedFullName.indexOf(' ');
+            if (firstSpace < 0) {
+                user.setFirstName(normalizedFullName);
+                user.setLastName("");
+            } else {
+                user.setFirstName(normalizedFullName.substring(0, firstSpace));
+                user.setLastName(normalizedFullName.substring(firstSpace + 1).trim());
+            }
+        }
+        user.setProfileImageUrl(userService.normalizeProfileImageUrl(profileImageUrl));
     }
 
     private String shortenSessionLabel(String sessionType, String slotTime) {

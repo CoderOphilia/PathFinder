@@ -11,11 +11,13 @@ import com.pathfinder.mentee.dto.MentorDirectoryItemView;
 import com.pathfinder.mentee.service.MenteeProfileService;
 import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.web.DemoMentorCatalog;
+import com.pathfinder.profile.service.ProfileImageStorageService;
 import com.pathfinder.session.domain.SessionRequest;
 import com.pathfinder.session.service.SessionService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,11 +31,17 @@ public class MenteeController {
 //    private final DemoMentorCatalog mentorCatalog;
     private final MenteeProfileService menteeProfileService;
     private  final SessionService sessionService;
+    private final ProfileImageStorageService profileImageStorageService;
 
-    public MenteeController(MenteeProfileService menteeProfileService,SessionService sessionService) {
+    public MenteeController(
+            MenteeProfileService menteeProfileService,
+            SessionService sessionService,
+            ProfileImageStorageService profileImageStorageService
+    ) {
 
         this.menteeProfileService = menteeProfileService;
         this.sessionService = sessionService;
+        this.profileImageStorageService = profileImageStorageService;
 
     }
 
@@ -93,6 +101,7 @@ public class MenteeController {
         User user = optionalUser.get();
         model.addAttribute("fullName", buildFullName(user.getFirstName(), user.getLastName()));
         model.addAttribute("email", user.getEmail());
+        model.addAttribute("profileImageUrl", user.getProfileImageUrl());
 
         Optional<MenteeProfile> optionalProfile = menteeProfileService.findProfileByUser(user);
         MenteeProfile profile = optionalProfile.orElse(new MenteeProfile());
@@ -103,7 +112,9 @@ public class MenteeController {
 
     @PostMapping("/profile")
     public String saveProfile(
+            @RequestParam(required = false) String fullName,
             @RequestParam String email,
+            @RequestParam(name = "profileImageFile", required = false) MultipartFile profileImageFile,
             @RequestParam(required = false) String targetRole,
             @RequestParam(required = false) String experienceLevel,
             @RequestParam(required = false) String timezone,
@@ -117,7 +128,19 @@ public class MenteeController {
 
 
         try {
-            menteeProfileService.saveMenteeProfile(user.getId(), targetRole,experienceLevel,timezone,currentGoals);
+            String profileImageUrl = user.getProfileImageUrl();
+            if (profileImageFile != null && !profileImageFile.isEmpty()) {
+                profileImageUrl = profileImageStorageService.storeProfileImage(profileImageFile, user.getEmail());
+            }
+            menteeProfileService.saveMenteeProfile(
+                    user.getId(),
+                    fullName,
+                    profileImageUrl,
+                    targetRole,
+                    experienceLevel,
+                    timezone,
+                    currentGoals
+            );
 
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -226,6 +249,9 @@ public class MenteeController {
         }
         if (!model.containsAttribute("email")) {
             model.addAttribute("email", menteeUser.getEmail());
+        }
+        if (!model.containsAttribute("profileImageUrl")) {
+            model.addAttribute("profileImageUrl", menteeUser.getProfileImageUrl());
         }
 
         if (!model.containsAttribute("targetRole")) {
