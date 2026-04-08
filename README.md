@@ -27,9 +27,9 @@ progress (session summaries + action items).
 - [x] View session request detail (status, payment state, timeline)
 - [x] Cancel a request as a mentee when status allows it
 - [x] Go to payment once a mentor approves the session
-- [ ] Save mentee profile fields and load them on future visits
-- [ ] Mentee session history page (all current + past requests)
-- [ ] Session action-item tracking (view, mark complete, reopen)
+- [x] Save mentee profile fields and load them on future visits
+- [x] Mentee session history page (all current + past requests)
+- [x] Session action-item tracking (view, mark complete, reopen)
 
 ### Mentor
 
@@ -81,7 +81,7 @@ progress (session summaries + action items).
 - [x] Payment status tracking: `not started`, `paid`, `failed`, `partial refund`, `refunded`
 - [x] Demo payment method selection and status update
 - [x] Cancellation refund status handling
-- [ ] Real payment gateway integration
+- [x] Real payment gateway integration
 - [ ] Transaction IDs + provider webhook handling
 - [ ] Transaction history page for mentees and mentors
 - [ ] Mentor payout settlement workflow
