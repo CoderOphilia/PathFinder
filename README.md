@@ -44,9 +44,9 @@ progress (session summaries + action items).
 - [x] Cancel approved session as mentor
 - [x] Mark paid session as completed
 - [ ] Add meeting link to approved sessions
-- [ ] Add post-session summary
+- [x] Add post-session summary
 - [ ] Add and manage post-session action items
-- [ ] Show mentor earnings and payout summary for completed paid sessions
+- [x] Show mentor earnings and payout summary for completed paid sessions
 
 ### Admin
 
