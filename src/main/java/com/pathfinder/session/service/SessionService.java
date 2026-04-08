@@ -121,9 +121,10 @@ public class SessionService {
     }
 
     public SessionRequest completeSession(Long sessionId) {
+        // Let mentors finish sessions after approval, even if payment is still stubbed.
         SessionRequest request = requireSession(sessionId);
-        if (request.getStatus() != SessionStatus.PAID) {
-            throw new IllegalArgumentException("Only paid sessions can be completed.");
+        if (request.getStatus() != SessionStatus.APPROVED && request.getStatus() != SessionStatus.PAID) {
+            throw new IllegalArgumentException("Only approved sessions can be completed.");
         }
         request.setStatus(SessionStatus.COMPLETED);
         return sessionRequestRepository.save(request);

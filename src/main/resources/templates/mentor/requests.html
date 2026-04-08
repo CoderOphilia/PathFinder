@@ -71,7 +71,7 @@
 			<p class="tile__kicker">History</p>
 			<h2>Previous requests</h2>
 			<p class="p p--sm p--muted p--tight">
-				Approved and declined decisions are listed here.
+				Approved, completed, cancelled, and declined decisions are listed here.
 			</p>
 
 			<p th:if="${#lists.isEmpty(previousRequests)}" class="p p--muted p--tight">
@@ -137,11 +137,11 @@
 										<button type="submit" class="btn btn--destructive btn--sm">Cancel</button>
 									</form>
 									<form
-										th:if="${request.status.name() == 'PAID'}"
+										th:if="${request.status.name() == 'APPROVED' or request.status.name() == 'PAID'}"
 										method="post"
 										th:action="@{|/mentor/sessions/${request.id}/complete|}"
 									>
-										<button type="submit" class="btn btn--secondary btn--sm">Complete</button>
+										<button type="submit" class="btn btn--secondary btn--sm">Mark done</button>
 									</form>
 								</div>
 							</td>

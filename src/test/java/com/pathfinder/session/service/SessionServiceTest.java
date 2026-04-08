@@ -130,19 +130,61 @@ class SessionServiceTest {
     }
 
     @Test
-    // Blocks completion before payment.
-    void blockCompleteBeforePayment() {
+    // Marks an approved session as complete while payment is stubbed.
+    void completeApprovedSession() {
         SessionRequest request = new SessionRequest();
         request.setId(1L);
         request.setStatus(SessionStatus.APPROVED);
+        request.setPaymentCompleted(false);
 
         when(sessionRequestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(sessionRequestRepository.save(any(SessionRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                sessionService.completeSession(1L)
-        );
+        SessionRequest result = sessionService.completeSession(1L);
 
-        assertTrue(exception.getMessage().contains("Only paid sessions"));
+        assertEquals(SessionStatus.COMPLETED, result.getStatus());
+        assertFalse(result.isPaymentCompleted());
+    }
+
+    @Test
+    // Marks a paid session as complete and preserves payment state.
+    void completePaidSession() {
+        SessionRequest request = new SessionRequest();
+        request.setId(1L);
+        request.setStatus(SessionStatus.PAID);
+        request.setPaymentCompleted(true);
+
+        when(sessionRequestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(sessionRequestRepository.save(any(SessionRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        SessionRequest result = sessionService.completeSession(1L);
+
+        assertEquals(SessionStatus.COMPLETED, result.getStatus());
+        assertTrue(result.isPaymentCompleted());
+    }
+
+    @Test
+    // Blocks completion from non-active session states.
+    void blockCompletionForInvalidStatuses() {
+        for (SessionStatus status : EnumSet.of(
+                SessionStatus.REQUESTED,
+                SessionStatus.DECLINED,
+                SessionStatus.CANCELLED,
+                SessionStatus.COMPLETED
+        )) {
+            long sessionId = status.ordinal() + 1L;
+            SessionRequest request = new SessionRequest();
+            request.setId(sessionId);
+            request.setStatus(status);
+
+            when(sessionRequestRepository.findById(sessionId)).thenReturn(Optional.of(request));
+
+            IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                    sessionService.completeSession(sessionId)
+            );
+
+            assertTrue(exception.getMessage().contains("Only approved sessions"));
+        }
     }
 
     private User createUser(String email, String role, String firstName, String lastName) {
