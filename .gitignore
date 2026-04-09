@@ -43,6 +43,9 @@ nbdist/
 # Local env files
 .env
 *.local
+*.mv.db
+*.trace.db
+uploaded/
 
 # Docs
 docs/**

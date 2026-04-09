@@ -29,7 +29,7 @@ import java.util.Locale;
 @Controller
 public class SessionController {
 
-    @Value("${stripe.api.secret.key}")
+    @Value("${stripe.api.secret.key:}")
     private String stripeApiKey;
 
     private static final String MENTEE_NAVBAR = "fragments/navbar_mentee :: navbar";
@@ -268,6 +268,11 @@ public class SessionController {
 
         long sessionCostCents = mentorProfile.getHourlyRateCents();
         long taxCents = Math.round(sessionCostCents * 0.05);
+
+        if (isBlank(stripeApiKey)) {
+            redirectAttributes.addFlashAttribute("formError", "Stripe secret key is not configured.");
+            return "redirect:/mentee/sessions/" + requestId;
+        }
 
         Stripe.apiKey = stripeApiKey;
 
