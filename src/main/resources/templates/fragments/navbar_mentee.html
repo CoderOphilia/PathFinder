@@ -8,7 +8,6 @@
 		<a th:href="@{/mentee/profile}" class="nav__link" th:classappend="${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/profile' || currentUrl == '/seeker/profile'} ? 'page' : null">Profile</a>
 		<a th:href="@{/mentee/mentors}" class="nav__link" th:classappend="${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors' ? 'active' : ''}" th:attr="aria-current=${currentUrl == '/mentee/mentors' || currentUrl == '/seeker/mentors'} ? 'page' : null">Find mentors</a>
 		<a th:href="@{/mentee/sessions/new}" class="nav__link" th:classappend="${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions') ? 'active' : ''}" th:attr="aria-current=${#strings.startsWith(currentUrl, '/mentee/sessions') || #strings.startsWith(currentUrl, '/seeker/sessions')} ? 'page' : null">Sessions</a>
-		<a th:href="@{/}" class="nav__link">Public site</a>
 		<a th:href="@{/auth/logout}" class="nav__link">Sign out</a>
 	</div>
 

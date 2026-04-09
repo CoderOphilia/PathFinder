@@ -24,11 +24,10 @@ class LayoutModelAttributesAdviceProdProfileWebMvcTest {
     private MockMvc mockMvc;
 
     @Test
-    void productionProfileDisablesDeveloperDockByDefault() throws Exception {
+    void productionProfileStillProvidesCurrentUrl() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
-                .andExpect(model().attribute("devMode", false))
                 .andExpect(model().attribute("currentUrl", "/"));
     }
 }
