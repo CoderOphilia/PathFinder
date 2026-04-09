@@ -550,6 +550,9 @@ public class MentorController {
         List<CalendarDay> calendarDays = new ArrayList<>();
         for (WeekdayOption weekday : WEEKDAYS.stream().filter(day -> !"sun".equals(day.key())).toList()) {
             List<CalendarEvent> events = mentorSessions.stream()
+                    .filter(request -> request.getStatus() == SessionStatus.REQUESTED
+                            || request.getStatus() == SessionStatus.APPROVED
+                            || request.getStatus() == SessionStatus.PAID)
                     .filter(request -> matchesWeekday(request.getSlotTime(), weekday.label()))
                     .limit(3)
                     .map(request -> new CalendarEvent(
