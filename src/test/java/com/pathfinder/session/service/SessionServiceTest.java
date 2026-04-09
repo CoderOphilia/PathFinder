@@ -193,10 +193,10 @@ class SessionServiceTest {
         when(sessionRequestRepository.findById(1L)).thenReturn(Optional.of(request));
         when(sessionRequestRepository.save(any(SessionRequest.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        SessionRequest result = sessionService.approveSession(1L, "See you soon");
+        SessionRequest result = sessionService.approveSession(1L, "https://zoom.us/j/123");
 
         assertEquals(SessionStatus.APPROVED, result.getStatus());
-        assertEquals("See you soon", result.getMentorNote());
+        assertEquals("https://zoom.us/j/123", result.getMeetingLink());
     }
 
     @Test

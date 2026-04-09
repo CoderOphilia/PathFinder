@@ -50,9 +50,9 @@
 				<strong>Booking notes:</strong>
 				<span th:text="${requestItem.request.bookingNotes}">Optional notes</span>
 			</p>
-			<p class="p p--sm p--muted p--tight" th:if="${requestItem.request.mentorNote != null and !requestItem.request.mentorNote.isEmpty()}">
+			<p class="p p--sm p--muted p--tight" th:if="${requestItem.request.meetingLink != null and !requestItem.request.meetingLink.isEmpty()}">
 				<strong>Meeting link:</strong>
-				<a class="link link--underline" th:href="${requestItem.request.mentorNote}" th:text="${requestItem.request.mentorNote}" target="_blank" rel="noopener noreferrer">Meeting link</a>
+				<a class="link link--underline" th:href="${requestItem.request.meetingLink}" th:text="${requestItem.request.meetingLink}" target="_blank" rel="noopener noreferrer">Meeting link</a>
 			</p>
 
 			<form
@@ -62,12 +62,12 @@
 				class="queueDecisionForm"
 			>
 				<div>
-					<label th:for="${'mentorNote-' + requestItem.request.id}" class="label">Meeting link</label>
+					<label th:for="${'meetingLink-' + requestItem.request.id}" class="label">Meeting link</label>
 					<input
-						th:id="${'mentorNote-' + requestItem.request.id}"
+						th:id="${'meetingLink-' + requestItem.request.id}"
 						class="input"
 						type="url"
-						name="mentorNote"
+						name="meetingLink"
 						placeholder="https://zoom.us/j/..."
 						required
 					/>
@@ -143,15 +143,15 @@
 							</td>
 							<td>
 								<a
-									th:if="${requestItem.request.mentorNote != null and !requestItem.request.mentorNote.isEmpty()}"
+									th:if="${requestItem.request.meetingLink != null and !requestItem.request.meetingLink.isEmpty()}"
 									class="link link--underline"
-									th:href="${requestItem.request.mentorNote}"
-									th:text="${requestItem.request.mentorNote}"
+									th:href="${requestItem.request.meetingLink}"
+									th:text="${requestItem.request.meetingLink}"
 									target="_blank"
 									rel="noopener noreferrer">
 									Meeting link
 								</a>
-								<span th:if="${requestItem.request.mentorNote == null or requestItem.request.mentorNote.isEmpty()}" class="p p--sm p--muted p--tight">
+								<span th:if="${requestItem.request.meetingLink == null or requestItem.request.meetingLink.isEmpty()}" class="p p--sm p--muted p--tight">
 									No link
 								</span>
 							</td>

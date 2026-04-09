@@ -80,7 +80,7 @@ public class SessionService {
         request.setSessionType(requireText(sessionType, "Session type is required."));
         request.setObjective(requireText(objective, "Objective is required."));
         request.setBookingNotes(normalizeText(bookingNotes));
-        request.setMentorNote("");
+        request.setMeetingLink("");
         request.setStatus(SessionStatus.REQUESTED);
         request.setPaymentCompleted(false);
         request.setFreeSessionRequested(requestFreeSession);
@@ -117,27 +117,27 @@ public class SessionService {
         return  sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(menteeEmail);
     }
 
-    public SessionRequest approveSession(Long sessionId, String mentorNote) {
+    public SessionRequest approveSession(Long sessionId, String meetingLink) {
         SessionRequest request = requireSession(sessionId);
         if (request.getStatus() != SessionStatus.REQUESTED) {
             throw new IllegalArgumentException("Only requested sessions can be approved.");
         }
-        String normalizedMeetingLink = normalizeText(mentorNote);
+        String normalizedMeetingLink = normalizeText(meetingLink);
         if (normalizedMeetingLink.isEmpty()) {
             throw new IllegalArgumentException("Meeting link is required to approve a session.");
         }
         request.setStatus(SessionStatus.APPROVED);
-        request.setMentorNote(normalizedMeetingLink);
+        request.setMeetingLink(normalizedMeetingLink);
         return sessionRequestRepository.save(request);
     }
 
-    public SessionRequest declineSession(Long sessionId, String mentorNote) {
+    public SessionRequest declineSession(Long sessionId, String meetingLink) {
         SessionRequest request = requireSession(sessionId);
         if (request.getStatus() != SessionStatus.REQUESTED) {
             throw new IllegalArgumentException("Only requested sessions can be declined.");
         }
         request.setStatus(SessionStatus.DECLINED);
-        request.setMentorNote(normalizeText(mentorNote));
+        request.setMeetingLink(normalizeText(meetingLink));
         return sessionRequestRepository.save(request);
     }
 

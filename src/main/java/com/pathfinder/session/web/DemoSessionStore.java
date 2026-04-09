@@ -184,7 +184,7 @@ public class DemoSessionStore {
                 .toList();
     }
 
-    public synchronized Optional<SessionRequestView> applyDecision(String requestId, String decision, String mentorNote) {
+    public synchronized Optional<SessionRequestView> applyDecision(String requestId, String decision, String meetingLink) {
         expirePendingRequests();
         SessionRequestView current = requestsById.get(requestId);
         if (current == null || current.status() != SessionStatus.REQUESTED) {
@@ -202,7 +202,7 @@ public class DemoSessionStore {
                     current.sessionType(),
                     current.objective(),
                     current.bookingNotes(),
-                    safeTrim(mentorNote),
+                    safeTrim(meetingLink),
                     SessionStatus.APPROVED_PENDING_PAYMENT,
                     PaymentStatus.NOT_STARTED,
                     current.pricingModelSnapshot(),
@@ -228,7 +228,7 @@ public class DemoSessionStore {
                     current.sessionType(),
                     current.objective(),
                     current.bookingNotes(),
-                    safeTrim(mentorNote),
+                    safeTrim(meetingLink),
                     SessionStatus.DECLINED,
                     current.paymentStatus(),
                     current.pricingModelSnapshot(),
@@ -268,7 +268,7 @@ public class DemoSessionStore {
                 current.sessionType(),
                 current.objective(),
                 current.bookingNotes(),
-                current.mentorNote(),
+                current.meetingLink(),
                 SessionStatus.APPROVED_PAID,
                 PaymentStatus.PAID,
                 current.pricingModelSnapshot(),
@@ -308,7 +308,7 @@ public class DemoSessionStore {
                 current.sessionType(),
                 current.objective(),
                 current.bookingNotes(),
-                current.mentorNote(),
+                current.meetingLink(),
                 SessionStatus.CANCELLED,
                 cancellationPaymentStatus,
                 current.pricingModelSnapshot(),
@@ -344,7 +344,7 @@ public class DemoSessionStore {
                 current.sessionType(),
                 current.objective(),
                 current.bookingNotes(),
-                current.mentorNote(),
+                current.meetingLink(),
                 SessionStatus.COMPLETED,
                 current.paymentStatus(),
                 current.pricingModelSnapshot(),
@@ -379,7 +379,7 @@ public class DemoSessionStore {
                         request.sessionType(),
                         request.objective(),
                         request.bookingNotes(),
-                        request.mentorNote(),
+                        request.meetingLink(),
                         SessionStatus.EXPIRED,
                         request.paymentStatus(),
                         request.pricingModelSnapshot(),
@@ -409,7 +409,7 @@ public class DemoSessionStore {
                         request.sessionType(),
                         request.objective(),
                         request.bookingNotes(),
-                        request.mentorNote(),
+                        request.meetingLink(),
                         SessionStatus.CANCELLED,
                         PaymentStatus.FAILED,
                         request.pricingModelSnapshot(),
@@ -730,7 +730,7 @@ public class DemoSessionStore {
             String sessionType,
             String objective,
             String bookingNotes,
-            String mentorNote,
+            String meetingLink,
             SessionStatus status,
             PaymentStatus paymentStatus,
             PricingModel pricingModelSnapshot,
