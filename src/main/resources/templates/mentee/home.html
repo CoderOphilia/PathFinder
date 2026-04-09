@@ -83,10 +83,11 @@
 						<tr>
 							<th scope="col">Session</th>
 							<th scope="col">Mentor</th>
-							<th scope="col">Time</th>
-							<th scope="col">Cost</th>
+							<th scope="col" class="menteeSessionsTable__timeCol">Time</th>
+							<th scope="col" class="menteeSessionsTable__compactCol">Cost</th>
 							<th scope="col">Status</th>
-							<th scope="col">Action</th>
+							<th scope="col" class="menteeSessionsTable__compactCol">Action</th>
+							<th scope="col" class="menteeSessionsTable__compactCol">Meeting link</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -95,9 +96,11 @@
 								<strong th:text="${request.sessionType}">Mock interview</strong>
 							</td>
 							<td th:text="${request.mentorName}">Mentor</td>
-							<td th:text="${request.slotTime}">Wednesday • 12:00 PM</td>
+							<td class="menteeSessionsTable__timeCell">
+								<span th:text="${#strings.replace(#strings.replace(request.slotTime, '(America/', '('), '/)', ')')}">Wednesday • 12:00 PM</span>
+							</td>
 							<td>
-								<span class="statusBadge statusBadge--neutral"
+								<span class="statusBadge statusBadge--neutral menteeSessionsTable__costBadge"
 									th:text="${request.freeSessionRequested
 										? 'Free session'
 										: ('$' + #numbers.formatDecimal((request.quotedAmountCents == null ? 0 : request.quotedAmountCents) / 100.0, 1, 2))}">
@@ -120,7 +123,8 @@
 									Requested
 								</span>
 							</td>
-							<td>
+							<td class="menteeSessionsTable__actionCell">
+								<div class="tableActions">
 								<a
 									th:if="${request.status.name() == 'APPROVED' and !request.freeSessionRequested and !request.paymentCompleted}"
 									class="btn btn--default btn--sm"
@@ -146,6 +150,31 @@
 								>
 									No action
 								</span>
+								</div>
+							</td>
+							<td class="menteeSessionsTable__actionCell">
+								<a
+									th:if="${request.status.name() == 'PAID'
+										and request.meetingLink != null
+										and !request.meetingLink.isEmpty()}"
+									class="btn btn--outline btn--sm"
+									th:href="${request.meetingLink}"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									Open link
+								</a>
+								<button
+									th:if="${request.status.name() != 'PAID'
+										or request.meetingLink == null
+										or request.meetingLink.isEmpty()}"
+									type="button"
+									class="btn btn--outline btn--sm"
+									disabled
+									aria-disabled="true"
+								>
+									Open link
+								</button>
 							</td>
 						</tr>
 					</tbody>

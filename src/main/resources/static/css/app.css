@@ -397,6 +397,7 @@ main {
 	color: var(--ink);
 	font-weight: 600;
 	cursor: pointer;
+	white-space: nowrap;
 }
 
 .btn:hover { border-color: var(--accent-border); background: var(--surface-soft); }
@@ -554,6 +555,26 @@ a.link--muted { color: var(--muted); }
 .dataTable tbody tr:nth-child(even) { background: #fbf8f3; }
 .tableRowLink { color: var(--ink); font-weight: 600; text-decoration: none; }
 .tableRowLink:hover { text-decoration: underline; }
+
+.menteeSessionsTable__timeCol,
+.menteeSessionsTable__timeCell {
+	width: 28%;
+	max-width: 280px;
+}
+
+.menteeSessionsTable__timeCell {
+	white-space: normal;
+}
+
+.menteeSessionsTable__compactCol,
+.menteeSessionsTable__actionCell {
+	white-space: nowrap;
+}
+
+.menteeSessionsTable__costBadge {
+	white-space: nowrap;
+	display: inline-flex;
+}
 
 .availabilityToggle { display: inline-flex; align-items: center; gap: 6px; }
 .availabilityToggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
