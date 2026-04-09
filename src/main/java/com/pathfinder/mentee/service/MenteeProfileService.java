@@ -153,7 +153,8 @@ public class MenteeProfileService {
         // Pick the soonest upcoming session for the dashboard card.
         List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
         return sessionRequests.stream()
-                .filter(request -> request.getStatus() == SessionStatus.PAID)              .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
+                .filter(request -> request.getStatus() == SessionStatus.PAID)
+                .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
                 .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
 
 
