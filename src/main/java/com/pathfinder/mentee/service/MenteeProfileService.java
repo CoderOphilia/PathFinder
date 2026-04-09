@@ -212,6 +212,7 @@ public class MenteeProfileService {
         return weekdays.stream()
                 .map(day -> {
                     List<CalendarEvent> events = menteeSessions.stream()
+                            .filter(s -> s.getStatus() != SessionStatus.CANCELLED)
                             .filter(s -> matchesWeekday(s.getSlotTime(), day))
                             .limit(3)
                             .map(s -> new CalendarEvent(shortenSessionLabel(s.getSessionType(), s.getSlotTime())))
