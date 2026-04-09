@@ -98,8 +98,8 @@
 				<span th:text="${sessionRequest.bookingNotes}">Optional note</span>
 			</p>
 			<p class="p p--muted p--tight" th:if="${sessionRequest.mentorNote != null and !sessionRequest.mentorNote.isEmpty()}">
-				<strong>Mentor note:</strong>
-				<span th:text="${sessionRequest.mentorNote}">Mentor note</span>
+				<strong>Meeting link:</strong>
+				<a class="link link--underline" th:href="${sessionRequest.mentorNote}" th:text="${sessionRequest.mentorNote}" target="_blank" rel="noopener noreferrer">Meeting link</a>
 			</p>
 			<p class="p p--sm p--muted p--tight" th:if="${bookingPolicySummary != null and !bookingPolicySummary.isEmpty()}">
 				<strong>Booking policy:</strong>

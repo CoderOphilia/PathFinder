@@ -122,8 +122,12 @@ public class SessionService {
         if (request.getStatus() != SessionStatus.REQUESTED) {
             throw new IllegalArgumentException("Only requested sessions can be approved.");
         }
+        String normalizedMeetingLink = normalizeText(mentorNote);
+        if (normalizedMeetingLink.isEmpty()) {
+            throw new IllegalArgumentException("Meeting link is required to approve a session.");
+        }
         request.setStatus(SessionStatus.APPROVED);
-        request.setMentorNote(normalizeText(mentorNote));
+        request.setMentorNote(normalizedMeetingLink);
         return sessionRequestRepository.save(request);
     }
 
