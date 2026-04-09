@@ -141,24 +141,24 @@ public class MenteeProfileService {
 
 
     // Getting session
-
     public Optional<SessionRequest> getNextSessionForMentee(String menteeEmail) {
-        // Only show future sessions that are actually approved to happen.
-        return  sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(normalizeText(menteeEmail))
+        return sessionRequestRepository.findByMenteeEmailOrderByCreatedAtDesc(normalizeText(menteeEmail))
                 .stream()
-                .filter(this::isUpcomingSession)
-                .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
-                .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
+                .filter(s -> s.getStatus() == SessionStatus.APPROVED)
+                .filter(s -> s.getCreatedAt() != null && s.getCreatedAt().isAfter(LocalDateTime.now()))
+                .min(Comparator.comparing(SessionRequest::getCreatedAt));
     }
 
     public Optional<SessionRequest> getNextSession(String menteeEmail) {
         // Pick the soonest upcoming session for the dashboard card.
         List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
         return sessionRequests.stream()
-                .filter(this::isUpcomingSession)
-                .filter(s -> s.getStatus() == SessionStatus.APPROVED)
-                .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
+                .filter(request -> request.getStatus() == SessionStatus.PAID)              .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
                 .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
+
+
+//
+
 
     }
 
