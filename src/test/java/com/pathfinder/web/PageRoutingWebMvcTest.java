@@ -40,6 +40,7 @@ import java.util.Optional;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -151,7 +152,25 @@ class PageRoutingWebMvcTest {
     }
 
     @Test
-    void signupPostRedirectsByRoleWhenValid() throws Exception {
+    void signupPostShowsValidationMessageWhenCreationFails() throws Exception {
+        when(userService.emailExists("demo@example.com")).thenReturn(false);
+        when(userService.createUser(any(User.class))).thenThrow(new IllegalArgumentException("A user with this email already exists"));
+
+        mockMvc.perform(multipart("/auth/signup")
+                        .file(new MockMultipartFile("profileImageFile", new byte[0]))
+                        .param("firstName", "Demo")
+                        .param("lastName", "User")
+                        .param("email", "demo@example.com")
+                        .param("password", "Password123!")
+                        .param("confirmPassword", "Password123!")
+                        .param("role", "mentor"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/auth/signup"))
+                .andExpect(flash().attribute("formError", "A user with this email already exists"));
+    }
+
+    @Test
+    void mentorSignupRedirectsToProfileWhenValid() throws Exception {
         User created = createUser("demo@example.com", "mentor");
         when(userService.emailExists("demo@example.com")).thenReturn(false);
         when(userService.createUser(any(User.class))).thenReturn(created);
@@ -165,7 +184,28 @@ class PageRoutingWebMvcTest {
                         .param("confirmPassword", "Password123!")
                         .param("role", "mentor"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/mentor/home"))
+                .andExpect(redirectedUrl("/mentor/profile"))
+                .andExpect(flash().attributeExists("flashMessage"));
+
+        verify(mentorProfileService).initializeProfileForNewMentor(1L);
+    }
+
+    @Test
+    void menteeSignupRedirectsToHomeWhenValid() throws Exception {
+        User created = createUser("demo@example.com", "mentee");
+        when(userService.emailExists("demo@example.com")).thenReturn(false);
+        when(userService.createUser(any(User.class))).thenReturn(created);
+
+        mockMvc.perform(multipart("/auth/signup")
+                        .file(new MockMultipartFile("profileImageFile", new byte[0]))
+                        .param("firstName", "Demo")
+                        .param("lastName", "User")
+                        .param("email", "demo@example.com")
+                        .param("password", "Password123!")
+                        .param("confirmPassword", "Password123!")
+                        .param("role", "mentee"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentee/home"))
                 .andExpect(flash().attributeExists("flashMessage"));
     }
 

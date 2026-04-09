@@ -169,6 +169,19 @@ class MentorProfileServiceTest {
     }
 
     @Test
+    void initializeProfileForNewMentorCreatesPlaceholderProfile() {
+        User mentor = createMentorUser();
+
+        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(mentor));
+        when(userRepository.getReferenceById(1L)).thenReturn(mentor);
+
+        mentorProfileService.initializeProfileForNewMentor(1L);
+
+        verify(entityManager).persist(any(MentorProfile.class));
+    }
+
+    @Test
     void listPublicMentorsOnlyReturnsApprovedMentors() {
         User approvedMentor = createMentorUser();
         User pendingMentor = new User();
