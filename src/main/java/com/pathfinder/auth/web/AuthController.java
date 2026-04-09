@@ -2,6 +2,7 @@ package com.pathfinder.auth.web;
 
 import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.service.UserService;
+import com.pathfinder.mentor.service.MentorProfileService;
 import com.pathfinder.profile.service.ProfileImageStorageService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -9,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +29,7 @@ public class AuthController {
     public static final String SESSION_USER_ROLE = "sessionUserRole";
 
     private final UserService service;
+    private final MentorProfileService mentorProfileService;
     private final ProfileImageStorageService profileImageStorageService;
 
     private static final String PUBLIC_NAVBAR = "fragments/navbar :: navbar";
@@ -78,6 +81,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
+    @Transactional
     public String signupSubmit(
             @ModelAttribute("user") User user,
             @RequestParam(name = "profileImageFile", required = false) MultipartFile profileImageFile,
@@ -112,12 +116,31 @@ public class AuthController {
             return "redirect:/auth/signup";
         }
 
-        User createdUser = service.createUser(user);
+        try {
+            User createdUser = service.createUser(user);
+            session.setAttribute(SESSION_USER_EMAIL, createdUser.getEmail());
+            session.setAttribute(SESSION_USER_ROLE, createdUser.getRole());
+            if ("mentor".equalsIgnoreCase(createdUser.getRole())) {
+                mentorProfileService.initializeProfileForNewMentor(createdUser.getId());
+                redirectAttributes.addFlashAttribute(
+                        "flashMessage",
+                        "Account created successfully. Complete your mentor profile to start accepting requests."
+                );
+                return "redirect:/mentor/profile";
+            }
 
-        session.setAttribute(SESSION_USER_EMAIL, createdUser.getEmail());
-        session.setAttribute(SESSION_USER_ROLE, createdUser.getRole());
-        redirectAttributes.addFlashAttribute("flashMessage", "Account created successfully.");
-        return "redirect:" + homePathForRole(user.getRole());
+            redirectAttributes.addFlashAttribute("flashMessage", "Account created successfully.");
+            return "redirect:" + homePathForRole(user.getRole());
+        } catch (IllegalArgumentException exception) {
+            redirectAttributes.addFlashAttribute("formError", exception.getMessage());
+            return "redirect:/auth/signup";
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute(
+                    "formError",
+                    "We couldn't finish creating your account. Please try again."
+            );
+            return "redirect:/auth/signup";
+        }
     }
 
     @GetMapping("/forgot")

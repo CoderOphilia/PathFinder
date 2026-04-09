@@ -174,6 +174,24 @@ public class MentorProfileService {
         return user;
     }
 
+    @Transactional
+    public void initializeProfileForNewMentor(Long userId) {
+        if (userId == null || mentorProfileRepository.findById(userId).isPresent()) {
+            return;
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null || !"mentor".equalsIgnoreCase(user.getRole())) {
+            return;
+        }
+
+        User managedUser = userRepository.getReferenceById(userId);
+        MentorProfile profile = new MentorProfile();
+        profile.setUserId(managedUser.getId());
+        profile.setUser(managedUser);
+        entityManager.persist(profile);
+    }
+
     @Transactional(readOnly = true)
     public List<String> findSkillsByEmail(String accountEmail) {
         User user = findMentorUserByEmail(accountEmail);
