@@ -46,7 +46,7 @@ body {
 
 h1, h2 {
 	margin: 0 0 0.75rem;
-	font-family: var(--font-heading);
+	font-family: var(--font-heading), serif;
 	line-height: 1.08;
 	font-weight: 600;
 	letter-spacing: -0.03em;

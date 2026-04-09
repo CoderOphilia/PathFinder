@@ -7,7 +7,6 @@ import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.domain.MentorSkill;
 import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.repo.MentorInterviewCompanyRepository;
-import com.pathfinder.mentor.repo.MentorProfileRepository;
 import com.pathfinder.mentor.repo.MentorSkillRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,8 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Optional;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -25,7 +23,7 @@ import static org.mockito.Mockito.when;
 class AdminReviewServiceTest {
 
     @Mock
-    private MentorProfileRepository mentorProfileRepository;
+    private AdminReviewMentorProfileResolver mentorProfileResolver;
 
     @Mock
     private MentorSkillRepository mentorSkillRepository;
@@ -50,16 +48,74 @@ class AdminReviewServiceTest {
         company.setCompanyName("Meta");
 
         when(userRepository.findAll()).thenReturn(List.of(mentor));
-        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.of(profile));
+        when(mentorProfileResolver.findExistingOrDefault(mentor)).thenReturn(profile);
         when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(1L)).thenReturn(List.of(skill));
         when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(1L)).thenReturn(List.of(company));
 
-        AdminReviewService.MentorReviewItemView item = adminReviewService.listReviewItems().getFirst();
+        AdminReviewService.MentorReviewSummaryView item = adminReviewService.listReviewItems().getFirst();
 
         assertEquals("mentor-user", item.slug());
         assertEquals("Pending review", item.reviewStatus());
+        assertEquals("Complete (7/7)", item.verificationSummary());
+        assertEquals("7/7", item.verificationScore());
+    }
+
+    @Test
+    // Builds the full detail view used by the dedicated mentor review page.
+    void findReviewItem() {
+        User mentor = createMentorUser();
+        MentorProfile profile = createProfile(VerificationStatus.PENDING, "");
+        MentorSkill skill = new MentorSkill();
+        skill.setSkillName("System design");
+        MentorInterviewCompany company = new MentorInterviewCompany();
+        company.setCompanyName("Meta");
+
+        when(userRepository.findAll()).thenReturn(List.of(mentor));
+        when(mentorProfileResolver.findExistingOrDefault(mentor)).thenReturn(profile);
+        when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(1L)).thenReturn(List.of(skill));
+        when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(1L)).thenReturn(List.of(company));
+
+        AdminReviewService.MentorReviewDetailView item = adminReviewService.findReviewItem("mentor-user");
+
+        assertEquals("mentor@example.com", item.email());
         assertEquals("System design", item.skills().getFirst());
         assertEquals("Meta", item.interviewCompanies().getFirst());
+        assertEquals("Complete (7/7)", item.verificationSummary());
+    }
+
+    @Test
+    void listReviewItemsIncludesMentorWithoutSavedProfile() {
+        User mentor = createMentorUser();
+        MentorProfile profile = createEmptyProfile();
+
+        when(userRepository.findAll()).thenReturn(List.of(mentor));
+        when(mentorProfileResolver.findExistingOrDefault(mentor)).thenReturn(profile);
+        when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(1L)).thenReturn(List.of());
+        when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(1L)).thenReturn(List.of());
+
+        AdminReviewService.MentorReviewSummaryView item = adminReviewService.listReviewItems().getFirst();
+
+        assertEquals("mentor-user", item.slug());
+        assertEquals("Pending review", item.reviewStatus());
+        assertEquals("0/7 complete • Missing Current title, Current company, Expertise, Bio, Hourly rate, Skills, Interview companies", item.verificationSummary());
+        assertEquals("0/7", item.verificationScore());
+    }
+
+    @Test
+    void findReviewItemIncludesMentorWithoutSavedProfile() {
+        User mentor = createMentorUser();
+        MentorProfile profile = createEmptyProfile();
+
+        when(userRepository.findAll()).thenReturn(List.of(mentor));
+        when(mentorProfileResolver.findExistingOrDefault(mentor)).thenReturn(profile);
+        when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(1L)).thenReturn(List.of());
+        when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(1L)).thenReturn(List.of());
+
+        AdminReviewService.MentorReviewDetailView item = adminReviewService.findReviewItem("mentor-user");
+
+        assertEquals("mentor@example.com", item.email());
+        assertEquals("Pending review", item.reviewStatus());
+        assertEquals("0/7 complete • Missing Current title, Current company, Expertise, Bio, Hourly rate, Skills, Interview companies", item.verificationSummary());
     }
 
     @Test
@@ -90,11 +146,20 @@ class AdminReviewServiceTest {
         assertEquals("Profile is incomplete.", profile.getAdminNote());
     }
 
+    @Test
+    // Prevents admins from rejecting a mentor without leaving a reason.
+    void denyMentorRequiresNote() {
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> adminReviewService.denyMentor("mentor-user", "   ")
+        );
+
+        assertEquals("Enter a denial note before rejecting the mentor.", exception.getMessage());
+    }
+
     private void mockMentorLookup(User mentor, MentorProfile profile) {
         when(userRepository.findAll()).thenReturn(List.of(mentor));
-        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.of(profile));
-        when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(1L)).thenReturn(List.of());
-        when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(1L)).thenReturn(List.of());
+        when(mentorProfileResolver.findExistingOrCreate(mentor)).thenReturn(profile);
     }
 
     private User createMentorUser() {
@@ -112,9 +177,21 @@ class AdminReviewServiceTest {
         profile.setUserId(1L);
         profile.setCurrentTitle("Staff Engineer");
         profile.setCurrentCompany("Example");
+        profile.setExpertise("Backend interviews");
         profile.setBio("Experienced mentor");
+        profile.setHourlyRateCents(8000);
         profile.setVerificationStatus(status);
         profile.setAdminNote(adminNote);
+        return profile;
+    }
+
+    private MentorProfile createEmptyProfile() {
+        MentorProfile profile = new MentorProfile();
+        profile.setUserId(1L);
+        profile.setVerificationStatus(VerificationStatus.PENDING);
+        profile.setAdminNote("");
+        profile.setHourlyRateCents(0);
+        profile.setSessionsCompleted(0);
         return profile;
     }
 }

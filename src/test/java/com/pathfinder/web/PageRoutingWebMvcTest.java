@@ -1,7 +1,6 @@
 package com.pathfinder.web;
 
 import com.pathfinder.admin.service.AdminAccountService;
-import com.pathfinder.admin.service.AdminProfileService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
 import com.pathfinder.auth.config.SecurityConfig;
@@ -88,9 +87,6 @@ class PageRoutingWebMvcTest {
     private AdminSessionOversightService adminSessionOversightService;
 
     @MockBean
-    private AdminProfileService adminProfileService;
-
-    @MockBean
     private ProfileImageStorageService profileImageStorageService;
 
     @BeforeEach
@@ -137,7 +133,6 @@ class PageRoutingWebMvcTest {
         assertAuthenticatedLayoutPage("/mentor/availability", "mentor/availability :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
         assertAuthenticatedLayoutPage("/mentor/requests", "mentor/requests :: content", "fragments/navbar_mentor :: navbar", "mentor@example.com", "mentor");
         assertAuthenticatedLayoutPage("/admin/home", "admin/home :: content", "fragments/navbar_admin :: navbar", "admin@example.com", "admin");
-        assertAuthenticatedLayoutPage("/admin/profile", "admin/profile :: content", "fragments/navbar_admin :: navbar", "admin@example.com", "admin");
     }
 
     @Test
@@ -253,6 +248,28 @@ class PageRoutingWebMvcTest {
         mockMvc.perform(get("/mentor/home"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/auth/login"));
+    }
+
+    @Test
+    void mentorProfileShowsPendingVerificationWithoutSavedProfile() throws Exception {
+        mockMvc.perform(get("/mentor/profile")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "mentor@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "mentor"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", "mentor/profile :: content"))
+                .andExpect(model().attribute("verificationStatusLabel", "Pending review"))
+                .andExpect(model().attribute("verificationStatusMessage", "Your profile is under review."));
+    }
+
+    @Test
+    void unknownPublicMentorProfileRedirectsToMentorDirectory() throws Exception {
+        when(mentorProfileService.findPublicProfileBySlug("pending-mentor")).thenReturn(null);
+
+        mockMvc.perform(get("/mentors/pending-mentor"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/mentee/mentors"))
+                .andExpect(flash().attributeExists("formError"));
     }
 
     @Test

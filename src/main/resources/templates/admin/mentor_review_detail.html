@@ -1,0 +1,148 @@
+<section xmlns:th="http://www.thymeleaf.org" th:fragment="content">
+	<div class="gridPage">
+		<section class="tile tile--full">
+			<p class="tile__kicker">Admin review</p>
+			<h1>Mentor review detail</h1>
+			<p class="p p--muted p--tight">
+				Review the mentor's full profile, verification checklist, and admin history before approving or denying.
+			</p>
+
+			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
+			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
+
+			<div class="heroActions">
+				<a class="btn btn--outline" th:href="@{/admin/mentors/review}">Back to queue</a>
+				<a class="btn btn--default" th:href="'mailto:' + ${selectedReviewItem.email}">Contact by email</a>
+			</div>
+		</section>
+
+		<section class="tile tile--span4">
+			<p class="tile__kicker">Mentor</p>
+			<img
+				th:if="${selectedReviewItem.profileImageUrl != null and !selectedReviewItem.profileImageUrl.isEmpty()}"
+				th:src="${selectedReviewItem.profileImageUrl}"
+				th:alt="${selectedReviewItem.name + ' profile image'}"
+				style="width: 96px; height: 96px; object-fit: cover; border-radius: 50%; border: 1px solid #d8d0c4; margin-bottom: 16px;"
+			/>
+			<h2 th:text="${selectedReviewItem.name}">Mentor Name</h2>
+			<p class="p p--strong p--tight" th:text="${selectedReviewItem.roleAtCompany.isEmpty() ? 'Role not added yet.' : selectedReviewItem.roleAtCompany}">
+				Title @ Company
+			</p>
+			<p class="p p--sm p--muted p--tight" th:text="${selectedReviewItem.email}">mentor@example.com</p>
+			<p class="p p--tight" th:text="${selectedReviewItem.bio.isEmpty() ? 'No bio added yet.' : selectedReviewItem.bio}">
+				Mentor bio
+			</p>
+
+			<dl class="detailList">
+				<div>
+					<dt>Status</dt>
+					<dd><span th:class="${selectedReviewItem.statusClass}" th:text="${selectedReviewItem.reviewStatus}">Pending review</span></dd>
+				</div>
+				<div>
+					<dt>Verification summary</dt>
+					<dd th:text="${selectedReviewItem.verificationSummary}">5/7 complete</dd>
+				</div>
+				<div>
+					<dt>Expertise</dt>
+					<dd th:text="${selectedReviewItem.expertise.isEmpty() ? 'Not added yet.' : selectedReviewItem.expertise}">Backend</dd>
+				</div>
+				<div>
+					<dt>Hourly rate</dt>
+					<dd th:text="${selectedReviewItem.hourlyRateLabel.isEmpty() ? 'Not added yet.' : selectedReviewItem.hourlyRateLabel}">$80.00</dd>
+				</div>
+				<div>
+					<dt>Sessions completed</dt>
+					<dd th:text="${selectedReviewItem.sessionsCompleted}">0</dd>
+				</div>
+				<div>
+					<dt>Free trial session</dt>
+					<dd th:text="${selectedReviewItem.offersFreeSession ? (selectedReviewItem.trialSessionLabel.isEmpty() ? 'Offered' : selectedReviewItem.trialSessionLabel) : 'Not offered'}">
+						Not offered
+					</dd>
+				</div>
+				<div>
+					<dt>Saved admin note</dt>
+					<dd th:text="${selectedReviewItem.adminNote.isEmpty() ? 'No admin note saved yet.' : selectedReviewItem.adminNote}">
+						No admin note saved yet.
+					</dd>
+				</div>
+			</dl>
+		</section>
+
+		<section class="tile tile--span4">
+			<p class="tile__kicker">Verification checklist</p>
+			<h2>Readiness summary</h2>
+			<ul class="checklist">
+				<li th:each="check : ${selectedReviewItem.verificationChecks}">
+					<strong th:text="${check.label}">Bio</strong>
+					<span th:text="${check.complete ? ' complete' : ' missing'}"> complete</span>
+					<span class="p p--sm p--muted" th:text="${' • ' + check.detail}"> • Added</span>
+				</li>
+			</ul>
+		</section>
+
+		<section class="tile tile--span4">
+			<p class="tile__kicker">Experience details</p>
+			<h2>Supporting information</h2>
+			<p class="tile__kicker">Skills</p>
+			<ul class="tags tags--compact" th:if="${!selectedReviewItem.skills.isEmpty()}">
+				<li class="tag" th:each="skill : ${selectedReviewItem.skills}" th:text="${skill}">Skill</li>
+			</ul>
+			<p th:if="${selectedReviewItem.skills.isEmpty()}" class="p p--sm p--muted p--tight">No skills added yet.</p>
+
+			<p class="tile__kicker">Interview companies</p>
+			<ul class="tags tags--compact" th:if="${!selectedReviewItem.interviewCompanies.isEmpty()}">
+				<li class="tag tag--soft" th:each="company : ${selectedReviewItem.interviewCompanies}" th:text="${company}">Company</li>
+			</ul>
+			<p th:if="${selectedReviewItem.interviewCompanies.isEmpty()}" class="p p--sm p--muted p--tight">No interview companies added yet.</p>
+		</section>
+
+		<section class="tile tile--span6">
+			<p class="tile__kicker">Approve</p>
+			<h2>Approve mentor</h2>
+			<p class="p p--sm p--muted p--tight">
+				Use an optional note when you want to document what was reviewed or what the mentor did well.
+			</p>
+			<form method="post" th:action="@{|/admin/mentors/review/${selectedReviewItem.slug}/approve|}" class="queueDecisionForm">
+				<div>
+					<label for="approveAdminNote" class="label">Approval note</label>
+					<textarea
+						id="approveAdminNote"
+						name="adminNote"
+						class="textarea"
+						rows="4"
+						placeholder="Optional note for the mentor or future admins"
+						th:text="${selectedReviewItem.adminNote}"
+					></textarea>
+				</div>
+				<div class="formActions">
+					<button type="submit" class="btn btn--default">Approve mentor</button>
+				</div>
+			</form>
+		</section>
+
+		<section class="tile tile--span6">
+			<p class="tile__kicker">Deny</p>
+			<h2>Deny mentor</h2>
+			<p class="p p--sm p--muted p--tight">
+				Rejections must include a note so the mentor has clear feedback and the admin record stays audit-friendly.
+			</p>
+			<form method="post" th:action="@{|/admin/mentors/review/${selectedReviewItem.slug}/deny|}" class="queueDecisionForm">
+				<div>
+					<label for="denyAdminNote" class="label">Denial note</label>
+					<textarea
+						id="denyAdminNote"
+						name="adminNote"
+						class="textarea"
+						rows="4"
+						placeholder="Explain what is missing or why the mentor was denied"
+						required
+					></textarea>
+				</div>
+				<div class="formActions">
+					<button type="submit" class="btn btn--outline">Deny mentor</button>
+				</div>
+			</form>
+		</section>
+	</div>
+</section>

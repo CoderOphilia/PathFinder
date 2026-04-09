@@ -5,6 +5,7 @@ import com.pathfinder.auth.repo.UserRepository;
 import com.pathfinder.auth.service.UserService;
 import com.pathfinder.mentor.domain.MentorAvailability;
 import com.pathfinder.mentor.domain.MentorProfile;
+import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.repo.MentorAvailabilityRepository;
 import com.pathfinder.mentor.repo.MentorInterviewCompanyRepository;
 import com.pathfinder.mentor.repo.MentorProfileRepository;
@@ -167,6 +168,52 @@ class MentorProfileServiceTest {
         assertEquals("20:00", result.getFirst().endTime());
     }
 
+    @Test
+    void listPublicMentorsOnlyReturnsApprovedMentors() {
+        User approvedMentor = createMentorUser();
+        User pendingMentor = new User();
+        pendingMentor.setId(2L);
+        pendingMentor.setEmail("pending@example.com");
+        pendingMentor.setRole("mentor");
+        pendingMentor.setFirstName("Pending");
+        pendingMentor.setLastName("Mentor");
+
+        when(userRepository.findAll()).thenReturn(List.of(approvedMentor, pendingMentor));
+        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.of(createProfile(VerificationStatus.APPROVED)));
+        when(mentorProfileRepository.findById(2L)).thenReturn(Optional.of(createProfile(VerificationStatus.PENDING)));
+        when(mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(anyLong())).thenReturn(List.of());
+        when(mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(anyLong())).thenReturn(List.of());
+
+        List<MentorProfileService.PublicMentorProfile> mentors = mentorProfileService.listPublicMentors();
+
+        assertEquals(1, mentors.size());
+        assertEquals("Mentor User", mentors.getFirst().name());
+    }
+
+    @Test
+    void publicProfileLookupIgnoresUnapprovedMentors() {
+        User mentor = createMentorUser();
+
+        when(userRepository.findAll()).thenReturn(List.of(mentor));
+        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.of(createProfile(VerificationStatus.REJECTED)));
+
+        MentorProfileService.PublicMentorProfile result = mentorProfileService.findPublicProfileBySlug("mentor-user");
+
+        assertEquals(null, result);
+    }
+
+    @Test
+    void mentorEmailLookupOnlyReturnsApprovedMentors() {
+        User mentor = createMentorUser();
+
+        when(userRepository.findAll()).thenReturn(List.of(mentor));
+        when(mentorProfileRepository.findById(1L)).thenReturn(Optional.of(createProfile(VerificationStatus.PENDING)));
+
+        String mentorEmail = mentorProfileService.findMentorEmailByName("Mentor User");
+
+        assertEquals("", mentorEmail);
+    }
+
     private User createMentorUser() {
         User mentor = new User();
         mentor.setId(1L);
@@ -175,5 +222,17 @@ class MentorProfileServiceTest {
         mentor.setFirstName("Mentor");
         mentor.setLastName("User");
         return mentor;
+    }
+
+    private MentorProfile createProfile(VerificationStatus verificationStatus) {
+        MentorProfile profile = new MentorProfile();
+        profile.setUserId(1L);
+        profile.setVerificationStatus(verificationStatus);
+        profile.setCurrentTitle("Senior Engineer");
+        profile.setCurrentCompany("Example Corp");
+        profile.setBio("Backend mentor");
+        profile.setHourlyRateCents(8000);
+        profile.setSessionsCompleted(12);
+        return profile;
     }
 }

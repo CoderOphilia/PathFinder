@@ -4,93 +4,53 @@
 			<p class="tile__kicker">Admin review</p>
 			<h1>Mentor review</h1>
 			<p class="p p--muted p--tight">
-				Pick a mentor, read the saved profile summary, and either approve or deny.
+				Review each mentor's verification summary, then open the full record before making a decision.
 			</p>
 
 			<p th:if="${formError}" class="notice notice--error" role="alert" th:text="${formError}">Error</p>
 			<p th:if="${flashMessage}" class="notice notice--success" role="status" th:text="${flashMessage}">Success</p>
 		</section>
 
-		<section class="tile tile--span6">
+		<section class="tile tile--full">
 			<p class="tile__kicker">Queue</p>
-			<h2>Mentors</h2>
+			<h2>Verification queue</h2>
+			<p class="p p--sm p--muted p--tight">
+				Each row links to a dedicated review page with the mentor's full profile details and admin actions.
+			</p>
 			<div class="tableWrap">
 				<table class="dataTable">
 					<thead>
 						<tr>
 							<th scope="col">Mentor</th>
+							<th scope="col">Email</th>
 							<th scope="col">Role</th>
+							<th scope="col">Verification summary</th>
 							<th scope="col">Status</th>
+							<th scope="col">Review</th>
 						</tr>
 					</thead>
 					<tbody>
 						<tr th:each="item : ${reviewItems}">
 							<td>
-								<a class="tableRowLink" th:href="@{/admin/mentors/review(mentor=${item.slug})}" th:text="${item.name}">
+								<a class="tableRowLink" th:href="@{|/admin/mentors/review/${item.slug}|}" th:text="${item.name}">
 									Mentor Name
 								</a>
 							</td>
+							<td th:text="${item.email}">mentor@example.com</td>
 							<td th:text="${item.roleAtCompany}">Title @ Company</td>
+							<td>
+								<p class="p p--sm p--tight" th:text="${item.verificationSummary}">5/7 complete</p>
+								<p class="p p--sm p--muted p--tight" th:text="${item.verificationScore}">5/7</p>
+							</td>
 							<td><span th:class="${item.statusClass}" th:text="${item.reviewStatus}">Pending review</span></td>
+							<td>
+								<a class="btn btn--outline" th:href="@{|/admin/mentors/review/${item.slug}|}">Open review</a>
+							</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
-		</section>
-
-		<section class="tile tile--span6">
-			<p class="tile__kicker">Details</p>
-			<div th:if="${selectedReviewItem != null}">
-				<h2 th:text="${selectedReviewItem.name}">Mentor Name</h2>
-				<p class="p p--strong p--tight" th:text="${selectedReviewItem.roleAtCompany}">Title @ Company</p>
-				<p class="p p--tight" th:text="${selectedReviewItem.bio.isEmpty() ? 'No bio added yet.' : selectedReviewItem.bio}">
-					Mentor bio
-				</p>
-
-				<dl class="detailList">
-					<div>
-						<dt>Status</dt>
-						<dd th:text="${selectedReviewItem.reviewStatus}">Pending review</dd>
-					</div>
-					<div>
-						<dt>Admin note</dt>
-						<dd th:text="${selectedReviewItem.adminNote.isEmpty() ? 'No admin note yet.' : selectedReviewItem.adminNote}">
-							No admin note yet.
-						</dd>
-					</div>
-				</dl>
-
-				<p class="tile__kicker">Skills</p>
-				<ul class="tags tags--compact">
-					<li class="tag" th:each="skill : ${selectedReviewItem.skills}" th:text="${skill}">Skill</li>
-				</ul>
-
-				<p class="tile__kicker">Interview companies</p>
-				<ul class="tags tags--compact">
-					<li class="tag tag--soft" th:each="company : ${selectedReviewItem.interviewCompanies}" th:text="${company}">Company</li>
-				</ul>
-
-				<form method="post" th:action="@{|/admin/mentors/review/${selectedReviewItem.slug}/approve|}" class="queueDecisionForm">
-					<div>
-						<label for="adminNote" class="label">Admin note</label>
-						<textarea
-							id="adminNote"
-							name="adminNote"
-							class="textarea"
-							rows="4"
-							placeholder="Optional note for the mentor"
-							th:text="${selectedReviewItem.adminNote}"
-						></textarea>
-					</div>
-					<div class="formActions">
-						<button type="submit" class="btn btn--default">Approve</button>
-						<button type="submit" class="btn btn--outline" th:formaction="@{|/admin/mentors/review/${selectedReviewItem.slug}/deny|}">
-							Deny
-						</button>
-					</div>
-				</form>
-			</div>
-			<p th:if="${selectedReviewItem == null}" class="p p--muted p--tight">No mentor profiles are ready for review.</p>
+			<p th:if="${reviewItems.isEmpty()}" class="p p--muted p--tight">No mentor profiles are ready for review.</p>
 		</section>
 	</div>
 </section>

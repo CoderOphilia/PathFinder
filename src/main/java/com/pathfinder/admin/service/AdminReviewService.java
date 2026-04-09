@@ -7,71 +7,72 @@ import com.pathfinder.mentor.domain.MentorProfile;
 import com.pathfinder.mentor.domain.MentorSkill;
 import com.pathfinder.mentor.domain.VerificationStatus;
 import com.pathfinder.mentor.repo.MentorInterviewCompanyRepository;
-import com.pathfinder.mentor.repo.MentorProfileRepository;
 import com.pathfinder.mentor.repo.MentorSkillRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @Transactional
 public class AdminReviewService {
 
-    private final MentorProfileRepository mentorProfileRepository;
+    private final AdminReviewMentorProfileResolver mentorProfileResolver;
     private final MentorSkillRepository mentorSkillRepository;
     private final MentorInterviewCompanyRepository mentorInterviewCompanyRepository;
     private final UserRepository userRepository;
 
     public AdminReviewService(
-            MentorProfileRepository mentorProfileRepository,
+            AdminReviewMentorProfileResolver mentorProfileResolver,
             MentorSkillRepository mentorSkillRepository,
             MentorInterviewCompanyRepository mentorInterviewCompanyRepository,
             UserRepository userRepository
     ) {
-        this.mentorProfileRepository = mentorProfileRepository;
+        this.mentorProfileResolver = mentorProfileResolver;
         this.mentorSkillRepository = mentorSkillRepository;
         this.mentorInterviewCompanyRepository = mentorInterviewCompanyRepository;
         this.userRepository = userRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<MentorReviewItemView> listReviewItems() {
-        // Admin reads every mentor user, then builds a simple row for the review page.
+    public List<MentorReviewSummaryView> listReviewItems() {
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
-                .map(this::toReviewItem)
+                .map(this::toReviewSummary)
                 .filter(item -> item != null)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public MentorReviewItemView findReviewItem(String mentorSlug) {
+    public MentorReviewDetailView findReviewItem(String mentorSlug) {
         String normalizedSlug = normalizeSlug(mentorSlug);
         if (normalizedSlug.isEmpty()) {
             return null;
         }
 
-        return listReviewItems().stream()
-                .filter(item -> item.slug().equals(normalizedSlug))
-                .findFirst()
+        return findMentorUserBySlug(normalizedSlug)
+                .map(this::toReviewDetail)
                 .orElse(null);
     }
 
     public void approveMentor(String mentorSlug, String adminNote) {
-        // Save the admin decision directly on the mentor profile.
         MentorProfile profile = requireMentorProfile(mentorSlug);
         profile.setVerificationStatus(VerificationStatus.APPROVED);
         profile.setAdminNote(normalizeText(adminNote));
     }
 
     public void denyMentor(String mentorSlug, String adminNote) {
-        // Save the admin decision directly on the mentor profile.
+        String normalizedNote = normalizeText(adminNote);
+        if (normalizedNote.isEmpty()) {
+            throw new IllegalArgumentException("Enter a denial note before rejecting the mentor.");
+        }
         MentorProfile profile = requireMentorProfile(mentorSlug);
-        // The existing enum already has REJECTED, so we use it for the denied state.
         profile.setVerificationStatus(VerificationStatus.REJECTED);
-        profile.setAdminNote(normalizeText(adminNote));
+        profile.setAdminNote(normalizedNote);
     }
 
     @Transactional(readOnly = true)
@@ -81,46 +82,150 @@ public class AdminReviewService {
                 .count();
     }
 
-    private MentorReviewItemView toReviewItem(User mentorUser) {
-        // Pull the saved mentor profile and turn it into a small view object for the template.
-        MentorProfile profile = mentorProfileRepository.findById(mentorUser.getId()).orElse(null);
-        if (profile == null) {
-            return null;
-        }
+    private MentorReviewSummaryView toReviewSummary(User mentorUser) {
+        MentorProfile profile = mentorProfileResolver.findExistingOrDefault(mentorUser);
+        MentorReviewFacts facts = buildFacts(mentorUser, profile);
+        return new MentorReviewSummaryView(
+                facts.slug(),
+                facts.name(),
+                facts.email(),
+                facts.roleAtCompany(),
+                facts.reviewStatus(),
+                facts.statusClass(),
+                facts.verificationSummary(),
+                facts.completeChecks() + "/" + facts.totalChecks()
+        );
+    }
 
-        List<String> skills = mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(mentorUser.getId()).stream()
-                .map(MentorSkill::getSkillName)
-                .toList();
-        List<String> interviewCompanies = mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(mentorUser.getId()).stream()
-                .map(MentorInterviewCompany::getCompanyName)
-                .toList();
+    private MentorProfile requireMentorProfile(String mentorSlug) {
+        return findMentorUserBySlug(normalizeSlug(mentorSlug))
+                .map(mentorProfileResolver::findExistingOrCreate)
+                .orElseThrow(() -> new IllegalArgumentException("Mentor review item not found."));
+    }
 
-        return new MentorReviewItemView(
-                normalizeSlug(buildFullName(mentorUser)),
-                buildFullName(mentorUser),
-                buildRoleAtCompany(profile),
+    private MentorReviewDetailView toReviewDetail(User mentorUser) {
+        MentorProfile profile = mentorProfileResolver.findExistingOrDefault(mentorUser);
+        MentorReviewFacts facts = buildFacts(mentorUser, profile);
+        List<String> skills = findSkills(mentorUser.getId());
+        List<String> interviewCompanies = findInterviewCompanies(mentorUser.getId());
+        List<VerificationCheckView> verificationChecks = buildVerificationChecks(profile, skills, interviewCompanies);
+        return new MentorReviewDetailView(
+                facts.slug(),
+                facts.name(),
+                facts.email(),
+                normalizeText(mentorUser.getProfileImageUrl()),
+                facts.roleAtCompany(),
+                normalizeText(profile.getExpertise()),
+                formatCad(profile.getHourlyRateCents()),
                 normalizeText(profile.getBio()),
                 skills,
                 interviewCompanies,
                 toStatusLabel(profile.getVerificationStatus()),
                 toStatusClass(profile.getVerificationStatus()),
-                normalizeText(profile.getAdminNote())
+                normalizeText(profile.getAdminNote()),
+                facts.verificationSummary(),
+                verificationChecks,
+                profile.getSessionsCompleted() == null ? 0 : profile.getSessionsCompleted(),
+                profile.isOffersFreeSession(),
+                formatTrialSessionLabel(profile)
         );
     }
 
-    private MentorProfile requireMentorProfile(String mentorSlug) {
-        // Find the real mentor profile that matches the selected slug before updating it.
-        MentorReviewItemView item = findReviewItem(mentorSlug);
-        if (item == null) {
-            throw new IllegalArgumentException("Mentor review item not found.");
-        }
+    private MentorReviewFacts buildFacts(User mentorUser, MentorProfile profile) {
+        List<String> skills = findSkills(mentorUser.getId());
+        List<String> interviewCompanies = findInterviewCompanies(mentorUser.getId());
+        List<VerificationCheckView> verificationChecks = buildVerificationChecks(profile, skills, interviewCompanies);
+        int completeChecks = (int) verificationChecks.stream().filter(VerificationCheckView::complete).count();
+        return new MentorReviewFacts(
+                normalizeSlug(buildFullName(mentorUser)),
+                buildFullName(mentorUser),
+                normalizeText(mentorUser.getEmail()),
+                buildRoleAtCompany(profile),
+                toStatusLabel(profile.getVerificationStatus()),
+                toStatusClass(profile.getVerificationStatus()),
+                buildVerificationSummary(verificationChecks),
+                completeChecks,
+                verificationChecks.size()
+        );
+    }
 
+    private List<String> findSkills(Long mentorUserId) {
+        return mentorSkillRepository.findByMentorProfileUserIdOrderBySkillNameAsc(mentorUserId).stream()
+                .map(MentorSkill::getSkillName)
+                .toList();
+    }
+
+    private List<String> findInterviewCompanies(Long mentorUserId) {
+        return mentorInterviewCompanyRepository.findByMentorProfileUserIdOrderByCompanyNameAsc(mentorUserId).stream()
+                .map(MentorInterviewCompany::getCompanyName)
+                .toList();
+    }
+
+    private List<VerificationCheckView> buildVerificationChecks(
+            MentorProfile profile,
+            List<String> skills,
+            List<String> interviewCompanies
+    ) {
+        List<VerificationCheckView> checks = new ArrayList<>();
+        checks.add(new VerificationCheckView(
+                "Current title",
+                !normalizeText(profile.getCurrentTitle()).isEmpty(),
+                normalizeText(profile.getCurrentTitle()).isEmpty() ? "Missing" : normalizeText(profile.getCurrentTitle())
+        ));
+        checks.add(new VerificationCheckView(
+                "Current company",
+                !normalizeText(profile.getCurrentCompany()).isEmpty(),
+                normalizeText(profile.getCurrentCompany()).isEmpty() ? "Missing" : normalizeText(profile.getCurrentCompany())
+        ));
+        checks.add(new VerificationCheckView(
+                "Expertise",
+                !normalizeText(profile.getExpertise()).isEmpty(),
+                normalizeText(profile.getExpertise()).isEmpty() ? "Missing" : "Added"
+        ));
+        checks.add(new VerificationCheckView(
+                "Bio",
+                !normalizeText(profile.getBio()).isEmpty(),
+                normalizeText(profile.getBio()).isEmpty() ? "Missing" : "Added"
+        ));
+        checks.add(new VerificationCheckView(
+                "Hourly rate",
+                profile.getHourlyRateCents() != null && profile.getHourlyRateCents() > 0,
+                profile.getHourlyRateCents() != null && profile.getHourlyRateCents() > 0 ? formatCad(profile.getHourlyRateCents()) : "Missing"
+        ));
+        checks.add(new VerificationCheckView(
+                "Skills",
+                !skills.isEmpty(),
+                skills.isEmpty() ? "Missing" : skills.size() + " added"
+        ));
+        checks.add(new VerificationCheckView(
+                "Interview companies",
+                !interviewCompanies.isEmpty(),
+                interviewCompanies.isEmpty() ? "Missing" : interviewCompanies.size() + " added"
+        ));
+        return checks;
+    }
+
+    private String buildVerificationSummary(List<VerificationCheckView> checks) {
+        int total = checks.size();
+        int complete = (int) checks.stream().filter(VerificationCheckView::complete).count();
+        List<String> missing = checks.stream()
+                .filter(check -> !check.complete())
+                .map(VerificationCheckView::label)
+                .toList();
+        if (missing.isEmpty()) {
+            return "Complete (" + complete + "/" + total + ")";
+        }
+        return complete + "/" + total + " complete • Missing " + String.join(", ", missing);
+    }
+
+    private Optional<User> findMentorUserBySlug(String mentorSlug) {
+        if (mentorSlug.isEmpty()) {
+            return Optional.empty();
+        }
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
-                .filter(user -> normalizeSlug(buildFullName(user)).equals(item.slug()))
-                .findFirst()
-                .flatMap(user -> mentorProfileRepository.findById(user.getId()))
-                .orElseThrow(() -> new IllegalArgumentException("Mentor review item not found."));
+                .filter(user -> normalizeSlug(buildFullName(user)).equals(mentorSlug))
+                .findFirst();
     }
 
     private String toStatusLabel(VerificationStatus status) {
@@ -159,6 +264,46 @@ public class AdminReviewService {
         return title + " @ " + company;
     }
 
+    private String formatCad(Integer amountCents) {
+        if (amountCents == null || amountCents <= 0) {
+            return "";
+        }
+        return String.format(Locale.ROOT, "$%.2f", amountCents / 100.0);
+    }
+
+    private String formatTrialSessionLabel(MentorProfile profile) {
+        if (!profile.isOffersFreeSession()
+                || profile.getTrialSessionWeekday() == null
+                || profile.getTrialSessionStartTime() == null
+                || profile.getTrialSessionEndTime() == null) {
+            return "";
+        }
+        return weekdayLabel(profile.getTrialSessionWeekday()) + " • "
+                + formatTime(profile.getTrialSessionStartTime()) + " - " + formatTime(profile.getTrialSessionEndTime());
+    }
+
+    private String weekdayLabel(int weekday) {
+        return switch (weekday) {
+            case 1 -> "Sunday";
+            case 2 -> "Monday";
+            case 3 -> "Tuesday";
+            case 4 -> "Wednesday";
+            case 5 -> "Thursday";
+            case 6 -> "Friday";
+            case 7 -> "Saturday";
+            default -> "Day";
+        };
+    }
+
+    private String formatTime(LocalTime time) {
+        int hour = time.getHour();
+        int convertedHour = hour % 12;
+        if (convertedHour == 0) {
+            convertedHour = 12;
+        }
+        return String.format(Locale.ROOT, "%d:%02d %s", convertedHour, time.getMinute(), hour >= 12 ? "PM" : "AM");
+    }
+
     private String normalizeSlug(String value) {
         return normalizeText(value)
                 .toLowerCase(Locale.ROOT)
@@ -173,16 +318,57 @@ public class AdminReviewService {
         return value.trim().replaceAll("\\s+", " ");
     }
 
-    public record MentorReviewItemView(
+    public record MentorReviewSummaryView(
             String slug,
             String name,
+            String email,
             String roleAtCompany,
+            String reviewStatus,
+            String statusClass,
+            String verificationSummary,
+            String verificationScore
+    ) {
+    }
+
+    public record MentorReviewDetailView(
+            String slug,
+            String name,
+            String email,
+            String profileImageUrl,
+            String roleAtCompany,
+            String expertise,
+            String hourlyRateLabel,
             String bio,
             List<String> skills,
             List<String> interviewCompanies,
             String reviewStatus,
             String statusClass,
-            String adminNote
+            String adminNote,
+            String verificationSummary,
+            List<VerificationCheckView> verificationChecks,
+            int sessionsCompleted,
+            boolean offersFreeSession,
+            String trialSessionLabel
+    ) {
+    }
+
+    public record VerificationCheckView(
+            String label,
+            boolean complete,
+            String detail
+    ) {
+    }
+
+    private record MentorReviewFacts(
+            String slug,
+            String name,
+            String email,
+            String roleAtCompany,
+            String reviewStatus,
+            String statusClass,
+            String verificationSummary,
+            int completeChecks,
+            int totalChecks
     ) {
     }
 }

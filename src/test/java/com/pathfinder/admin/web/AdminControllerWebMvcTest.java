@@ -1,12 +1,10 @@
 package com.pathfinder.admin.web;
 
 import com.pathfinder.admin.service.AdminAccountService;
-import com.pathfinder.admin.service.AdminProfileService;
 import com.pathfinder.admin.service.AdminReviewService;
 import com.pathfinder.admin.service.AdminSessionOversightService;
 import com.pathfinder.auth.config.SecurityConfig;
 import com.pathfinder.auth.config.SessionRoleAuthenticationFilter;
-import com.pathfinder.auth.domain.User;
 import com.pathfinder.auth.web.AuthController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -43,9 +42,6 @@ class AdminControllerWebMvcTest {
     @MockBean
     private AdminSessionOversightService adminSessionOversightService;
 
-    @MockBean
-    private AdminProfileService adminProfileService;
-
     @Test
     // Renders the admin home page with top-level counts.
     void home() throws Exception {
@@ -65,47 +61,60 @@ class AdminControllerWebMvcTest {
     }
 
     @Test
-    void profile() throws Exception {
-        User admin = new User();
-        admin.setEmail("admin@example.com");
-        admin.setFirstName("Admin");
-        admin.setLastName("User");
-        when(adminProfileService.findAdminUserByEmail("admin@example.com")).thenReturn(admin);
-
-        mockMvc.perform(get("/admin/profile")
-                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
-                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("layout"))
-                .andExpect(model().attribute("content", "admin/profile :: content"))
-                .andExpect(model().attribute("email", "admin@example.com"));
-    }
-
-    @Test
-    // Renders mentor review rows and the selected item.
+    // Renders mentor review rows on the queue page.
     void mentorReview() throws Exception {
-        AdminReviewService.MentorReviewItemView item = new AdminReviewService.MentorReviewItemView(
+        AdminReviewService.MentorReviewSummaryView item = new AdminReviewService.MentorReviewSummaryView(
                 "mentor-user",
                 "Mentor User",
+                "mentor@example.com",
                 "Staff Engineer @ Example",
-                "Experienced mentor",
-                List.of("System design"),
-                List.of("Meta"),
                 "Pending review",
                 "statusBadge statusBadge--requested",
-                ""
+                "7/7 complete",
+                "7/7"
         );
         when(adminReviewService.listReviewItems()).thenReturn(List.of(item));
-        when(adminReviewService.findReviewItem("mentor-user")).thenReturn(item);
 
         mockMvc.perform(get("/admin/mentors/review")
-                        .param("mentor", "mentor-user")
                         .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
                         .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("content", "admin/mentor_review :: content"))
-                .andExpect(model().attributeExists("reviewItems"))
+                .andExpect(model().attribute("reviewItems", List.of(item)));
+    }
+
+    @Test
+    // Renders the dedicated mentor review detail page.
+    void mentorReviewDetail() throws Exception {
+        AdminReviewService.MentorReviewDetailView item = new AdminReviewService.MentorReviewDetailView(
+                "mentor-user",
+                "Mentor User",
+                "mentor@example.com",
+                "",
+                "Staff Engineer @ Example",
+                "Backend interviews",
+                "$80.00",
+                "Experienced mentor",
+                List.of("System design"),
+                List.of("Meta"),
+                "Pending review",
+                "statusBadge statusBadge--requested",
+                "",
+                "Complete (7/7)",
+                List.of(new AdminReviewService.VerificationCheckView("Bio", true, "Added")),
+                3,
+                true,
+                "Monday • 6:00 PM - 6:30 PM"
+        );
+        when(adminReviewService.findReviewItem("mentor-user")).thenReturn(item);
+
+        mockMvc.perform(get("/admin/mentors/review/mentor-user")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("content", "admin/mentor_review_detail :: content"))
                 .andExpect(model().attribute("selectedReviewItem", item));
     }
 
@@ -154,31 +163,34 @@ class AdminControllerWebMvcTest {
     }
 
     @Test
-    // Posts an approve action and redirects back to the selected mentor.
+    // Posts an approve action and redirects back to the detail page.
     void approveMentor() throws Exception {
         mockMvc.perform(post("/admin/mentors/review/mentor-user/approve")
                         .param("adminNote", "Looks good.")
                         .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
                         .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/mentors/review?mentor=mentor-user"))
+                .andExpect(redirectedUrl("/admin/mentors/review/mentor-user"))
                 .andExpect(flash().attributeExists("flashMessage"));
 
         verify(adminReviewService).approveMentor("mentor-user", "Looks good.");
     }
 
     @Test
-    void saveProfileRedirectsAfterSuccess() throws Exception {
-        mockMvc.perform(post("/admin/profile")
-                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
-                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin")
-                        .param("team", "Operations")
-                        .param("supportChannel", "#ops")
-                        .param("notes", "Daily moderation handoff"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/admin/profile"))
-                .andExpect(flash().attributeExists("flashMessage"));
+    // Keeps the admin on the detail page when denial validation fails.
+    void denyMentorValidationError() throws Exception {
+        doThrow(new IllegalArgumentException("Enter a denial note before rejecting the mentor."))
+                .when(adminReviewService).denyMentor("mentor-user", "");
 
-        verify(adminProfileService).saveProfile("admin@example.com", "Operations", "#ops", "Daily moderation handoff");
+        mockMvc.perform(post("/admin/mentors/review/mentor-user/deny")
+                        .param("adminNote", "")
+                        .sessionAttr(AuthController.SESSION_USER_EMAIL, "admin@example.com")
+                        .sessionAttr(AuthController.SESSION_USER_ROLE, "admin"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/mentors/review/mentor-user"))
+                .andExpect(flash().attribute("formError", "Enter a denial note before rejecting the mentor."));
+
+        verify(adminReviewService).denyMentor("mentor-user", "");
     }
+
 }

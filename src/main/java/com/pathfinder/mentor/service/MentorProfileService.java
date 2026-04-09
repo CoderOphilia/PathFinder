@@ -251,8 +251,8 @@ public class MentorProfileService {
 
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
-                .map(user -> toPublicMentorProfile(user, mentorProfileRepository.findById(user.getId()).orElse(null)))
-                .filter(profile -> profile != null)
+                .map(user -> toPublicMentorProfile(user, findApprovedPublicProfile(user.getId())))
+                .filter(Objects::nonNull)
                 .filter(profile -> profile.slug().equals(normalizedSlug))
                 .findFirst()
                 .orElse(null);
@@ -262,8 +262,8 @@ public class MentorProfileService {
     public List<PublicMentorProfile> listPublicMentors() {
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
-                .map(user -> toPublicMentorProfile(user, mentorProfileRepository.findById(user.getId()).orElse(null)))
-                .filter(profile -> profile != null)
+                .map(user -> toPublicMentorProfile(user, findApprovedPublicProfile(user.getId())))
+                .filter(Objects::nonNull)
                 .toList();
     }
 
@@ -276,6 +276,7 @@ public class MentorProfileService {
 
         return userRepository.findAll().stream()
                 .filter(user -> "mentor".equalsIgnoreCase(user.getRole()))
+                .filter(user -> findApprovedPublicProfile(user.getId()) != null)
                 .filter(user -> buildFullName(user.getFirstName(), user.getLastName()).equalsIgnoreCase(normalizedName))
                 .map(User::getEmail)
                 .findFirst()
@@ -330,6 +331,15 @@ public class MentorProfileService {
                 interviewCompanies,
                 profile.getSessionsCompleted() == null ? 0 : profile.getSessionsCompleted()
         );
+    }
+
+    private boolean isPubliclyVisible(MentorProfile profile) {
+        return profile != null && profile.getVerificationStatus() == VerificationStatus.APPROVED;
+    }
+
+    private MentorProfile findApprovedPublicProfile(Long userId) {
+        MentorProfile profile = mentorProfileRepository.findById(userId).orElse(null);
+        return isPubliclyVisible(profile) ? profile : null;
     }
 
     private void applyProfileValues(

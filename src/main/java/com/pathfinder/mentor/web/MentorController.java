@@ -321,6 +321,18 @@ public class MentorController {
         if (!model.containsAttribute("offersFreeSession")) {
             model.addAttribute("offersFreeSession", profile != null && profile.isOffersFreeSession());
         }
+        if (!model.containsAttribute("verificationStatusLabel")) {
+            model.addAttribute("verificationStatusLabel", verificationStatusLabel(profile == null ? null : profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("verificationStatusClass")) {
+            model.addAttribute("verificationStatusClass", verificationStatusClass(profile == null ? null : profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("verificationStatusMessage")) {
+            model.addAttribute("verificationStatusMessage", verificationStatusMessage(profile == null ? null : profile.getVerificationStatus()));
+        }
+        if (!model.containsAttribute("adminNote")) {
+            model.addAttribute("adminNote", profile == null ? "" : normalizeText(profile.getAdminNote()));
+        }
         if (profile == null) {
             return;
         }
@@ -368,19 +380,6 @@ public class MentorController {
             if (!currentRoleBadge.isEmpty()) {
                 model.addAttribute("currentRoleBadge", currentRoleBadge);
             }
-        }
-        // Show mentors the latest admin decision directly on their profile page.
-        if (!model.containsAttribute("verificationStatusLabel")) {
-            model.addAttribute("verificationStatusLabel", verificationStatusLabel(profile.getVerificationStatus()));
-        }
-        if (!model.containsAttribute("verificationStatusClass")) {
-            model.addAttribute("verificationStatusClass", verificationStatusClass(profile.getVerificationStatus()));
-        }
-        if (!model.containsAttribute("verificationStatusMessage")) {
-            model.addAttribute("verificationStatusMessage", verificationStatusMessage(profile.getVerificationStatus()));
-        }
-        if (!model.containsAttribute("adminNote")) {
-            model.addAttribute("adminNote", normalizeText(profile.getAdminNote()));
         }
     }
 
