@@ -97,9 +97,9 @@
 				<strong>Booking notes:</strong>
 				<span th:text="${sessionRequest.bookingNotes}">Optional note</span>
 			</p>
-			<p class="p p--muted p--tight" th:if="${sessionRequest.mentorNote != null and !sessionRequest.mentorNote.isEmpty()}">
+			<p class="p p--muted p--tight" th:if="${sessionRequest.meetingLink != null and !sessionRequest.meetingLink.isEmpty()}">
 				<strong>Meeting link:</strong>
-				<a class="link link--underline" th:href="${sessionRequest.mentorNote}" th:text="${sessionRequest.mentorNote}" target="_blank" rel="noopener noreferrer">Meeting link</a>
+				<a class="link link--underline" th:href="${sessionRequest.meetingLink}" th:text="${sessionRequest.meetingLink}" target="_blank" rel="noopener noreferrer">Meeting link</a>
 			</p>
 			<p class="p p--sm p--muted p--tight" th:if="${bookingPolicySummary != null and !bookingPolicySummary.isEmpty()}">
 				<strong>Booking policy:</strong>

@@ -147,7 +147,7 @@ class SessionCompletionWebMvcTest {
         request.setSessionType("Mock interview");
         request.setObjective("Practice behavioral answers");
         request.setBookingNotes("");
-        request.setMentorNote("");
+        request.setMeetingLink("");
         request.setStatus(status);
         request.setPaymentCompleted(status == SessionStatus.PAID || status == SessionStatus.COMPLETED);
         request.setFreeSessionRequested(false);

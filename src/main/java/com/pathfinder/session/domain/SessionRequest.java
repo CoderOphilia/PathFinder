@@ -51,8 +51,8 @@ public class SessionRequest {
     @Column(length = 1000)
     private String bookingNotes;
 
-    @Column(length = 1000)
-    private String mentorNote;
+    @Column(name = "meeting_link", length = 1000)
+    private String meetingLink;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

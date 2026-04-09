@@ -392,15 +392,15 @@ public class SessionController {
     public String applyDecision(
             @PathVariable Long requestId,
             @RequestParam(defaultValue = "") String decision,
-            @RequestParam(defaultValue = "") String mentorNote,
+            @RequestParam(defaultValue = "") String meetingLink,
             RedirectAttributes redirectAttributes
     ) {
         try {
             if ("approve".equalsIgnoreCase(decision)) {
-                sessionService.approveSession(requestId, mentorNote);
+                sessionService.approveSession(requestId, meetingLink);
                 redirectAttributes.addFlashAttribute("flashMessage", "Session approved.");
             } else if ("decline".equalsIgnoreCase(decision)) {
-                sessionService.declineSession(requestId, mentorNote);
+                sessionService.declineSession(requestId, meetingLink);
                 redirectAttributes.addFlashAttribute("flashMessage", "Session declined.");
             } else {
                 redirectAttributes.addFlashAttribute("formError", "Choose approve or decline.");
