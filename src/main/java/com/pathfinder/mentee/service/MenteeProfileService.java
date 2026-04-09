@@ -156,6 +156,7 @@ public class MenteeProfileService {
         List<SessionRequest> sessionRequests = getMenteeSession(menteeEmail);
         return sessionRequests.stream()
                 .filter(this::isUpcomingSession)
+                .filter(s -> s.getStatus() == SessionStatus.APPROVED)
                 .filter(s -> parseSlotTime(s.getSlotTime()).isAfter(LocalDateTime.now()))
                 .min(Comparator.comparing(s -> parseSlotTime(s.getSlotTime())));
 
